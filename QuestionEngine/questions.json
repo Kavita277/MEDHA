@@ -1,0 +1,325 @@
+{
+  "questions": [
+    {
+      "question_id": "GW-01",
+      "intent": "general_wellbeing",
+      "priority": 4,
+      "trigger": "scheduled_checkin",
+      "question": "Overall, how have you been feeling over the past few days?",
+      "response_type": "scale_1_5",
+      "sensitivity": "low",
+      "llm_rephrase": "yes",
+      "cooldown_days": 3,
+      "core_or_adaptive": "core",
+      "measures": "Global self-rated wellbeing trend",
+      "structured_output": {
+        "wellbeing_score": "integer 1-5"
+      }
+    },
+    {
+      "question_id": "GW-03",
+      "intent": "general_wellbeing",
+      "priority": 4,
+      "trigger": "scheduled_checkin",
+      "question": "How would you describe your energy levels lately?",
+      "response_type": "scale_1_5",
+      "sensitivity": "low",
+      "llm_rephrase": "yes",
+      "cooldown_days": 3,
+      "core_or_adaptive": "core",
+      "measures": "Self-rated energy/fatigue trend",
+      "structured_output": {
+        "energy_score": "integer 1-5"
+      }
+    },
+    {
+      "question_id": "GW-05",
+      "intent": "general_wellbeing",
+      "priority": 4,
+      "trigger": "previous_wellbeing_checkin_exists",
+      "question": "Compared to our last check-in, would you say things are better, worse, or about the same?",
+      "response_type": "multiple_choice",
+      "sensitivity": "low",
+      "llm_rephrase": "yes",
+      "cooldown_days": 3,
+      "core_or_adaptive": "core",
+      "measures": "Self-perceived trajectory",
+      "structured_output": {
+        "self_reported_trend": "better | worse | same | prefer_not_to_say"
+      }
+    },
+    {
+      "question_id": "GW-06",
+      "intent": "general_wellbeing",
+      "priority": 4,
+      "trigger": "two_or_more_low_GW01_scores",
+      "question": "Is there anything specific making things harder right now?",
+      "response_type": "optional_text_or_voice",
+      "sensitivity": "medium",
+      "llm_rephrase": "controlled_only",
+      "cooldown_days": 7,
+      "core_or_adaptive": "adaptive",
+      "measures": "Context for declining wellbeing without demanding trauma disclosure",
+      "structured_output": {
+        "context_text": "raw string"
+      }
+    },
+    {
+      "question_id": "SF-01",
+      "intent": "sleep_functioning",
+      "priority": 3,
+      "trigger": "scheduled_checkin",
+      "question": "How has your sleep been over the past week?",
+      "response_type": "scale_1_5",
+      "sensitivity": "low",
+      "llm_rephrase": "yes",
+      "cooldown_days": 3,
+      "core_or_adaptive": "core",
+      "measures": "Self-rated sleep quality trend",
+      "structured_output": {
+        "sleep_score": "integer 1-5"
+      }
+    },
+    {
+      "question_id": "SF-02",
+      "intent": "sleep_functioning",
+      "priority": 3,
+      "trigger": "scheduled_checkin",
+      "question": "Have you been able to keep up with your usual daily activities, like work, chores, or self-care?",
+      "response_type": "multiple_choice",
+      "sensitivity": "low",
+      "llm_rephrase": "yes",
+      "cooldown_days": 3,
+      "core_or_adaptive": "core",
+      "measures": "Functional ability",
+      "structured_output": {
+        "functioning_level": "fully | mostly | partially | not_at_all"
+      }
+    },
+    {
+      "question_id": "SF-03",
+      "intent": "sleep_functioning",
+      "priority": 3,
+      "trigger": "two_consecutive_low_SF01_scores",
+      "question": "Is anything in particular affecting your sleep?",
+      "response_type": "optional_text",
+      "sensitivity": "medium",
+      "llm_rephrase": "controlled_only",
+      "cooldown_days": 7,
+      "core_or_adaptive": "adaptive",
+      "measures": "Context for sleep disruption",
+      "structured_output": {
+        "sleep_context_text": "raw string"
+      }
+    },
+    {
+      "question_id": "SF-05",
+      "intent": "sleep_functioning",
+      "priority": 3,
+      "trigger": "functioning_trend_declining",
+      "question": "Have you noticed any changes in your ability to concentrate or focus?",
+      "response_type": "scale_1_5",
+      "sensitivity": "low_medium",
+      "llm_rephrase": "yes",
+      "cooldown_days": 7,
+      "core_or_adaptive": "adaptive",
+      "measures": "Cognitive/functioning change",
+      "structured_output": {
+        "concentration_change_score": "integer 1-5"
+      }
+    },
+    {
+      "question_id": "ES-01",
+      "intent": "event_related_stress",
+      "priority": 2,
+      "trigger": "event_trigger_signal",
+      "question": "Are certain places, sounds, or situations currently making you feel distressed or on edge?",
+      "response_type": "yes_no_optional_text",
+      "sensitivity": "medium_high",
+      "llm_rephrase": "controlled_only",
+      "cooldown_days": 14,
+      "core_or_adaptive": "core",
+      "measures": "Current trigger sensitivity",
+      "structured_output": {
+        "trigger_sensitivity_flag": "boolean"
+      }
+    },
+    {
+      "question_id": "ES-02",
+      "intent": "event_related_stress",
+      "priority": 2,
+      "trigger": "upcoming_or_recent_case_event",
+      "question": "We noticed [case-related event] may be coming up. How are you coping with this?",
+      "response_type": "scale_1_5",
+      "sensitivity": "high",
+      "llm_rephrase": "controlled_only",
+      "cooldown_days": 14,
+      "core_or_adaptive": "adaptive",
+      "measures": "Stress related to known case event",
+      "structured_output": {
+        "event_coping_score": "integer 1-5",
+        "linked_case_event_id": "string"
+      }
+    },
+    {
+      "question_id": "ES-03",
+      "intent": "event_related_stress",
+      "priority": 2,
+      "trigger": "low_frequency_scheduled",
+      "question": "Over the past week, how often have unwanted memories or thoughts about what happened come up for you?",
+      "response_type": "multiple_choice",
+      "sensitivity": "high",
+      "llm_rephrase": "no",
+      "cooldown_days": 14,
+      "core_or_adaptive": "core",
+      "measures": "Intrusion frequency as a monitoring signal",
+      "structured_output": {
+        "intrusion_frequency": "never | rarely | sometimes | often | very_often"
+      }
+    },
+    {
+      "question_id": "ES-06",
+      "intent": "event_related_stress",
+      "priority": 2,
+      "trigger": "low_frequency_scheduled",
+      "question": "Do you find yourself feeling unusually alert, jumpy, or on guard lately?",
+      "response_type": "scale_1_5",
+      "sensitivity": "medium_high",
+      "llm_rephrase": "controlled_only",
+      "cooldown_days": 14,
+      "core_or_adaptive": "core",
+      "measures": "Hypervigilance as a monitoring signal",
+      "structured_output": {
+        "hypervigilance_score": "integer 1-5"
+      }
+    },
+    {
+      "question_id": "SA-01",
+      "intent": "safety_support",
+      "priority": 1,
+      "trigger": "safety_intent_active",
+      "question": "Do you currently feel physically safe where you are staying?",
+      "response_type": "yes_no",
+      "sensitivity": "high",
+      "llm_rephrase": "no",
+      "cooldown_days": 1,
+      "core_or_adaptive": "core",
+      "measures": "Immediate physical safety",
+      "structured_output": {
+        "feels_safe": "boolean or null"
+      }
+    },
+    {
+      "question_id": "SA-02",
+      "intent": "safety_support",
+      "priority": 1,
+      "trigger": "safety_intent_active",
+      "question": "Is anyone currently threatening or harming you?",
+      "response_type": "yes_no",
+      "sensitivity": "high",
+      "llm_rephrase": "no",
+      "cooldown_days": 1,
+      "core_or_adaptive": "core",
+      "measures": "Active threat/harm",
+      "structured_output": {
+        "active_threat_flag": "boolean or null"
+      }
+    },
+    {
+      "question_id": "SA-03",
+      "intent": "safety_support",
+      "priority": 1,
+      "trigger": "scheduled_safety_check",
+      "question": "Do you have access to food, shelter, and any medical care you need right now?",
+      "response_type": "multiple_choice_optional_text",
+      "sensitivity": "medium_high",
+      "llm_rephrase": "controlled_only",
+      "cooldown_days": 14,
+      "core_or_adaptive": "core",
+      "measures": "Basic needs access",
+      "structured_output": {
+        "basic_needs_status": "all | some_not_all | none"
+      }
+    },
+    {
+      "question_id": "SA-04",
+      "intent": "safety_support",
+      "priority": 1,
+      "trigger": "scheduled_safety_support_check",
+      "question": "If you needed help right now, is there someone you could contact?",
+      "response_type": "yes_no",
+      "sensitivity": "medium",
+      "llm_rephrase": "yes",
+      "cooldown_days": 14,
+      "core_or_adaptive": "core",
+      "measures": "Immediate support availability",
+      "structured_output": {
+        "has_immediate_contact": "boolean"
+      }
+    },
+    {
+      "question_id": "SE-01",
+      "intent": "social_emotional_support",
+      "priority": 3,
+      "trigger": "scheduled_checkin",
+      "question": "Do you feel you have people you can talk to when things are difficult?",
+      "response_type": "scale_1_5",
+      "sensitivity": "low_medium",
+      "llm_rephrase": "yes",
+      "cooldown_days": 3,
+      "core_or_adaptive": "core",
+      "measures": "Perceived social support",
+      "structured_output": {
+        "perceived_support_score": "integer 1-5"
+      }
+    },
+    {
+      "question_id": "SE-02",
+      "intent": "social_emotional_support",
+      "priority": 3,
+      "trigger": "scheduled_checkin",
+      "question": "Have you been able to spend time with people who support you recently?",
+      "response_type": "yes_no",
+      "sensitivity": "low",
+      "llm_rephrase": "yes",
+      "cooldown_days": 3,
+      "core_or_adaptive": "core",
+      "measures": "Recent support contact",
+      "structured_output": {
+        "recent_support_contact": "boolean"
+      }
+    },
+    {
+      "question_id": "SE-03",
+      "intent": "social_emotional_support",
+      "priority": 3,
+      "trigger": "support_network_change_or_SE01_drop",
+      "question": "Has your support network changed recently — someone moved away, a new support person, anything like that?",
+      "response_type": "yes_no_optional_text",
+      "sensitivity": "medium",
+      "llm_rephrase": "controlled_only",
+      "cooldown_days": 7,
+      "core_or_adaptive": "adaptive",
+      "measures": "Change in support network",
+      "structured_output": {
+        "support_network_change_flag": "boolean"
+      }
+    },
+    {
+      "question_id": "SE-06",
+      "intent": "social_emotional_support",
+      "priority": 3,
+      "trigger": "low_SE01_or_high_withdrawal_twice",
+      "question": "Would it help to be connected with additional support resources?",
+      "response_type": "yes_no",
+      "sensitivity": "low_medium",
+      "llm_rephrase": "yes",
+      "cooldown_days": 7,
+      "core_or_adaptive": "adaptive",
+      "measures": "Openness to referral",
+      "structured_output": {
+        "wants_referral": "boolean"
+      }
+    }
+  ]
+}
