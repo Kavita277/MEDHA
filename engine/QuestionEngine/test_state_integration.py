@@ -60,6 +60,9 @@ from model_adapters import (
     longitudinal_signals_to_state,
     speech_signals_to_state,
     VOICE_FEATURE_FIELDS,
+    extract_structured_risk_payload,
+    structured_risk_payload_to_state,
+    REQUIRED_STRUCTURED_RISK_FIELDS,
 )
 from test_engine import select_next_question
 
@@ -787,6 +790,60 @@ class Test6_SpeechSignalsFromVoiceEngine(unittest.TestCase):
 
 
 # ===========================================================================
+# Test 7 — Structured Risk Engine 7-Field Contract & State Integration
+# ===========================================================================
+
+class Test7_StructuredRiskPayloadIntegration(unittest.TestCase):
+
+    def test_structured_risk_payload_contains_all_7_fields(self):
+        """
+        Structured Risk payload must contain exactly the 7 required fields:
+        Mood, Stress, Sleep, Functioning, Safety, Social_Support_Checkin, Self_Reported_Wellbeing.
+        """
+        payload = extract_structured_risk_payload({
+            "current_state": {
+                "Mood": 3.0,
+                "Stress": 4.0,
+                "Sleep": 2.0,
+                "Functioning": 3.0,
+                "Safety": 4.0,
+                "Social_Support_Checkin": 2.0,
+                "Self_Reported_Wellbeing": 3.0,
+            }
+        })
+        self.assertEqual(
+            set(payload.keys()),
+            set(REQUIRED_STRUCTURED_RISK_FIELDS)
+        )
+        self.assertEqual(payload["Mood"], 3.0)
+        self.assertEqual(payload["Social_Support_Checkin"], 2.0)
+
+    def test_structured_risk_payload_stored_in_state_without_trigger_side_effects(self):
+        """
+        Structured Risk payload stored in MedhaState must not trigger any QE flags.
+        """
+        payload = extract_structured_risk_payload({
+            "current_state": {
+                "Mood": 1.0,
+                "Stress": 5.0,
+                "Sleep": 1.0,
+                "Functioning": 1.0,
+                "Safety": 1.0,
+                "Social_Support_Checkin": 1.0,
+                "Self_Reported_Wellbeing": 1.0,
+            }
+        })
+        state = _base_state()
+        state.update(structured_risk_payload_to_state(payload))
+
+        state_dict = state.to_dict()
+        stored = state_dict["patient_context"]["structured_risk_payload"]
+        self.assertEqual(stored, payload)
+        self.assertFalse(state_dict["safety_intent_active"])
+        self.assertFalse(state_dict["functioning_trend_declining"])
+
+
+# ===========================================================================
 # Runner
 # ===========================================================================
 
@@ -802,6 +859,7 @@ def run_tests():
         Test5_NLPSignalsIntoState,
         TestAdapterSmoke,
         Test6_SpeechSignalsFromVoiceEngine,
+        Test7_StructuredRiskPayloadIntegration,
     ]
 
     for cls in test_classes:

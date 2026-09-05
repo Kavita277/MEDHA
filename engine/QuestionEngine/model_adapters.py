@@ -44,6 +44,7 @@ MODEL CONNECTION STATUS
   Behaviour Model  — interface ready; real model not yet connected
   NLP/Text Model   — interface ready; real model not yet connected (medha_nlp.py)
   Speech Model     — interface ready; Voice Engine schema normalised (Atharva, 2026-08-30)
+  Structured Risk  — interface ready via structured_risk_adapter.py
   Longitudinal     — connected via patient_context.derive_question_engine_state()
 """
 
@@ -386,3 +387,14 @@ def longitudinal_signals_to_state(derived: dict) -> dict:
         k: v for k, v in derived.items()
         if k in _LONGITUDINAL_KEYS and isinstance(v, bool)
     }
+
+
+# ===========================================================================
+# STRUCTURED RISK ENGINE ADAPTER
+# ===========================================================================
+
+from structured_risk_adapter import (
+    REQUIRED_STRUCTURED_RISK_FIELDS,
+    extract_structured_risk_payload,
+    structured_risk_payload_to_state,
+)
