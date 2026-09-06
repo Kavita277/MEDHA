@@ -1,0 +1,114 @@
+[
+  {
+    "id": "SH-WELL-01",
+    "type": "guide",
+    "title": "Daily Grounding and Breathing Techniques",
+    "category": "wellness",
+    "description": "Evidence-informed somatic breathing and 5-4-3-2-1 sensory grounding exercises to support autonomic regulation and daily stress management.",
+    "tags": ["general_wellbeing", "low", "moderate", "wellness", "coping", "routine"]
+  },
+  {
+    "id": "SH-WELL-02",
+    "type": "guide",
+    "title": "Sleep Hygiene & Routine Restoration Guide",
+    "category": "wellness",
+    "description": "Structured guide offering evidence-based practices for healthy sleep schedules, sleep environment optimization, and restorative rest routines.",
+    "tags": ["sleep_functioning", "low", "moderate", "wellness", "sleep"]
+  },
+  {
+    "id": "SH-WELL-03",
+    "type": "guide",
+    "title": "Holistic Daily Wellness & Resilience Practice Guide",
+    "category": "wellness",
+    "description": "Practical self-care guide focusing on daily rhythm maintenance, adaptive energy pacing, and restorative mindfulness exercises.",
+    "tags": ["general_wellbeing", "wellness", "routine"]
+  },
+  {
+    "id": "SH-SLEEP-01",
+    "type": "exercise",
+    "title": "Somatic Relaxation & Restorative Sleep Protocols",
+    "category": "coping",
+    "description": "Progressive muscle relaxation (PMR) and guided auditory relaxation sequences to support soothing evening transitions and sleep onset.",
+    "tags": ["sleep_functioning", "sleep", "coping"]
+  },
+  {
+    "id": "SH-SOC-01",
+    "type": "directory",
+    "title": "Peer & Community Support Network Directory",
+    "category": "social_support",
+    "description": "Verified directory of community-based peer support groups, survivor circles, and accredited social support organizations.",
+    "tags": ["social_emotional_support", "community", "wellness", "support"]
+  },
+  {
+    "id": "SH-SOC-02",
+    "type": "guide",
+    "title": "Safe Communication & Boundary Setting Toolkit",
+    "category": "social_support",
+    "description": "Supportive communication frameworks for navigating interpersonal conversations, setting emotional boundaries, and activating personal support networks.",
+    "tags": ["social_emotional_support", "support", "coping"]
+  },
+  {
+    "id": "SH-EVENT-01",
+    "type": "guide",
+    "title": "Post-Event Emotional Grounding & Coping Protocol",
+    "category": "coping",
+    "description": "Evidence-informed steps for managing acute emotional surges, sensory stabilization, and safe pacing following stressful case events or hearings.",
+    "tags": ["event_related_stress", "coping", "distress"]
+  },
+  {
+    "id": "SH-COP-01",
+    "type": "exercise",
+    "title": "Emotional De-escalation and Coping Toolkit",
+    "category": "coping",
+    "description": "Step-by-step emotional stabilization exercises, cognitive reframing prompts, and self-soothing strategies for periods of elevated tension.",
+    "tags": ["event_related_stress", "moderate", "high", "coping", "increasing_trend", "distress"]
+  },
+  {
+    "id": "SH-PROT-01",
+    "type": "checklist",
+    "title": "Personal Safety Planning & Emergency Preparedness Guide",
+    "category": "protection",
+    "description": "Comprehensive template for establishing safe contacts, secure communication protocols, and situational awareness measures.",
+    "tags": ["safety_support", "threat_event", "protection_issue", "high", "critical", "protection"]
+  },
+  {
+    "id": "SH-PROT-02",
+    "type": "directory",
+    "title": "Emergency Protection & Law Enforcement Liaison Directory",
+    "category": "protection",
+    "description": "Verified emergency contact numbers, 24/7 dedicated support hotlines, and victim protection liaison resources.",
+    "tags": ["safety_support", "threat_event", "protection_issue", "critical", "protection"]
+  },
+  {
+    "id": "SH-LEG-01",
+    "type": "guide",
+    "title": "Victim Legal Rights & Case Progression Handbook",
+    "category": "legal_support",
+    "description": "Informational handbook outlining procedural rights, case timeline tracking steps, and legal aid advocacy contacts.",
+    "tags": ["investigation_delay", "legal_support", "rights"]
+  },
+  {
+    "id": "SH-FIN-01",
+    "type": "directory",
+    "title": "Victim Compensation Schemes & Financial Relief Guide",
+    "category": "financial_support",
+    "description": "Step-by-step guidance on accessing statutory victim compensation funds, emergency subsistence grants, and institutional financial aid services.",
+    "tags": ["financial_hardship", "compensation_delay", "financial_support"]
+  },
+  {
+    "id": "SH-REHAB-01",
+    "type": "directory",
+    "title": "Community Rehabilitation & Vocational Reintegration Directory",
+    "category": "rehabilitation",
+    "description": "Directory of accredited community rehabilitation partners, vocational training centers, and psychosocial reintegration programs.",
+    "tags": ["rehabilitation_issue", "rehabilitation", "community"]
+  },
+  {
+    "id": "SH-CRISIS-01",
+    "type": "helpline",
+    "title": "24/7 National Crisis & Psychological Support Hotline",
+    "category": "crisis_support",
+    "description": "Immediate access to confidential, round-the-clock trained professional psychological first-aid support services.",
+    "tags": ["safety_support", "critical", "high", "crisis", "increasing_trend"]
+  }
+]
