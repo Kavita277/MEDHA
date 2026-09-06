@@ -27,3 +27,11 @@ Thumbs.db
 venv/
 env/
 
+
+MEDHA_Longitudinal_Synthetic_1000x30_LATIN_ONLY.zip
+datasets/
+*.onnx
+*.onnx.json
+
+*.pt
+*.pth

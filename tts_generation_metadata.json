@@ -1,0 +1,13 @@
+{
+    "generator_version": "1.0",
+    "python_version": "3.12.5 (tags/v3.12.5:ff3bc82, Aug  6 2024, 20:45:27) [MSC v.1940 64 bit (AMD64)]",
+    "piper_version": "unknown",
+    "voice_name": "en_US-lessac-medium.onnx",
+    "model_checksum": "unknown",
+    "seed": 42,
+    "generation_timestamp": "2026-09-05T17:18:38Z",
+    "input_dataset_filename": "datasets\\MEDHA_Longitudinal_Synthetic_1000x30\\voice_engine_raw_manifest_500x30.csv",
+    "number_requested": 5,
+    "number_successfully_generated": 5,
+    "number_failed": 0
+}
