@@ -13,7 +13,7 @@ torch.manual_seed(SEED)
 np.random.seed(SEED)
 
 DATASET_DIR = os.path.join("datasets", "MEDHA_Longitudinal_Synthetic_1000x30")
-VOICE_CSV = os.path.join(DATASET_DIR, "voice_engine_outputs_150x30.csv")
+VOICE_NPZ = os.path.join(DATASET_DIR, "voice_engine_outputs_150x30.npz")
 TARGETS_CSV = os.path.join(DATASET_DIR, "targets_1000x30.csv")
 SPLITS_JSON = os.path.join(DATASET_DIR, "patient_splits_150.json")
 MODEL_DIR = os.path.join("Models", "voice_gru")
@@ -21,7 +21,8 @@ MODEL_DIR = os.path.join("Models", "voice_gru")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 class VoiceGRU(nn.Module):
-    def __init__(self, input_size=13, hidden_size=64, num_layers=1):
+    # Wav2Vec2 base hidden_dim is 768
+    def __init__(self, input_size=768, hidden_size=64, num_layers=1):
         super(VoiceGRU, self).__init__()
         self.gru = nn.GRU(input_size, hidden_size, num_layers, batch_first=True)
         self.fc = nn.Linear(hidden_size, 1)
@@ -35,31 +36,32 @@ class VoiceGRU(nn.Module):
 def prepare_data():
     with open(SPLITS_JSON, "r") as f:
         splits = json.load(f)
-    # Load features and targets
-    feat_df = pd.read_csv(VOICE_CSV)
+        
+    # Load targets
     targ_df = pd.read_csv(TARGETS_CSV)
     
-    feat_df = feat_df.sort_values(by=['patient_id', 'day_index'])
-    targ_df = targ_df.sort_values(by=['patient_id', 'day_index'])
+    # Load pre-extracted Wav2Vec2 features
+    npz = np.load(VOICE_NPZ)
+    X_voice = npz["X_voice"]         # (150, 30, 768)
+    patient_ids = npz["patient_ids"] # (150,)
     
-    features = [
-        "voice_distress", "confidence", "angry", "sad", "neutral", "happy",
-        "duration_seconds", "rms_energy", "pitch_mean", "pitch_std",
-        "zero_crossing_rate", "speaking_rate", "acoustic_indicator"
-    ]
+    pid_to_idx = {pid: idx for idx, pid in enumerate(patient_ids)}
     
-    def build_tensors(patient_ids):
+    def build_tensors(split_pids):
         X = []
         y = []
-        for pid in patient_ids:
-            p_feat = feat_df[feat_df['patient_id'] == pid]
-            p_targ = targ_df[targ_df['patient_id'] == pid]
-            
-            if len(p_feat) != 30 or len(p_targ) != 30:
-                print(f"Skipping patient {pid} due to missing days")
+        for pid in split_pids:
+            if pid not in pid_to_idx:
                 continue
                 
-            x_seq = p_feat[features].values
+            idx = pid_to_idx[pid]
+            x_seq = X_voice[idx] # (30, 768)
+            
+            p_targ = targ_df[targ_df['patient_id'] == pid]
+            if len(p_targ) != 30:
+                print(f"Skipping patient {pid} due to missing target days")
+                continue
+                
             y_val = p_targ[p_targ['day_index'] == 30]['current_distress_label'].values[0]
             
             X.append(x_seq)
@@ -74,8 +76,8 @@ def prepare_data():
     return X_train, y_train, X_val, y_val, X_test, y_test
 
 def main():
-    if not os.path.exists(VOICE_CSV):
-        print(f"File {VOICE_CSV} not found! Wait for extraction to finish.")
+    if not os.path.exists(VOICE_NPZ):
+        print(f"File {VOICE_NPZ} not found! Wait for extraction to finish.")
         return
         
     print("Preparing data...")
