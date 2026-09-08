@@ -1,16 +1,23 @@
 import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import json
 import torch
 import torch.nn as nn
 import pandas as pd
 import numpy as np
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+from tools.train_gated_fusion import GatedFusionModel
 
 DATASET_DIR = os.path.join("datasets", "MEDHA_Longitudinal_Synthetic_1000x30")
 TEXT_OUT_CSV = os.path.join(DATASET_DIR, "text_engine_outputs_500x30.csv")
 BEHAVIOUR_OUT_CSV = os.path.join(DATASET_DIR, "behaviour_engine_outputs_500x30.csv")
+VOICE_NPZ = os.path.join(DATASET_DIR, "voice_engine_outputs_150x30.npz")
+SYNC_CSV = os.path.join(DATASET_DIR, "synchronized_multimodal_150x30.csv")
 TARGETS_CSV = os.path.join(DATASET_DIR, "targets_1000x30.csv")
 SPLITS_JSON = os.path.join(DATASET_DIR, "patient_splits.json")
+SPLITS_VOICE_JSON = os.path.join(DATASET_DIR, "patient_splits_150.json")
 
 class TextGRU(nn.Module):
     def __init__(self, input_size=5, hidden_size=64, num_layers=1):
@@ -34,6 +41,17 @@ class BehaviourGRU(nn.Module):
         last_out = out[:, -1, :]
         return self.fc(last_out).squeeze(-1)
 
+class VoiceGRU(nn.Module):
+    def __init__(self, input_size=768, hidden_size=64, num_layers=1):
+        super(VoiceGRU, self).__init__()
+        self.gru = nn.GRU(input_size, hidden_size, num_layers, batch_first=True)
+        self.fc = nn.Linear(hidden_size, 1)
+        
+    def forward(self, x):
+        out, _ = self.gru(x)
+        last_out = out[:, -1, :]
+        return self.fc(last_out).squeeze(-1)
+
 def build_test_tensors(feat_df, targ_df, test_ids, features):
     X, y = [], []
     for pid in test_ids:
@@ -48,11 +66,17 @@ def build_test_tensors(feat_df, targ_df, test_ids, features):
         
     return torch.tensor(np.array(X), dtype=torch.float32), torch.tensor(np.array(y), dtype=torch.float32)
 
-def evaluate_model(model, X, y, model_name):
+def evaluate_model(model, X, y, model_name, is_fusion=False):
     model.eval()
     with torch.no_grad():
-        logits = model(X)
-        probs = torch.sigmoid(logits).numpy()
+        if is_fusion:
+            Z, M, S = X
+            z_final, future_logit, _ = model(Z, M, S)
+            probs = torch.sigmoid(z_final).numpy()
+        else:
+            logits = model(X)
+            probs = torch.sigmoid(logits).numpy()
+            
         preds = (probs >= 0.5).astype(int)
         
     y_true = y.numpy()
@@ -82,7 +106,6 @@ def main():
     text_feat_df = pd.read_csv(TEXT_OUT_CSV).sort_values(by=['patient_id', 'day_index'])
     text_features = ['text_distress', 'fear_signal', 'threat_context', 'negative_affect', 'urgency']
     X_test_text, y_test_text = build_test_tensors(text_feat_df, targ_df, test_ids, text_features)
-    
     text_model = TextGRU()
     text_model.load_state_dict(torch.load("Models/text_gru/text_gru.pt"))
     evaluate_model(text_model, X_test_text, y_test_text, "Text GRU")
@@ -91,10 +114,56 @@ def main():
     beh_feat_df = pd.read_csv(BEHAVIOUR_OUT_CSV).sort_values(by=['patient_id', 'day_index'])
     beh_features = ['anomaly_score', 'engagement_deviation', 'inactivity_score']
     X_test_beh, y_test_beh = build_test_tensors(beh_feat_df, targ_df, test_ids, beh_features)
-    
     beh_model = BehaviourGRU()
     beh_model.load_state_dict(torch.load("Models/behaviour_gru/behaviour_gru.pt"))
     evaluate_model(beh_model, X_test_beh, y_test_beh, "Behaviour GRU")
+    
+    # 3. Voice GRU
+    with open(SPLITS_VOICE_JSON, "r") as f:
+        splits_voice = json.load(f)
+    test_ids_voice = splits_voice['test']
+    
+    npz = np.load(VOICE_NPZ)
+    X_voice = npz["X_voice"]
+    patient_ids_voice = npz["patient_ids"]
+    pid_to_idx = {pid: idx for idx, pid in enumerate(patient_ids_voice)}
+    
+    X_v, y_v = [], []
+    for pid in test_ids_voice:
+        if pid in pid_to_idx:
+            X_v.append(X_voice[pid_to_idx[pid]])
+            p_targ = targ_df[targ_df['patient_id'] == pid]
+            y_v.append(p_targ[p_targ['day_index'] == 30]['current_distress_label'].values[0])
+            
+    X_test_voice = torch.tensor(np.array(X_v), dtype=torch.float32)
+    y_test_voice = torch.tensor(np.array(y_v), dtype=torch.float32)
+    voice_model = VoiceGRU()
+    voice_model.load_state_dict(torch.load("Models/voice_gru/voice_gru.pt"))
+    evaluate_model(voice_model, X_test_voice, y_test_voice, "Voice GRU (Wav2Vec2)")
+    
+    # 4. Gated Fusion Model
+    sync_df = pd.read_csv(SYNC_CSV)
+    struct_cols = [c for c in sync_df.columns if c.startswith('struct_')]
+    
+    Z, M, S, y_f = [], [], [], []
+    for pid in test_ids_voice:
+        p_df = sync_df[sync_df['patient_id'] == pid].sort_values(by='day_index')
+        row = p_df.iloc[-1] # evaluate at day 30
+        Z.append([row['z_text'], row['z_voice'], row['z_behaviour']])
+        M.append([row['text_available'], row['voice_available'], row['behaviour_available']])
+        S.append(row[struct_cols].values.astype(float))
+        y_f.append(row['current_distress_label'])
+        
+    X_test_fusion = (
+        torch.tensor(np.array(Z), dtype=torch.float32),
+        torch.tensor(np.array(M), dtype=torch.float32),
+        torch.tensor(np.array(S), dtype=torch.float32)
+    )
+    y_test_fusion = torch.tensor(np.array(y_f), dtype=torch.float32)
+    
+    fusion_model = GatedFusionModel(struct_dim=19)
+    fusion_model.load_state_dict(torch.load("Models/fusion_model/fusion_model.pt"))
+    evaluate_model(fusion_model, X_test_fusion, y_test_fusion, "Gated Late Fusion Model", is_fusion=True)
 
 if __name__ == "__main__":
     main()
