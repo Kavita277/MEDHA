@@ -1,0 +1,12 @@
+{
+  "patient_id": "P001",
+  "payload": {
+    "day_index": 1,
+    "completion_baseline_z": 0.5,
+    "latency_baseline_z": 1.2,
+    "question_skip_rate": 0.1,
+    "session_duration_baseline_z": -0.5,
+    "response_length_baseline_z": 0.0,
+    "missed_checkins": 0
+  }
+}

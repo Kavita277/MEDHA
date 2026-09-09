@@ -1,0 +1,30 @@
+{
+  "data": {
+    "Mood": 3,
+    "Stress": 4,
+    "Sleep": 2,
+    "Functioning": 3,
+    "Safety": 1,
+    "Social_Support_Checkin": 1,
+    "Self_Reported_Wellbeing": 3,
+    "Threat_Event": 0,
+    "Upcoming_Hearing": 1,
+    "Hearing_Completed": 0,
+    "Investigation_Delay": 1,
+    "Compensation_Delay": 0,
+    "Relocation_Stress": 1,
+    "Rehabilitation_Issue": 0,
+    "Protection_Event": 0,
+    "Family_Support": 1,
+    "Social_Support": 1,
+    "Therapist_Engagement": 0,
+    "Access_To_Services": 1,
+    "Stable_Housing": 1,
+    "Other_Protective_Factors": 0,
+    "Recent_Episode": 1,
+    "Episode_Severity": "Moderate",
+    "Family_Reported_Episode": 1,
+    "Case_Type": "caste_based_violence",
+    "Case_Stage": "Investigation"
+  }
+}

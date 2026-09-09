@@ -1,0 +1,10 @@
+[2026-09-07T00:59:48.339748] Engine: TEXT | Endpoint: /health/text | Status: 200 | Time: 55.68ms | {"status":"healthy","model_loaded":true}
+[2026-09-07T00:59:48.346968] Engine: VOICE | Endpoint: /health/voice | Status: 200 | Time: 4.98ms | {"status":"healthy","model_loaded":true}
+[2026-09-07T00:59:48.353416] Engine: BEHAVIOUR | Endpoint: /health/behaviour | Status: 200 | Time: 4.86ms | {"status":"healthy","model_loaded":true}
+[2026-09-07T00:59:48.359989] Engine: STRUCTURED | Endpoint: /health/structured | Status: 200 | Time: 5.10ms | {"status":"healthy","model_loaded":true}
+[2026-09-07T00:59:48.365395] Engine: TEMPORAL | Endpoint: /health/temporal | Status: 200 | Time: 4.22ms | {"status":"healthy","model_loaded":true}
+[2026-09-07T00:59:48.459673] Engine: TEXT | Endpoint: /analyze/text | Status: 200 | Time: 86.54ms | SUCCESS
+[2026-09-07T00:59:50.354386] Engine: VOICE | Endpoint: /analyze/voice | Status: 200 | Time: 1887.14ms | SUCCESS
+[2026-09-07T00:59:50.437117] Engine: BEHAVIOUR | Endpoint: /analyze/behaviour | Status: 200 | Time: 75.03ms | SUCCESS
+[2026-09-07T00:59:50.483461] Engine: STRUCTURED | Endpoint: /risk/structured | Status: 200 | Time: 38.48ms | SUCCESS
+[2026-09-07T00:59:50.495037] Engine: TEMPORAL | Endpoint: /predict | Status: 200 | Time: 3.07ms | SUCCESS
