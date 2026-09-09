@@ -1,0 +1,90 @@
+{
+  "row_level": {
+    "train": {
+      "split": "train",
+      "n_rows": 21000,
+      "target_mean": 39.70309333333333,
+      "target_std": 13.067747803652331,
+      "pred_mean": 39.70606994628906,
+      "pred_std": 10.918050765991211,
+      "MAE": 5.074221620875767,
+      "RMSE": 6.375670345402799,
+      "R2": 0.7619598481027222,
+      "Pearson": 0.8737405507151098,
+      "Baseline_MAE": 10.69618957968254,
+      "Baseline_RMSE": 13.067747803652331,
+      "Baseline_R2": 0.0
+    },
+    "validation": {
+      "split": "validation",
+      "n_rows": 4500,
+      "target_mean": 40.729013333333334,
+      "target_std": 12.771522107313599,
+      "pred_mean": 40.74474334716797,
+      "pred_std": 10.439308166503906,
+      "MAE": 5.8343392797342934,
+      "RMSE": 7.282960109781738,
+      "R2": 0.6748149707119948,
+      "Pearson": 0.8214823420495326,
+      "Baseline_MAE": 10.44985728,
+      "Baseline_RMSE": 12.812661268604582,
+      "Baseline_R2": -0.006452702963334556
+    },
+    "test": {
+      "split": "test",
+      "n_rows": 4500,
+      "target_mean": 40.52758666666667,
+      "target_std": 13.142955902867174,
+      "pred_mean": 40.67814254760742,
+      "pred_std": 10.85971736907959,
+      "MAE": 5.885852368952433,
+      "RMSE": 7.383884746219269,
+      "R2": 0.6843660451767458,
+      "Pearson": 0.8273441907821537,
+      "Baseline_MAE": 10.819625434074075,
+      "Baseline_RMSE": 13.168791862635777,
+      "Baseline_R2": -0.003935393783493613
+    }
+  },
+  "victim_level": {
+    "train": {
+      "n_victims": 700,
+      "MAE": 0.9567786485217867,
+      "RMSE": 1.1876607317961805,
+      "R2": 0.9833599684256877,
+      "Pearson": 0.9930328585723085
+    },
+    "validation": {
+      "n_victims": 150,
+      "MAE": 1.3594795265706379,
+      "RMSE": 1.7092596574252605,
+      "R2": 0.9594492135465327,
+      "Pearson": 0.9828545341161382
+    },
+    "test": {
+      "n_victims": 150,
+      "MAE": 1.4238223915608725,
+      "RMSE": 1.7617934738708405,
+      "R2": 0.9644594416813385,
+      "Pearson": 0.9839113517507256
+    }
+  },
+  "train_mean_dds": 39.70309333333333,
+  "model_config": {
+    "objective": "reg:squarederror",
+    "n_estimators": 300,
+    "learning_rate": 0.05,
+    "max_depth": 5,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "random_state": 42
+  },
+  "preprocessing": {
+    "numeric_imputer": "median (train-fitted)",
+    "categorical_imputer": "constant='MISSING'",
+    "categorical_encoder": "OrdinalEncoder (unknown=-1)"
+  },
+  "split_reference": "engine/data/processed/v2_victim_split.csv",
+  "feature_policy": "engine/v2/v2_feature_policy.py",
+  "created_at": "2026-09-06T00:47:37.224468"
+}

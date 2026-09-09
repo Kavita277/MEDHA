@@ -1,0 +1,27 @@
+{
+  "imputer": "ZeroImputerWithAvailabilityFlag",
+  "imputed_features": [
+    "Struct_Pred",
+    "Text_Pred",
+    "Voice_Pred",
+    "Behav_Pred"
+  ],
+  "fill_value": 0.0,
+  "availability_flags": [
+    "Struct_Available",
+    "Text_Available",
+    "Voice_Available",
+    "Behav_Available"
+  ],
+  "feature_order": [
+    "Struct_Pred",
+    "Text_Pred",
+    "Voice_Pred",
+    "Behav_Pred",
+    "Struct_Available",
+    "Text_Available",
+    "Voice_Available",
+    "Behav_Available"
+  ],
+  "rules": "If modality unavailable, Pred=0.0 and Available=0.0; else Pred=actual and Available=1.0"
+}

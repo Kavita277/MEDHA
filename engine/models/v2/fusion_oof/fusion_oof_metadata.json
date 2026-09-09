@@ -1,0 +1,117 @@
+{
+  "step": "10B_CORRECTION",
+  "methodology": "Leakage-Safe 5-Fold Victim-Level Cross-Fitting OOF Stacking",
+  "timestamp": "2026-09-06T13:55:53.432289",
+  "random_seed": 42,
+  "n_folds": 5,
+  "train_victims": 700,
+  "train_rows": 21000,
+  "validation_victims": 150,
+  "validation_rows": 4500,
+  "test_status": "TEST SET UNTOUCHED (NOT USED IN SELECTION OR TUNING)",
+  "specialist_oof_metrics": {
+    "Struct_Pred": {
+      "split": "Structured Specialist (XGBoost)",
+      "MAE": 6.2015,
+      "RMSE": 7.7884,
+      "R2": 0.6448,
+      "Pearson": 0.8031,
+      "Spearman": 0.8081,
+      "N": 21000
+    },
+    "Text_Pred": {
+      "split": "Text Specialist (Ridge Core-5)",
+      "MAE": 6.4034,
+      "RMSE": 8.0313,
+      "R2": 0.6325,
+      "Pearson": 0.7953,
+      "Spearman": 0.8038,
+      "N": 15493
+    },
+    "Voice_Pred": {
+      "split": "Voice Specialist (Ridge Core-5)",
+      "MAE": 6.4969,
+      "RMSE": 8.1447,
+      "R2": 0.6414,
+      "Pearson": 0.8009,
+      "Spearman": 0.8089,
+      "N": 7634
+    },
+    "Behav_Pred": {
+      "split": "Behaviour Specialist (Ridge Ext-10)",
+      "MAE": 7.4513,
+      "RMSE": 9.3463,
+      "R2": 0.4885,
+      "Pearson": 0.6989,
+      "Spearman": 0.7162,
+      "N": 21000
+    }
+  },
+  "candidates": {
+    "A_WeightedAvg": {
+      "weights": {
+        "structured": 0.266292,
+        "text": 0.257896,
+        "voice": 0.254184,
+        "behaviour": 0.221627
+      },
+      "val": {
+        "split": "Candidate A (Weighted Avg)",
+        "MAE": 6.094,
+        "RMSE": 7.6155,
+        "R2": 0.6444,
+        "Pearson": 0.8056,
+        "Spearman": 0.8116,
+        "N": 4500
+      }
+    },
+    "B_Ridge": {
+      "alpha": 1.0,
+      "coefficients": {
+        "Struct_Pred": 0.793027,
+        "Text_Pred": 0.256571,
+        "Voice_Pred": 0.172211,
+        "Behav_Pred": -0.005349,
+        "Struct_Available": 0.0,
+        "Text_Available": -10.316719,
+        "Voice_Available": -6.849708,
+        "Behav_Available": 0.0
+      },
+      "intercept": 8.52348,
+      "val": {
+        "split": "Candidate B (Ridge)",
+        "MAE": 5.9062,
+        "RMSE": 7.3713,
+        "R2": 0.6669,
+        "Pearson": 0.8167,
+        "Spearman": 0.8209,
+        "N": 4500
+      }
+    },
+    "C_XGBoost": {
+      "n_estimators": 100,
+      "max_depth": 3,
+      "learning_rate": 0.1,
+      "feature_importance": {
+        "Struct_Pred": 0.6697,
+        "Text_Pred": 0.1377,
+        "Voice_Pred": 0.036,
+        "Behav_Pred": 0.0494,
+        "Struct_Available": 0.0,
+        "Text_Available": 0.0904,
+        "Voice_Available": 0.0168,
+        "Behav_Available": 0.0
+      },
+      "val": {
+        "split": "Candidate C (XGBoost)",
+        "MAE": 5.8851,
+        "RMSE": 7.3544,
+        "R2": 0.6684,
+        "Pearson": 0.8176,
+        "Spearman": 0.8209,
+        "N": 4500
+      }
+    }
+  },
+  "selected_model": "C_XGBoost"
+}

@@ -1,0 +1,16 @@
+{
+  "selected_candidate": "C_XGBoost",
+  "selection_metric": "Validation MAE",
+  "validation_performance": {
+    "split": "Candidate C (XGBoost)",
+    "MAE": 5.8851,
+    "RMSE": 7.3544,
+    "R2": 0.6684,
+    "Pearson": 0.8176,
+    "Spearman": 0.8209,
+    "N": 4500
+  },
+  "training_protocol": "5-fold victim-level cross-fitting (OOF) over 700 train victims",
+  "test_split_status": "UNTOUCHED (frozen for Step 10C final evaluation)",
+  "timestamp": "2026-09-06T13:55:53.376123"
+}

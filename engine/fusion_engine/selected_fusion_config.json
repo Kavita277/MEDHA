@@ -1,0 +1,11 @@
+{
+    "selected_model": "Learned Logistic Fusion",
+    "threshold": 0.15,
+    "features": [
+        "text_risk",
+        "voice_risk",
+        "behaviour_risk",
+        "structured_risk",
+        "temporal_risk_score"
+    ]
+}

@@ -1,0 +1,61 @@
+{
+    "specialist": "Behaviour DDS Specialist",
+    "policy_version": "v2.0",
+    "mathematical_definition": "Absolute deviation |z| for Engagement_Deviation and Response_Delay_Deviation",
+    "core_features": [
+        "Engagement_Score",
+        "Engagement_Deviation",
+        "Response_Delay_Hours",
+        "Response_Delay_Deviation",
+        "Missed_Checkin",
+        "Interaction_Frequency_7d",
+        "Session_Duration_Minutes"
+    ],
+    "extended_features": [
+        "Engagement_Score",
+        "Engagement_Deviation",
+        "Response_Delay_Hours",
+        "Response_Delay_Deviation",
+        "Missed_Checkin",
+        "Interaction_Frequency_7d",
+        "Session_Duration_Minutes",
+        "Baseline_Response_Delay",
+        "Baseline_Engagement",
+        "Behaviour_Trend"
+    ],
+    "canonical_model": "Ridge (All 10 Absolute Deviations)",
+    "all_10_features": [
+        "Engagement_Score",
+        "Engagement_Deviation",
+        "Response_Delay_Hours",
+        "Response_Delay_Deviation",
+        "Missed_Checkin",
+        "Interaction_Frequency_7d",
+        "Session_Duration_Minutes",
+        "Baseline_Response_Delay",
+        "Baseline_Engagement",
+        "Behaviour_Trend"
+    ],
+    "core_7_features": [
+        "Engagement_Score",
+        "Engagement_Deviation",
+        "Response_Delay_Hours",
+        "Response_Delay_Deviation",
+        "Missed_Checkin",
+        "Interaction_Frequency_7d",
+        "Session_Duration_Minutes"
+    ],
+    "coefficients_ridge_all10": {
+        "Engagement_Score": -42.8463,
+        "Engagement_Deviation": 5.2674,
+        "Response_Delay_Hours": 0.429,
+        "Response_Delay_Deviation": -0.0492,
+        "Missed_Checkin": -0.34,
+        "Interaction_Frequency_7d": 0.0625,
+        "Session_Duration_Minutes": 0.0221,
+        "Baseline_Response_Delay": -0.3246,
+        "Baseline_Engagement": -14.2674,
+        "Behaviour_Trend": 40.5461
+    },
+    "intercept_ridge_all10": 72.7589
+}

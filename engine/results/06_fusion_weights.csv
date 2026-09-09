@@ -1,0 +1,5 @@
+modality,weight,normalized_weight,availability
+text,0.25,0.25,yes
+voice,0.25,0.25,yes
+behaviour,0.25,0.25,yes
+structured,0.25,0.25,yes

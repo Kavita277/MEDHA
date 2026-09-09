@@ -1,0 +1,9 @@
+{
+  "strategy": "pos_weight in BCEWithLogitsLoss",
+  "formula": "n_negative / n_positive (from Train split only)",
+  "n_train_total": 11200,
+  "n_train_positive": 961,
+  "n_train_negative": 10239,
+  "train_positive_rate": 0.0858035683631897,
+  "pos_weight": 10.65452653485952
+}

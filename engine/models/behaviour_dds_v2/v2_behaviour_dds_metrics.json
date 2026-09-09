@@ -1,0 +1,212 @@
+{
+    "ridge_all10_canonical": {
+        "train": {
+            "n_samples": 21000,
+            "mae": 7.4401,
+            "rmse": 9.332,
+            "r2": 0.49,
+            "pearson_r": 0.7,
+            "spearman_rho": 0.7172,
+            "baseline_mae": 10.6962,
+            "baseline_rmse": 13.0677,
+            "mae_improvement_pct": 30.44
+        },
+        "val": {
+            "n_samples": 4500,
+            "mae": 7.2715,
+            "rmse": 9.1091,
+            "r2": 0.4913,
+            "pearson_r": 0.7029,
+            "spearman_rho": 0.7188,
+            "baseline_mae": 10.4499,
+            "baseline_rmse": 12.8127,
+            "mae_improvement_pct": 30.41
+        },
+        "test": {
+            "n_samples": 4500,
+            "mae": 7.353,
+            "rmse": 9.1945,
+            "r2": 0.5106,
+            "pearson_r": 0.7147,
+            "spearman_rho": 0.7332,
+            "baseline_mae": 10.8196,
+            "baseline_rmse": 13.1688,
+            "mae_improvement_pct": 32.04
+        }
+    },
+    "xgb_all10": {
+        "train": {
+            "n_samples": 21000,
+            "mae": 7.1833,
+            "rmse": 9.006,
+            "r2": 0.525,
+            "pearson_r": 0.7254,
+            "spearman_rho": 0.7313,
+            "baseline_mae": 10.6962,
+            "baseline_rmse": 13.0677,
+            "mae_improvement_pct": 32.84
+        },
+        "val": {
+            "n_samples": 4500,
+            "mae": 7.1814,
+            "rmse": 9.0051,
+            "r2": 0.5028,
+            "pearson_r": 0.7111,
+            "spearman_rho": 0.719,
+            "baseline_mae": 10.4499,
+            "baseline_rmse": 12.8127,
+            "mae_improvement_pct": 31.28
+        },
+        "test": {
+            "n_samples": 4500,
+            "mae": 7.2577,
+            "rmse": 9.0949,
+            "r2": 0.5211,
+            "pearson_r": 0.7229,
+            "spearman_rho": 0.7321,
+            "baseline_mae": 10.8196,
+            "baseline_rmse": 13.1688,
+            "mae_improvement_pct": 32.92
+        }
+    },
+    "ridge_core7": {
+        "train": {
+            "n_samples": 21000,
+            "mae": 7.6575,
+            "rmse": 9.5908,
+            "r2": 0.4613,
+            "pearson_r": 0.6792,
+            "spearman_rho": 0.6924,
+            "baseline_mae": 10.6962,
+            "baseline_rmse": 13.0677,
+            "mae_improvement_pct": 28.41
+        },
+        "val": {
+            "n_samples": 4500,
+            "mae": 7.5665,
+            "rmse": 9.4558,
+            "r2": 0.4518,
+            "pearson_r": 0.6748,
+            "spearman_rho": 0.6905,
+            "baseline_mae": 10.4499,
+            "baseline_rmse": 12.8127,
+            "mae_improvement_pct": 27.59
+        },
+        "test": {
+            "n_samples": 4500,
+            "mae": 7.702,
+            "rmse": 9.6546,
+            "r2": 0.4604,
+            "pearson_r": 0.6785,
+            "spearman_rho": 0.6965,
+            "baseline_mae": 10.8196,
+            "baseline_rmse": 13.1688,
+            "mae_improvement_pct": 28.81
+        }
+    },
+    "xgb_core7": {
+        "train": {
+            "n_samples": 21000,
+            "mae": 7.4496,
+            "rmse": 9.3452,
+            "r2": 0.4886,
+            "pearson_r": 0.6992,
+            "spearman_rho": 0.7015,
+            "baseline_mae": 10.6962,
+            "baseline_rmse": 13.0677,
+            "mae_improvement_pct": 30.35
+        },
+        "val": {
+            "n_samples": 4500,
+            "mae": 7.4525,
+            "rmse": 9.3158,
+            "r2": 0.4679,
+            "pearson_r": 0.6864,
+            "spearman_rho": 0.693,
+            "baseline_mae": 10.4499,
+            "baseline_rmse": 12.8127,
+            "mae_improvement_pct": 28.68
+        },
+        "test": {
+            "n_samples": 4500,
+            "mae": 7.5827,
+            "rmse": 9.5193,
+            "r2": 0.4754,
+            "pearson_r": 0.6896,
+            "spearman_rho": 0.6976,
+            "baseline_mae": 10.8196,
+            "baseline_rmse": 13.1688,
+            "mae_improvement_pct": 29.92
+        }
+    },
+    "diagnostic_ridge_signed": {
+        "train": {
+            "n_samples": 21000,
+            "mae": 7.3624,
+            "rmse": 9.2422,
+            "r2": 0.4998,
+            "pearson_r": 0.707,
+            "spearman_rho": 0.7238,
+            "baseline_mae": 10.6962,
+            "baseline_rmse": 13.0677,
+            "mae_improvement_pct": 31.17
+        },
+        "val": {
+            "n_samples": 4500,
+            "mae": 7.2484,
+            "rmse": 9.0699,
+            "r2": 0.4957,
+            "pearson_r": 0.7067,
+            "spearman_rho": 0.7217,
+            "baseline_mae": 10.4499,
+            "baseline_rmse": 12.8127,
+            "mae_improvement_pct": 30.64
+        },
+        "test": {
+            "n_samples": 4500,
+            "mae": 7.3701,
+            "rmse": 9.2107,
+            "r2": 0.5089,
+            "pearson_r": 0.7135,
+            "spearman_rho": 0.7304,
+            "baseline_mae": 10.8196,
+            "baseline_rmse": 13.1688,
+            "mae_improvement_pct": 31.88
+        }
+    },
+    "diagnostic_xgb_signed": {
+        "train": {
+            "n_samples": 21000,
+            "mae": 7.1179,
+            "rmse": 8.9327,
+            "r2": 0.5327,
+            "pearson_r": 0.7304,
+            "spearman_rho": 0.7368,
+            "baseline_mae": 10.6962,
+            "baseline_rmse": 13.0677,
+            "mae_improvement_pct": 33.45
+        },
+        "val": {
+            "n_samples": 4500,
+            "mae": 7.1434,
+            "rmse": 8.9656,
+            "r2": 0.5072,
+            "pearson_r": 0.7142,
+            "spearman_rho": 0.7216,
+            "baseline_mae": 10.4499,
+            "baseline_rmse": 12.8127,
+            "mae_improvement_pct": 31.64
+        },
+        "test": {
+            "n_samples": 4500,
+            "mae": 7.2736,
+            "rmse": 9.1042,
+            "r2": 0.5202,
+            "pearson_r": 0.7221,
+            "spearman_rho": 0.7316,
+            "baseline_mae": 10.8196,
+            "baseline_rmse": 13.1688,
+            "mae_improvement_pct": 32.77
+        }
+    }
+}

@@ -1,0 +1,9 @@
+{
+  "candidate": "A_WeightedAvg",
+  "weights": {
+    "structured": 0.296272,
+    "text": 0.248674,
+    "voice": 0.245119,
+    "behaviour": 0.209936
+  }
+}

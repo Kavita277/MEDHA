@@ -1,0 +1,9 @@
+{
+  "selection_split": "Validation",
+  "selection_criterion": "Maximize positive-class F1 score",
+  "default_threshold": 0.5,
+  "selected_threshold": 0.75,
+  "val_f1_at_default": 0.3404255319148936,
+  "val_f1_at_selected": 0.4238178633975482,
+  "applied_to_test": true
+}
