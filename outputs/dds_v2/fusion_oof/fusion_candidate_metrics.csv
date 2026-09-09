@@ -1,0 +1,4 @@
+Candidate,Val_MAE,Val_RMSE,Val_R2,Val_Pearson,Val_Spearman
+A_WeightedAvg,6.094,7.6155,0.6444,0.8056,0.8116
+B_Ridge,5.9062,7.3713,0.6669,0.8167,0.8209
+C_XGBoost,5.8851,7.3544,0.6684,0.8176,0.8209

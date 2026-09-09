@@ -1,0 +1,44 @@
+{
+  "feature_order": [
+    "Struct_Pred",
+    "Text_Pred",
+    "Voice_Pred",
+    "Behav_Pred",
+    "Struct_Available",
+    "Text_Available",
+    "Voice_Available",
+    "Behav_Available"
+  ],
+  "approved_predictions": [
+    "Struct_Pred",
+    "Text_Pred",
+    "Voice_Pred",
+    "Behav_Pred"
+  ],
+  "availability_flags": [
+    "Struct_Available",
+    "Text_Available",
+    "Voice_Available",
+    "Behav_Available"
+  ],
+  "forbidden_features": [
+    "Actual_DDS",
+    "DDS",
+    "Future_Escalation_Label",
+    "Previous_DDS",
+    "Rolling_DDS_Mean",
+    "Rolling_DDS_SD",
+    "DDS_Slope",
+    "Recent_Change_Rate",
+    "Recent_Max_DDS",
+    "Recent_Min_DDS",
+    "Delta_DDS",
+    "DDS_Deviation_From_Baseline",
+    "Baseline_DDS",
+    "Trajectory_State",
+    "Discordance_Test_Feature",
+    "Discordance_Example_Flag",
+    "Intervention",
+    "Follow_Up"
+  ]
+}

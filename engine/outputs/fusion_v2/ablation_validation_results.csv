@@ -1,0 +1,6 @@
+Configuration,Removed_Modality,Features_Count,Validation_MAE,Validation_RMSE,Validation_R2,Validation_Pearson,Validation_Spearman,MAE_Diff_vs_Full,Pct_Impact
+Full Fusion,None (Full),8,5.8851,7.3544,0.6684,0.8176,0.8209,0.0,0.0
+Fusion without Text,Text,6,6.0027,7.5107,0.6542,0.8089,0.8127,0.1176,2.0
+Fusion without Voice,Voice,6,5.927,7.4141,0.663,0.8143,0.817,0.0419,0.71
+Fusion without Behaviour,Behaviour,6,5.883,7.3495,0.6688,0.8179,0.8214,-0.0021,-0.04
+Fusion without Structured,Structured,6,6.3527,7.9488,0.6126,0.7828,0.7889,0.4676,7.95

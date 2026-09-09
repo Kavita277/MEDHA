@@ -1,0 +1,123 @@
+{
+  "step": "Step 12 \u2014 GRU Temporal Sequence Construction",
+  "source_data": "engine/data/processed/v2_longitudinal_split.csv",
+  "target_column": "Future_Escalation_Label",
+  "window_size": 7,
+  "n_features": 57,
+  "feature_whitelist": [
+    "Checkin_Available",
+    "Mood",
+    "Stress",
+    "Sleep",
+    "Functioning",
+    "Safety",
+    "Social_Support_Checkin",
+    "Self_Reported_Wellbeing",
+    "Threat_Event",
+    "Upcoming_Hearing",
+    "Hearing_Completed",
+    "Investigation_Delay",
+    "Compensation_Delay",
+    "Relocation_Stress",
+    "Rehabilitation_Issue",
+    "Protection_Event",
+    "Family_Support",
+    "Social_Support",
+    "Therapist_Engagement",
+    "Access_To_Services",
+    "Stable_Housing",
+    "Other_Protective_Factors",
+    "Recent_Episode",
+    "Family_Reported_Episode",
+    "Missed_Checkin",
+    "Interaction_Frequency_7d",
+    "Session_Duration_Minutes",
+    "Engagement_Score",
+    "Engagement_Deviation",
+    "Response_Delay_Hours",
+    "Response_Delay_Deviation",
+    "Text_Available",
+    "Text_Distress",
+    "Fear",
+    "Threat_Context",
+    "Negative_Affect",
+    "Urgency",
+    "Voice_Available",
+    "Voice_Distress",
+    "Pause_Ratio",
+    "Speech_Rate_Deviation",
+    "Energy_Deviation",
+    "Acoustic_Indicator",
+    "Baseline_Response_Delay",
+    "Baseline_Engagement",
+    "Baseline_Text_Distress",
+    "Baseline_Voice_Distress",
+    "Baseline_Checkin_Distress",
+    "Text_Distress_Deviation",
+    "Voice_Distress_Deviation",
+    "Behaviour_Trend",
+    "Engagement_Trend",
+    "Text_Distress_Trend",
+    "Voice_Distress_Trend",
+    "Diary_Available",
+    "Therapist_Observation_Available",
+    "Therapist_Observation_Score"
+  ],
+  "excluded_non_numeric_approved": [
+    "Case_Type",
+    "Case_Stage",
+    "Episode_Severity"
+  ],
+  "nan_handling": "NaN and \u00b1inf replaced with 0.0 before sequence construction",
+  "scaler": "StandardScaler fitted on Train windows only",
+  "shapes": {
+    "X_train": [
+      11200,
+      7,
+      57
+    ],
+    "y_train": [
+      11200
+    ],
+    "X_val": [
+      2400,
+      7,
+      57
+    ],
+    "y_val": [
+      2400
+    ],
+    "X_test": [
+      2400,
+      7,
+      57
+    ],
+    "y_test": [
+      2400
+    ]
+  },
+  "label_distribution": {
+    "train": {
+      "pos": 961,
+      "neg": 10239,
+      "total": 11200
+    },
+    "val": {
+      "pos": 238,
+      "neg": 2162,
+      "total": 2400
+    },
+    "test": {
+      "pos": 249,
+      "neg": 2151,
+      "total": 2400
+    }
+  },
+  "victim_counts": {
+    "train": 700,
+    "val": 150,
+    "test": 150
+  },
+  "scaler_n_samples_seen": 78400,
+  "seed": 42
+}

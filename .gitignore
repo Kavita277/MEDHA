@@ -3,16 +3,17 @@ __pycache__/
 *.py[cod]
 *$*.py
 
-# PyTorch models / weight files
-*.pt
-*.bin
-*.h5
 
 # Local IDEs / System files
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+# Model weights and archives
+*.pt
+*.pth
+*.bin
+*.rar
 
 # Excel temporary / owner files
 ~$*.xlsx

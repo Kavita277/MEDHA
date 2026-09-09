@@ -1,21 +1,11 @@
 {
-    "model": "LogisticRegression Fusion",
-    "features": [
-        "structured_risk",
-        "text_risk",
-        "voice_risk",
-        "behaviour_risk"
-    ],
-    "threshold": 0.15,
-    "coefficients": [
-        [
-            9.077040196409003,
-            0.4543667020319396,
-            0.3541775395479319,
-            -0.7911289002372174
-        ]
-    ],
-    "intercept": [
-        -3.6711479769502557
-    ]
+    "architecture": "Manual Normalized Weights",
+    "weights": {
+        "text_risk": 0.25,
+        "voice_risk": 0.15,
+        "behaviour_risk": 0.15,
+        "structured_risk": 0.25,
+        "temporal_risk_score": 0.2
+    },
+    "selected_threshold": 0.19
 }

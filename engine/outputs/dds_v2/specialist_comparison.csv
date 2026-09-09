@@ -1,0 +1,9 @@
+Model,MAE,RMSE,R2,Pearson,Spearman
+Simple Baseline (Train-Mean Dummy),10.8196,13.1688,-0.0039,0.0000,0.0000
+Structured Specialist (Canonical XGBoost),6.1611,7.7353,0.6536,0.8086,0.8146
+Voice Specialist (Canonical Ridge),6.3070,7.9104,0.6529,0.8082,0.8179
+Text Specialist (Canonical Ridge),6.4352,8.0783,0.6365,0.7978,0.8067
+Behaviour Specialist (Canonical Ridge),7.3530,9.1945,0.5106,0.7147,0.7332
+Behaviour Specialist (XGBoost Baseline),7.2577,9.0949,0.5211,0.7229,0.7321
+Voice Specialist (XGBoost Baseline),6.3688,7.9710,0.6476,0.8052,0.8143
+Text Specialist (XGBoost Baseline),6.4496,8.0934,0.6351,0.7970,0.8054

@@ -1,0 +1,160 @@
+{
+  "specialist": "voice_dds",
+  "canonical_model": "ridge_core5",
+  "created_at": "2026-09-06T02:13:17.098233",
+  "authoritative_split": "engine/data/processed/v2_victim_split.csv",
+  "feature_policy": "engine/v2/v2_feature_policy.py",
+  "models_evaluated": {
+    "ridge_core5": {
+      "train": {
+        "MAE": 6.493,
+        "RMSE": 8.1398,
+        "R2": 0.6419,
+        "Pearson": 0.8012,
+        "Spearman": 0.8092,
+        "mean_actual": 39.8,
+        "std_actual": 13.6,
+        "mean_pred": 39.8,
+        "std_pred": 10.88,
+        "baseline_MAE": 11.179,
+        "baseline_RMSE": 13.6015,
+        "baseline_R2": 0.0,
+        "mae_improvement_pct": 41.92
+      },
+      "validation": {
+        "MAE": 6.3426,
+        "RMSE": 7.9419,
+        "R2": 0.6212,
+        "Pearson": 0.7882,
+        "Spearman": 0.7946,
+        "mean_actual": 40.95,
+        "std_actual": 12.9,
+        "mean_pred": 41.01,
+        "std_pred": 10.27,
+        "baseline_MAE": 10.6724,
+        "baseline_RMSE": 12.9551,
+        "baseline_R2": -0.0079,
+        "mae_improvement_pct": 40.57
+      },
+      "test": {
+        "MAE": 6.307,
+        "RMSE": 7.9104,
+        "R2": 0.6529,
+        "Pearson": 0.8082,
+        "Spearman": 0.8179,
+        "mean_actual": 40.05,
+        "std_actual": 13.43,
+        "mean_pred": 40.28,
+        "std_pred": 10.94,
+        "baseline_MAE": 11.1102,
+        "baseline_RMSE": 13.4294,
+        "baseline_R2": -0.0004,
+        "mae_improvement_pct": 43.23
+      }
+    },
+    "xgb_core5": {
+      "train": {
+        "MAE": 6.2377,
+        "RMSE": 7.8228,
+        "R2": 0.6692,
+        "Pearson": 0.8183,
+        "Spearman": 0.8241,
+        "mean_actual": 39.8,
+        "std_actual": 13.6,
+        "mean_pred": 39.8,
+        "std_pred": 10.87,
+        "baseline_MAE": 11.179,
+        "baseline_RMSE": 13.6015,
+        "baseline_R2": 0.0,
+        "mae_improvement_pct": 44.2
+      },
+      "validation": {
+        "MAE": 6.3539,
+        "RMSE": 7.9456,
+        "R2": 0.6209,
+        "Pearson": 0.788,
+        "Spearman": 0.7923,
+        "mean_actual": 40.95,
+        "std_actual": 12.9,
+        "mean_pred": 40.97,
+        "std_pred": 10.28,
+        "baseline_MAE": 10.6724,
+        "baseline_RMSE": 12.9551,
+        "baseline_R2": -0.0079,
+        "mae_improvement_pct": 40.46
+      },
+      "test": {
+        "MAE": 6.2913,
+        "RMSE": 7.9265,
+        "R2": 0.6515,
+        "Pearson": 0.8073,
+        "Spearman": 0.8151,
+        "mean_actual": 40.05,
+        "std_actual": 13.43,
+        "mean_pred": 40.29,
+        "std_pred": 10.88,
+        "baseline_MAE": 11.1102,
+        "baseline_RMSE": 13.4294,
+        "baseline_R2": -0.0004,
+        "mae_improvement_pct": 43.37
+      }
+    },
+    "xgb_all9": {
+      "train": {
+        "MAE": 6.1995,
+        "RMSE": 7.7761,
+        "R2": 0.6732,
+        "Pearson": 0.8208,
+        "Spearman": 0.8262,
+        "mean_actual": 39.8,
+        "std_actual": 13.6,
+        "mean_pred": 39.8,
+        "std_pred": 10.84,
+        "baseline_MAE": 11.179,
+        "baseline_RMSE": 13.6015,
+        "baseline_R2": 0.0,
+        "mae_improvement_pct": 44.54
+      },
+      "validation": {
+        "MAE": 6.3431,
+        "RMSE": 7.9454,
+        "R2": 0.6209,
+        "Pearson": 0.788,
+        "Spearman": 0.7936,
+        "mean_actual": 40.95,
+        "std_actual": 12.9,
+        "mean_pred": 40.99,
+        "std_pred": 10.29,
+        "baseline_MAE": 10.6724,
+        "baseline_RMSE": 12.9551,
+        "baseline_R2": -0.0079,
+        "mae_improvement_pct": 40.56
+      },
+      "test": {
+        "MAE": 6.2947,
+        "RMSE": 7.9244,
+        "R2": 0.6517,
+        "Pearson": 0.8075,
+        "Spearman": 0.815,
+        "mean_actual": 40.05,
+        "std_actual": 13.43,
+        "mean_pred": 40.29,
+        "std_pred": 10.85,
+        "baseline_MAE": 11.1102,
+        "baseline_RMSE": 13.4294,
+        "baseline_R2": -0.0004,
+        "mae_improvement_pct": 43.34
+      }
+    }
+  },
+  "ridge_coefficients": {
+    "intercept": 19.9335,
+    "weights": {
+      "Voice_Distress": 20.1469,
+      "Pause_Ratio": 22.4708,
+      "Speech_Rate_Deviation": 10.7023,
+      "Energy_Deviation": 8.3293,
+      "Acoustic_Indicator": 2.4622
+    }
+  }
+}

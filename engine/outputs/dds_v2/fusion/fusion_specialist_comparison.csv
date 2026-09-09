@@ -1,0 +1,7 @@
+Model,split,MAE,RMSE,R2,Pearson,Spearman,N
+Train-Mean Baseline,test,10.8196,13.1688,-0.0039,,,4500
+Structured Specialist,Structured Specialist,6.1611,7.7353,0.6536,0.8086,0.8146,4500
+Text Specialist,Text Specialist,6.4352,8.0783,0.6365,0.7978,0.8067,3362
+Voice Specialist,Voice Specialist,6.307,7.9104,0.6529,0.8082,0.8179,1692
+Behaviour Specialist,Behaviour Specialist,7.353,9.1945,0.5106,0.7147,0.7332,4500
+Fusion (C_XGBoost),full_test,6.0626,7.6266,0.6633,0.8146,0.8208,4500

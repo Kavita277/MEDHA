@@ -1,0 +1,26 @@
+{
+  "specialist": "voice_dds",
+  "canonical_model": "ridge_core5",
+  "core_features_count": 5,
+  "core_features": [
+    "Voice_Distress",
+    "Pause_Ratio",
+    "Speech_Rate_Deviation",
+    "Energy_Deviation",
+    "Acoustic_Indicator"
+  ],
+  "all_features_count": 9,
+  "all_features": [
+    "Voice_Available",
+    "Voice_Distress",
+    "Pause_Ratio",
+    "Speech_Rate_Deviation",
+    "Energy_Deviation",
+    "Acoustic_Indicator",
+    "Baseline_Voice_Distress",
+    "Voice_Distress_Deviation",
+    "Voice_Distress_Trend"
+  ],
+  "target": "DDS",
+  "missing_voice_policy": "Preserved as NaN when Voice_Available == 0; evaluated on available voice observations only"
+}

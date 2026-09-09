@@ -1,0 +1,8 @@
+{
+  "status": "DETERMINISTIC",
+  "max_run_difference": 0.0,
+  "test_rows": 4500,
+  "test_victims": 150,
+  "model_file": "C:\\Users\\jnark\\Documents\\MEDHA\\MEDHA\\engine\\models\\v2\\fusion_oof\\fusion_model.json",
+  "timestamp": "2026-09-06T14:08:55.336712"
+}

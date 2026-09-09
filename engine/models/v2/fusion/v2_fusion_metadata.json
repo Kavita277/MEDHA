@@ -1,0 +1,133 @@
+{
+  "step": "10B",
+  "timestamp": "2026-09-06T13:10:11.098397",
+  "selected_model": "C_XGBoost",
+  "candidates": {
+    "A_WeightedAvg": {
+      "weights": {
+        "structured": 0.296272,
+        "text": 0.248674,
+        "voice": 0.245119,
+        "behaviour": 0.209936
+      },
+      "val": {
+        "split": "val",
+        "MAE": 6.0733,
+        "RMSE": 7.5894,
+        "R2": 0.6469,
+        "Pearson": 0.807,
+        "Spearman": 0.8128,
+        "N": 4500
+      },
+      "test": {
+        "split": "test",
+        "MAE": 6.0833,
+        "RMSE": 7.6418,
+        "R2": 0.6619,
+        "Pearson": 0.8167,
+        "Spearman": 0.8233,
+        "N": 4500
+      }
+    },
+    "B_Ridge": {
+      "alpha": 10.0,
+      "coefficients": {
+        "Struct_Pred": 1.056589,
+        "Text_Pred": 0.094275,
+        "Voice_Pred": 0.090112,
+        "Behav_Pred": -0.149578,
+        "Struct_Available": 0.0,
+        "Text_Available": -3.900004,
+        "Voice_Available": -3.609338,
+        "Behav_Available": 0.0
+      },
+      "intercept": 3.816139,
+      "train": {
+        "split": "train",
+        "MAE": 5.2924,
+        "RMSE": 6.647,
+        "R2": 0.7413,
+        "Pearson": 0.861,
+        "Spearman": 0.8618,
+        "N": 21000
+      },
+      "val": {
+        "split": "val",
+        "MAE": 5.9819,
+        "RMSE": 7.48,
+        "R2": 0.657,
+        "Pearson": 0.8109,
+        "Spearman": 0.8146,
+        "N": 4500
+      },
+      "test": {
+        "split": "test",
+        "MAE": 6.0869,
+        "RMSE": 7.6524,
+        "R2": 0.661,
+        "Pearson": 0.8133,
+        "Spearman": 0.8198,
+        "N": 4500
+      }
+    },
+    "C_XGBoost": {
+      "n_estimators": 100,
+      "max_depth": 3,
+      "feature_importance": {
+        "Struct_Pred": 0.6244,
+        "Text_Pred": 0.1777,
+        "Voice_Pred": 0.0443,
+        "Behav_Pred": 0.0321,
+        "Struct_Available": 0.0,
+        "Text_Available": 0.104,
+        "Voice_Available": 0.0176,
+        "Behav_Available": 0.0
+      },
+      "train": {
+        "split": "train",
+        "MAE": 5.2246,
+        "RMSE": 6.5611,
+        "R2": 0.7479,
+        "Pearson": 0.8648,
+        "Spearman": 0.8648,
+        "N": 21000
+      },
+      "val": {
+        "split": "val",
+        "MAE": 5.9796,
+        "RMSE": 7.4792,
+        "R2": 0.6571,
+        "Pearson": 0.811,
+        "Spearman": 0.8156,
+        "N": 4500
+      },
+      "test": {
+        "split": "test",
+        "MAE": 6.0626,
+        "RMSE": 7.6266,
+        "R2": 0.6633,
+        "Pearson": 0.8146,
+        "Spearman": 0.8208,
+        "N": 4500
+      }
+    }
+  },
+  "baseline": {
+    "split": "test",
+    "MAE": 10.8196,
+    "RMSE": 13.1688,
+    "R2": -0.0039,
+    "Pearson": NaN,
+    "Spearman": NaN,
+    "N": 4500
+  },
+  "train_mean_dds": 39.7031,
+  "split_counts": {
+    "train_victims": 700,
+    "train_rows": 21000,
+    "val_victims": 150,
+    "val_rows": 4500,
+    "test_victims": 150,
+    "test_rows": 4500
+  }
+}

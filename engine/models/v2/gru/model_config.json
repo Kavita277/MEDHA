@@ -1,0 +1,18 @@
+{
+  "model_type": "V2GRUModel",
+  "input_size": 57,
+  "hidden_size": 64,
+  "num_layers": 1,
+  "dropout": 0.3,
+  "best_validation_epoch": 4,
+  "total_epochs_trained": 11,
+  "optimizer": "Adam",
+  "learning_rate": 0.001,
+  "weight_decay": 0.0001,
+  "batch_size": 128,
+  "early_stopping_patience": 7,
+  "early_stopping_criterion": "val_loss (min)",
+  "random_seed": 42,
+  "device": "cpu",
+  "pytorch_version": "2.13.0+cpu"
+}

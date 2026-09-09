@@ -1,0 +1,7 @@
+Model,MAE,RMSE,R2,Pearson,Spearman,N
+Train-Mean Baseline,12.9648,16.1965,-0.5187,,,4500
+Structured Specialist (XGBoost),6.1611,7.7353,0.6536,0.8086,0.8146,4500
+Text Specialist (Ridge Core-5),6.4352,8.0783,0.6365,0.7978,0.8067,3362
+Voice Specialist (Ridge Core-5),6.307,7.9104,0.6529,0.8082,0.8179,1692
+Behaviour Specialist (Ridge Ext-10),7.353,9.1945,0.5106,0.7147,0.7332,4500
+MEDHA V2 Frozen Fusion (Candidate C),5.9537,7.4925,0.675,0.8217,0.8272,4500

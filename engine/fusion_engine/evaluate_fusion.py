@@ -149,7 +149,8 @@ def generate_specialist_predictions(df):
     df['voice_available'] = df['Voice_Available'].astype(bool)
     
     # Behaviour (Anomaly score defaults to 0.5 for synthetic data as actual isolation forest is not run here)
-    df['behaviour_risk'] = 0.4*0.5 + 0.3*df['Engagement_Deviation'].fillna(0) + 0.3*df['Missed_Checkin'].fillna(0)
+    # The actual Behaviour Engine takes the absolute value of deviation. We must replicate that here.
+    df['behaviour_risk'] = 0.4*0.5 + 0.3*df['Engagement_Deviation'].abs().fillna(0) + 0.3*df['Missed_Checkin'].fillna(0)
     df['behaviour_risk'] = df['behaviour_risk'].clip(0, 1)
     df['behaviour_available'] = df['Engagement_Deviation'].notna()
     

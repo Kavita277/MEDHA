@@ -1,0 +1,159 @@
+{
+  "specialist": "text_dds",
+  "created_at": "2026-09-06T01:43:59.579468",
+  "authoritative_split": "engine/data/processed/v2_victim_split.csv",
+  "feature_policy": "engine/v2/v2_feature_policy.py",
+  "models_evaluated": {
+    "ridge_core5": {
+      "train": {
+        "MAE": 6.4001,
+        "RMSE": 8.0273,
+        "R2": 0.6329,
+        "Pearson": 0.7956,
+        "Spearman": 0.804,
+        "mean_actual": 39.7,
+        "std_actual": 13.25,
+        "mean_pred": 39.7,
+        "std_pred": 10.54,
+        "baseline_MAE": 10.8741,
+        "baseline_RMSE": 13.249,
+        "baseline_R2": 0.0,
+        "mae_reduction_pct": 41.14
+      },
+      "validation": {
+        "MAE": 6.3017,
+        "RMSE": 7.8748,
+        "R2": 0.6374,
+        "Pearson": 0.7987,
+        "Spearman": 0.8073,
+        "mean_actual": 40.71,
+        "std_actual": 13.08,
+        "mean_pred": 40.86,
+        "std_pred": 10.19,
+        "baseline_MAE": 10.7685,
+        "baseline_RMSE": 13.1164,
+        "baseline_R2": -0.006,
+        "mae_reduction_pct": 41.48
+      },
+      "test": {
+        "MAE": 6.4352,
+        "RMSE": 8.0783,
+        "R2": 0.6365,
+        "Pearson": 0.7978,
+        "Spearman": 0.8067,
+        "mean_actual": 40.51,
+        "std_actual": 13.4,
+        "mean_pred": 40.48,
+        "std_pred": 10.76,
+        "baseline_MAE": 11.0051,
+        "baseline_RMSE": 13.4228,
+        "baseline_R2": -0.0036,
+        "mae_reduction_pct": 41.53
+      }
+    },
+    "xgb_core5": {
+      "train": {
+        "MAE": 6.2449,
+        "RMSE": 7.8335,
+        "R2": 0.6504,
+        "Pearson": 0.8066,
+        "Spearman": 0.813,
+        "mean_actual": 39.7,
+        "std_actual": 13.25,
+        "mean_pred": 39.71,
+        "std_pred": 10.5,
+        "baseline_MAE": 10.8741,
+        "baseline_RMSE": 13.249,
+        "baseline_R2": 0.0,
+        "mae_reduction_pct": 42.57
+      },
+      "validation": {
+        "MAE": 6.2913,
+        "RMSE": 7.8595,
+        "R2": 0.6388,
+        "Pearson": 0.7995,
+        "Spearman": 0.8075,
+        "mean_actual": 40.71,
+        "std_actual": 13.08,
+        "mean_pred": 40.83,
+        "std_pred": 10.21,
+        "baseline_MAE": 10.7685,
+        "baseline_RMSE": 13.1164,
+        "baseline_R2": -0.006,
+        "mae_reduction_pct": 41.58
+      },
+      "test": {
+        "MAE": 6.4496,
+        "RMSE": 8.0934,
+        "R2": 0.6351,
+        "Pearson": 0.797,
+        "Spearman": 0.8054,
+        "mean_actual": 40.51,
+        "std_actual": 13.4,
+        "mean_pred": 40.49,
+        "std_pred": 10.75,
+        "baseline_MAE": 11.0051,
+        "baseline_RMSE": 13.4228,
+        "baseline_R2": -0.0036,
+        "mae_reduction_pct": 41.39
+      }
+    },
+    "xgb_all9": {
+      "train": {
+        "MAE": 6.2058,
+        "RMSE": 7.7803,
+        "R2": 0.6552,
+        "Pearson": 0.8096,
+        "Spearman": 0.8154,
+        "mean_actual": 39.7,
+        "std_actual": 13.25,
+        "mean_pred": 39.7,
+        "std_pred": 10.49,
+        "baseline_MAE": 10.8741,
+        "baseline_RMSE": 13.249,
+        "baseline_R2": 0.0,
+        "mae_reduction_pct": 42.93
+      },
+      "validation": {
+        "MAE": 6.3022,
+        "RMSE": 7.8684,
+        "R2": 0.638,
+        "Pearson": 0.7992,
+        "Spearman": 0.8071,
+        "mean_actual": 40.71,
+        "std_actual": 13.08,
+        "mean_pred": 40.87,
+        "std_pred": 10.13,
+        "baseline_MAE": 10.7685,
+        "baseline_RMSE": 13.1164,
+        "baseline_R2": -0.006,
+        "mae_reduction_pct": 41.48
+      },
+      "test": {
+        "MAE": 6.4361,
+        "RMSE": 8.092,
+        "R2": 0.6353,
+        "Pearson": 0.7971,
+        "Spearman": 0.8058,
+        "mean_actual": 40.51,
+        "std_actual": 13.4,
+        "mean_pred": 40.51,
+        "std_pred": 10.78,
+        "baseline_MAE": 11.0051,
+        "baseline_RMSE": 13.4228,
+        "baseline_R2": -0.0036,
+        "mae_reduction_pct": 41.52
+      }
+    }
+  },
+  "ridge_coefficients": {
+    "intercept": 14.2037,
+    "weights": {
+      "Text_Distress": 12.3504,
+      "Fear": 10.113,
+      "Threat_Context": 2.9063,
+      "Negative_Affect": 10.1067,
+      "Urgency": 9.7627
+    }
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "scaler_path": "engine/models/v2/gru_sequences/scaler.joblib",
+  "fitted_on": "Train windows only (78,400 timesteps)",
+  "features_scaled": 57
+}

@@ -1,0 +1,24 @@
+{
+  "specialist": "text_dds",
+  "core_features_count": 5,
+  "core_features": [
+    "Text_Distress",
+    "Fear",
+    "Threat_Context",
+    "Negative_Affect",
+    "Urgency"
+  ],
+  "all_features_count": 9,
+  "all_features": [
+    "Text_Available",
+    "Text_Distress",
+    "Fear",
+    "Threat_Context",
+    "Negative_Affect",
+    "Urgency",
+    "Baseline_Text_Distress",
+    "Text_Distress_Deviation",
+    "Text_Distress_Trend"
+  ],
+  "target": "DDS"
+}

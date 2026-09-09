@@ -1,0 +1,84 @@
+{
+  "step": "11_FUSION_ABLATION",
+  "timestamp": "2026-09-06T14:31:46.103722",
+  "training_dataset": "700 Train Victims (21,000 OOF rows)",
+  "evaluation_dataset": "150 Validation Victims (4,500 canonical rows)",
+  "test_set_sealed": true,
+  "model_architecture": "Candidate C (XGBoost Stacking Regressor)",
+  "full_fusion_validation_mae": 5.8851,
+  "ablation_results": [
+    {
+      "Configuration": "Full Fusion",
+      "Validation_MAE": 5.8851,
+      "Validation_RMSE": 7.3544,
+      "Validation_R2": 0.6684,
+      "Validation_Pearson": 0.8176,
+      "Validation_Spearman": 0.8209,
+      "N": 4500,
+      "Features_Count": 8,
+      "Removed_Modality": "None (Full)"
+    },
+    {
+      "Configuration": "Fusion without Text",
+      "Validation_MAE": 6.0027,
+      "Validation_RMSE": 7.5107,
+      "Validation_R2": 0.6542,
+      "Validation_Pearson": 0.8089,
+      "Validation_Spearman": 0.8127,
+      "N": 4500,
+      "Features_Count": 6,
+      "Removed_Modality": "Text"
+    },
+    {
+      "Configuration": "Fusion without Voice",
+      "Validation_MAE": 5.927,
+      "Validation_RMSE": 7.4141,
+      "Validation_R2": 0.663,
+      "Validation_Pearson": 0.8143,
+      "Validation_Spearman": 0.817,
+      "N": 4500,
+      "Features_Count": 6,
+      "Removed_Modality": "Voice"
+    },
+    {
+      "Configuration": "Fusion without Behaviour",
+      "Validation_MAE": 5.883,
+      "Validation_RMSE": 7.3495,
+      "Validation_R2": 0.6688,
+      "Validation_Pearson": 0.8179,
+      "Validation_Spearman": 0.8214,
+      "N": 4500,
+      "Features_Count": 6,
+      "Removed_Modality": "Behaviour"
+    },
+    {
+      "Configuration": "Fusion without Structured",
+      "Validation_MAE": 6.3527,
+      "Validation_RMSE": 7.9488,
+      "Validation_R2": 0.6126,
+      "Validation_Pearson": 0.7828,
+      "Validation_Spearman": 0.7889,
+      "N": 4500,
+      "Features_Count": 6,
+      "Removed_Modality": "Structured"
+    }
+  ],
+  "incremental_contributions": {
+    "Structured": {
+      "mae_penalty_when_removed": 0.4676,
+      "interpretation": "Foundational backbone; largest performance drop when omitted."
+    },
+    "Text": {
+      "mae_penalty_when_removed": 0.1176,
+      "interpretation": "Substantial incremental value; provides semantic distress indicators."
+    },
+    "Voice": {
+      "mae_penalty_when_removed": 0.0419,
+      "interpretation": "Modest positive incremental value; limited by ~37% observation coverage."
+    },
+    "Behaviour": {
+      "mae_penalty_when_removed": -0.0021,
+      "interpretation": "Negligible incremental value; behaviour features already represented inside Structured specialist."
+    }
+  }
+}
