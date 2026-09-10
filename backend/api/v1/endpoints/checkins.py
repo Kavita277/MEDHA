@@ -4,7 +4,7 @@ Check-In Endpoints
 """
 
 import uuid
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from backend.persistence.database import get_db
@@ -57,9 +57,12 @@ def submit_answer(
     return service.submit_answer(checkin_id, current_user, request.answer)
 
 
+from backend.jobs.prediction_queue import enqueue_prediction
+
 @router.post("/{checkin_id}/complete", response_model=CheckInResponse)
 def complete_checkin(
     checkin_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -67,5 +70,12 @@ def complete_checkin(
     Manually complete the check-in and emit the checkin_completed event.
     """
     service = CheckInService(db)
-    return service.complete_checkin(checkin_id, current_user)
+    response = service.complete_checkin(checkin_id, current_user)
+    
+    # Enqueue background prediction
+    case_id = response.case_id
+    timepoint = response.timepoint
+    background_tasks.add_task(enqueue_prediction, case_id, timepoint)
+    
+    return response
 

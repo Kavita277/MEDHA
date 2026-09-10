@@ -60,6 +60,49 @@ class SessionSummaryResponse(BaseModel):
     status: str = Field(..., description="Session lifecycle status")
     closed_at: Optional[datetime] = Field(None, description="When session ended (null if active)")
     created_at: datetime = Field(..., description="Session creation timestamp")
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ---------------------------------------------------------------------------
+# Therapist Historical Data Schemas
+# ---------------------------------------------------------------------------
+
+class CheckinSummaryResponse(BaseModel):
+    """
+    Compact checkin summary for historical view.
+    """
+    checkin_id: uuid.UUID = Field(..., description="Check-in ID")
+    timepoint: int = Field(..., description="Timepoint of the check-in")
+    status: str = Field(..., description="Lifecycle status (e.g., completed)")
+    started_at: datetime = Field(..., description="When check-in was started")
+    completed_at: Optional[datetime] = Field(None, description="When check-in was completed")
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class BehaviourSummaryResponse(BaseModel):
+    """
+    Historical behaviour snapshot for a given timepoint.
+    """
+    timepoint: int = Field(..., description="Timepoint of the behaviour snapshot")
+    app_interaction_duration: Optional[float] = Field(None, description="App Interaction Duration")
+    checkin_completion_rate: Optional[float] = Field(None, description="Checkin Completion Rate")
+    missed_checkin_count: Optional[int] = Field(None, description="Missed Checkin Count")
+    computed_at: datetime = Field(..., description="When the features were aggregated")
+
+    model_config = ConfigDict(from_attributes=True)
+
+class AlertSummaryResponse(BaseModel):
+    """
+    Compact safety alert for historical view.
+    """
+    id: uuid.UUID = Field(..., description="Alert ID")
+    event_type: str = Field(..., description="Type of alert (e.g., self_harm_intent)")
+    severity: str = Field(..., description="Severity of the alert")
+    status: str = Field(..., description="Lifecycle status (active/resolved)")
+    detected_at: datetime = Field(..., description="When the alert was detected")
+    handled_by: Optional[uuid.UUID] = Field(None, description="Therapist who handled the alert")
+    handled_at: Optional[datetime] = Field(None, description="When the alert was handled")
 
     model_config = ConfigDict(from_attributes=True)
 

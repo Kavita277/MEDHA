@@ -17,6 +17,7 @@ from __future__ import annotations
 import logging
 import sys
 import time
+import asyncio
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -27,6 +28,7 @@ from fastapi.responses import JSONResponse
 
 from backend.api.v1.router import api_v1_router
 from backend.config import Settings, get_settings
+from backend.jobs.prediction_queue import process_queue, reset_queue
 
 
 # ===========================================================================
@@ -64,8 +66,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         f"Starting {settings.PROJECT_NAME} v{settings.VERSION} "
         f"[env={settings.ENVIRONMENT}, debug={settings.DEBUG}]"
     )
+    
+    reset_queue()
+    worker_task = asyncio.create_task(process_queue())
+    
     yield
     logger.info(f"Shutting down {settings.PROJECT_NAME}")
+    worker_task.cancel()
+    try:
+        await worker_task
+    except asyncio.CancelledError:
+        pass
 
 
 # ===========================================================================

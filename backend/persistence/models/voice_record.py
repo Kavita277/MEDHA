@@ -9,7 +9,7 @@ class VoiceRecordModel(Base, TimestampMixin):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     case_id = Column(UUID(as_uuid=True), ForeignKey("cases.id"), nullable=False, index=True)
-    session_id = Column(UUID(as_uuid=True), ForeignKey("sessions.id"), nullable=True)
+    session_id = Column(UUID(as_uuid=True), ForeignKey("chat_sessions.id"), nullable=True)
     timepoint = Column(String, nullable=False, index=True)
     processed_at = Column(DateTime(timezone=True), nullable=True)
     available = Column(Float, nullable=False, default=0.0)

@@ -49,6 +49,9 @@ from backend.persistence.models.prediction_result import PredictionResultModel
 from backend.persistence.models.session import SessionModel, SessionStatus
 from backend.persistence.models.therapist import Therapist
 from backend.persistence.models.user import User, UserRole, UserStatus
+from backend.persistence.models.checkin import CheckInModel, CheckInStatus
+from backend.persistence.models.behaviour_snapshot import BehaviourFeatureSnapshotModel
+from backend.persistence.models.safety_event import SafetyEventModel
 from backend.security.passwords import hash_password
 
 
@@ -219,6 +222,37 @@ def results_test_db():
             predicted_at=datetime.now(timezone.utc),
         )
 
+        # ------------------------------------------------------------------
+        # Checkins, Behaviour Snapshots, Alerts for P1
+        # ------------------------------------------------------------------
+        checkin_p1 = CheckInModel(
+            id=uuid.uuid4(),
+            session_id=session_p1.id,
+            victim_id="V-P1-001",
+            status=CheckInStatus.COMPLETED.value,
+            completed_at=datetime.now(timezone.utc),
+        )
+        
+        behav_p1 = BehaviourFeatureSnapshotModel(
+            id=uuid.uuid4(),
+            case_id=case_p1.id,
+            timepoint=3,
+            app_interaction_duration=120.5,
+            checkin_completion_rate=1.0,
+            missed_checkin_count=0,
+            aggregated_at=datetime.now(timezone.utc),
+        )
+        
+        alert_p1 = SafetyEventModel(
+            id=uuid.uuid4(),
+            case_id=case_p1.id,
+            session_id=session_p1.id,
+            event_type="self_harm_intent",
+            severity="HIGH",
+            status="active",
+            detected_at=datetime.now(timezone.utc),
+        )
+
         session.add_all([
             patient1, patient2, patient3,
             therapist_user_a, therapist_user_b,
@@ -227,6 +261,7 @@ def results_test_db():
             case_p1, case_p2, case_p3,
             session_p1, session_p2, session_p3,
             pred_p1,
+            checkin_p1, behav_p1, alert_p1,
         ])
         session.commit()
 
@@ -675,6 +710,55 @@ def test_t_wrong_therapist_cannot_get_session_results(client):
         headers={"Authorization": f"Bearer {token_b}"},
     )
     assert resp.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# U. Therapist can get historical checkins, behaviour, alerts
+# ---------------------------------------------------------------------------
+def test_u_therapist_can_get_history_and_alerts(client):
+    tc, db = client
+    token_a = _token(tc, "alpha@medha.test", "TherapistA123!")
+    case_id = db["case_p1_id"]
+
+    # Checkins
+    resp = tc.get(
+        f"/api/v1/therapist/cases/{case_id}/checkins",
+        headers={"Authorization": f"Bearer {token_a}"},
+    )
+    assert resp.status_code == 200
+    assert len(resp.json()) == 1
+    assert resp.json()[0]["timepoint"] == 3
+
+    # Behaviour
+    resp = tc.get(
+        f"/api/v1/therapist/cases/{case_id}/behaviour",
+        headers={"Authorization": f"Bearer {token_a}"},
+    )
+    assert resp.status_code == 200
+    assert len(resp.json()) == 1
+    assert resp.json()[0]["app_interaction_duration"] == 120.5
+
+    # Alerts
+    resp = tc.get(
+        f"/api/v1/therapist/cases/{case_id}/alerts",
+        headers={"Authorization": f"Bearer {token_a}"},
+    )
+    assert resp.status_code == 200
+    assert len(resp.json()) == 1
+    assert resp.json()[0]["event_type"] == "self_harm_intent"
+
+
+# ---------------------------------------------------------------------------
+# V. Wrong therapist cannot get history/alerts
+# ---------------------------------------------------------------------------
+def test_v_wrong_therapist_cannot_get_history_and_alerts(client):
+    tc, db = client
+    token_b = _token(tc, "beta@medha.test", "TherapistB123!")
+    case_id = db["case_p1_id"]
+
+    assert tc.get(f"/api/v1/therapist/cases/{case_id}/checkins", headers={"Authorization": f"Bearer {token_b}"}).status_code == 403
+    assert tc.get(f"/api/v1/therapist/cases/{case_id}/behaviour", headers={"Authorization": f"Bearer {token_b}"}).status_code == 403
+    assert tc.get(f"/api/v1/therapist/cases/{case_id}/alerts", headers={"Authorization": f"Bearer {token_b}"}).status_code == 403
 
 
 # ---------------------------------------------------------------------------

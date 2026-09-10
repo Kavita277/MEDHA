@@ -52,6 +52,9 @@ from backend.persistence.models.session import SessionModel
 from backend.persistence.models.therapist import Therapist
 from backend.persistence.models.prediction_result import PredictionResultModel
 from backend.persistence.models.user import User
+from backend.persistence.models.checkin import CheckInModel
+from backend.persistence.models.behaviour_snapshot import BehaviourFeatureSnapshotModel
+from backend.persistence.models.safety_event import SafetyEventModel
 from backend.persistence.repositories.case import CaseRepository
 from backend.persistence.repositories.session import SessionRepository
 from backend.persistence.repositories.prediction_result import PredictionResultRepository
@@ -60,6 +63,9 @@ from backend.schemas.results import (
     CaseResultResponse,
     SessionSummaryResponse,
     SpecialistPredictionsResponse,
+    CheckinSummaryResponse,
+    BehaviourSummaryResponse,
+    AlertSummaryResponse,
 )
 from backend.security.dependencies import get_current_therapist
 from backend.services.triage_service import compute_triage_level, TRIAGE_LEVEL_UNKNOWN
@@ -320,3 +326,109 @@ def get_session_results(
     prediction = pred_repo.get_latest_for_session(session.id)
 
     return _build_result_response(case=case, prediction=prediction, session_id=session.id)
+
+
+@router.get(
+    "/cases/{case_id}/checkins",
+    response_model=List[CheckinSummaryResponse],
+    status_code=status.HTTP_200_OK,
+    summary="List Check-ins for a Case",
+    description="Returns all historical check-ins for the specified case. Therapist must own the case.",
+)
+def list_case_checkins(
+    case_id: uuid.UUID,
+    current_therapist: Therapist = Depends(get_current_therapist),
+    db: Session = Depends(get_db),
+) -> List[CheckinSummaryResponse]:
+    """Returns all historical check-ins for a therapist-owned case."""
+    case = _get_authorized_case(case_id, current_therapist, db)
+
+    checkins = (
+        db.query(CheckInModel)
+        .join(SessionModel)
+        .filter(SessionModel.case_id == case.id)
+        .order_by(CheckInModel.created_at.desc())
+        .all()
+    )
+
+    return [
+        CheckinSummaryResponse(
+            checkin_id=c.id,
+            timepoint=c.session.timepoint,
+            status=c.status,
+            started_at=c.created_at,
+            completed_at=c.completed_at,
+        )
+        for c in checkins
+    ]
+
+
+@router.get(
+    "/cases/{case_id}/behaviour",
+    response_model=List[BehaviourSummaryResponse],
+    status_code=status.HTTP_200_OK,
+    summary="List Behaviour History for a Case",
+    description="Returns longitudinal behaviour features for the specified case. Therapist must own the case.",
+)
+def list_case_behaviour(
+    case_id: uuid.UUID,
+    current_therapist: Therapist = Depends(get_current_therapist),
+    db: Session = Depends(get_db),
+) -> List[BehaviourSummaryResponse]:
+    """Returns historical behaviour snapshots for a therapist-owned case."""
+    case = _get_authorized_case(case_id, current_therapist, db)
+
+    snapshots = (
+        db.query(BehaviourFeatureSnapshotModel)
+        .filter(BehaviourFeatureSnapshotModel.case_id == case.id)
+        .order_by(BehaviourFeatureSnapshotModel.timepoint.desc())
+        .all()
+    )
+
+    return [
+        BehaviourSummaryResponse(
+            timepoint=s.timepoint,
+            app_interaction_duration=s.app_interaction_duration,
+            checkin_completion_rate=s.checkin_completion_rate,
+            missed_checkin_count=s.missed_checkin_count,
+            computed_at=s.aggregated_at,
+        )
+        for s in snapshots
+    ]
+
+
+@router.get(
+    "/cases/{case_id}/alerts",
+    response_model=List[AlertSummaryResponse],
+    status_code=status.HTTP_200_OK,
+    summary="List Safety Alerts for a Case",
+    description="Returns all safety alerts associated with the specified case. Therapist must own the case.",
+)
+def list_case_alerts(
+    case_id: uuid.UUID,
+    current_therapist: Therapist = Depends(get_current_therapist),
+    db: Session = Depends(get_db),
+) -> List[AlertSummaryResponse]:
+    """Returns all safety alerts for a therapist-owned case."""
+    case = _get_authorized_case(case_id, current_therapist, db)
+
+    alerts = (
+        db.query(SafetyEventModel)
+        .filter(SafetyEventModel.case_id == case.id)
+        .order_by(SafetyEventModel.detected_at.desc())
+        .all()
+    )
+
+    return [
+        AlertSummaryResponse(
+            id=a.id,
+            event_type=a.event_type,
+            severity=a.severity,
+            status=a.status,
+            detected_at=a.detected_at,
+            handled_by=a.handled_by,
+            handled_at=a.handled_at,
+        )
+        for a in alerts
+    ]
+

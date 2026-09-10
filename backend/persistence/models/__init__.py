@@ -18,6 +18,7 @@ from backend.persistence.models.behaviour_snapshot import BehaviourFeatureSnapsh
 from backend.persistence.models.prediction_result import PredictionResultModel
 from backend.persistence.models.voice_record import VoiceRecordModel
 from backend.persistence.models.journal_entry import JournalEntryModel
+from backend.persistence.models.safety_event import SafetyEventModel
 
 __all__ = [
     "Base",
@@ -37,4 +38,5 @@ __all__ = [
     "PredictionResultModel",
     "VoiceRecordModel",
     "JournalEntryModel",
+    "SafetyEventModel",
 ]

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from backend.api.v1.endpoints.auth import get_current_user
 from backend.persistence.database import get_db
 from backend.persistence.models.user import User
-from backend.services.case_service import get_active_case_for_user
+from backend.services.case_service import CaseService
 from backend.services import journal_service
 from backend.schemas.journal import (
     JournalEntryCreate, 
@@ -23,7 +23,7 @@ def create_journal_entry(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    case = get_active_case_for_user(db, current_user.id)
+    case = CaseService(db).get_active_case_for_user(current_user.id)
     new_entry = journal_service.create_entry(db, case.id, entry.content)
     return JournalEntryResponse.model_validate(new_entry)
 
@@ -32,7 +32,7 @@ def list_journal_entries(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    case = get_active_case_for_user(db, current_user.id)
+    case = CaseService(db).get_active_case_for_user(current_user.id)
     entries = journal_service.get_entries(db, case.id)
     return JournalEntryListResponse(entries=[JournalEntryResponse.model_validate(e) for e in entries])
 
@@ -42,7 +42,7 @@ def get_journal_entry(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    case = get_active_case_for_user(db, current_user.id)
+    case = CaseService(db).get_active_case_for_user(current_user.id)
     entry = journal_service.get_entry(db, case.id, entry_id)
     return JournalEntryResponse.model_validate(entry)
 
@@ -53,6 +53,6 @@ def update_journal_entry(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    case = get_active_case_for_user(db, current_user.id)
+    case = CaseService(db).get_active_case_for_user(current_user.id)
     entry = journal_service.update_entry(db, case.id, entry_id, update_data.content)
     return JournalEntryResponse.model_validate(entry)
