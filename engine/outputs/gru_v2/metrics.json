@@ -1,0 +1,115 @@
+{
+  "step": "Step 13 \u2014 Train and Evaluate V2 GRU",
+  "validation": {
+    "gru_selected_threshold": {
+      "accuracy": 0.8629166666666667,
+      "precision": 0.3633633633633634,
+      "recall": 0.5084033613445378,
+      "f1": 0.4238178633975482,
+      "roc_auc": 0.8147315355374343,
+      "pr_auc": 0.37537655204207127,
+      "threshold": 0.75,
+      "confusion_matrix": {
+        "tn": 1950,
+        "fp": 212,
+        "fn": 117,
+        "tp": 121
+      },
+      "support": {
+        "negative": 2162,
+        "positive": 238,
+        "total": 2400
+      }
+    },
+    "gru_default_threshold_05": {
+      "accuracy": 0.7029166666666666,
+      "precision": 0.21826809015421114,
+      "recall": 0.773109243697479,
+      "f1": 0.3404255319148936,
+      "roc_auc": 0.8147315355374343,
+      "pr_auc": 0.37537655204207127,
+      "threshold": 0.5,
+      "confusion_matrix": {
+        "tn": 1503,
+        "fp": 659,
+        "fn": 54,
+        "tp": 184
+      },
+      "support": {
+        "negative": 2162,
+        "positive": 238,
+        "total": 2400
+      }
+    },
+    "majority_baseline": {
+      "accuracy": 0.9008333333333334,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "roc_auc": 0.5,
+      "pr_auc": 0.09916666666666667,
+      "threshold": "majority_class_0",
+      "confusion_matrix": {
+        "tn": 2162,
+        "fp": 0,
+        "fn": 238,
+        "tp": 0
+      },
+      "support": {
+        "negative": 2162,
+        "positive": 238,
+        "total": 2400
+      }
+    }
+  },
+  "test": {
+    "gru_selected_threshold": {
+      "accuracy": 0.8358333333333333,
+      "precision": 0.298050139275766,
+      "recall": 0.42971887550200805,
+      "f1": 0.3519736842105263,
+      "roc_auc": 0.7952890128622346,
+      "pr_auc": 0.3133245808072298,
+      "threshold": 0.75,
+      "confusion_matrix": {
+        "tn": 1899,
+        "fp": 252,
+        "fn": 142,
+        "tp": 107
+      },
+      "support": {
+        "negative": 2151,
+        "positive": 249,
+        "total": 2400
+      }
+    },
+    "majority_baseline": {
+      "accuracy": 0.89625,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "roc_auc": 0.5,
+      "pr_auc": 0.10375,
+      "threshold": "majority_class_0",
+      "confusion_matrix": {
+        "tn": 2151,
+        "fp": 0,
+        "fn": 249,
+        "tp": 0
+      },
+      "support": {
+        "negative": 2151,
+        "positive": 249,
+        "total": 2400
+      }
+    }
+  },
+  "threshold_selection": {
+    "selected_threshold": 0.75,
+    "criterion": "Max F1 on Validation"
+  },
+  "reproducibility": {
+    "seed": 42,
+    "passed": true
+  }
+}

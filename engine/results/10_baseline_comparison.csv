@@ -1,0 +1,7 @@
+Task,Model,Metric,Value
+DDS,Mean Reference Baseline,MAE,15.777839623703706
+DDS,Structured Only,MAE,41.89133505155556
+DDS,Final Fusion,MAE,41.69186221422222
+Future Escalation,Majority Class,PR-AUC,0.0663768115942029
+Future Escalation,Structured Current Only (Non-temporal),PR-AUC,0.42079310707020523
+Future Escalation,Final GRU,PR-AUC,0.3015727396304284

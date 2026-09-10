@@ -1,0 +1,4 @@
+configuration,pr_auc
+Existing GRU,0.2855486181796829
+Structured Current Only (Non-temporal),0.40773967791524984
+Majority Class,0.08

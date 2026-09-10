@@ -1,0 +1,10 @@
+metric,value
+Mean Residual (Bias),0.1195
+MAE,5.9537
+RMSE,7.4925
+Median Absolute Error,4.9761
+Maximum Absolute Error,28.419
+Pct Error > 5,49.73
+Pct Error > 10,18.18
+Pct Error > 15,4.8
+Pct Error > 20,0.87

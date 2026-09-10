@@ -1,0 +1,11 @@
+feature,ridge_coefficient,xgb_gain_importance
+Engagement_Score,-42.8463,0.5797
+Engagement_Deviation,5.2674,0.1862
+Baseline_Engagement,-14.2674,0.0851
+Behaviour_Trend,40.5461,0.0448
+Response_Delay_Hours,0.429,0.0349
+Response_Delay_Deviation,-0.0492,0.0266
+Baseline_Response_Delay,-0.3246,0.0152
+Missed_Checkin,-0.34,0.0107
+Interaction_Frequency_7d,0.0625,0.01
+Session_Duration_Minutes,0.0221,0.0066

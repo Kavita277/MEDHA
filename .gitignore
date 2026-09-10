@@ -1,0 +1,33 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$*.py
+
+
+# Local IDEs / System files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+# Model weights and archives
+*.pt
+*.pth
+*.bin
+*.rar
+
+# Excel temporary / owner files
+~$*.xlsx
+~$*.xls
+
+# Ignore the nested MEDHA copy if it's redundant (we can ask or just ignore cache/models globally)
+# (For now let's apply the rule globally, which will ignore *.pt and __pycache__ in both directories)
+
+# Environments & Virtual Environments
+.env
+.venv/
+venv/
+env/
+
+# Scratch & Logs
+scratch_*.txt
+*.log

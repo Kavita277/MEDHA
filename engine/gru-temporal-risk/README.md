@@ -1,0 +1,46 @@
+# MEDHA GRU Temporal Risk Engine
+
+The Temporal Risk Engine uses a Gated Recurrent Unit (GRU) neural network to analyze a victim's **longitudinal history** (data over time). Instead of just looking at a single snapshot, it evaluates the sequence of past check-ins to predict the probability of a clinical escalation or severe distress event occurring within the next 7 days.
+
+## Codebase File Directory
+- **`src/model.py`**: Defines the PyTorch GRU neural network architecture.
+- **`src/preprocessing.py`**: Contains functions like `apply_scaler` to normalize data before it hits the neural network.
+- **`src/sequence_builder.py`**: Contains `build_sliding_windows`, which converts flat rows of data into the sequential 3D tensors required by recurrent neural networks.
+- **`models/`**: Stores the PyTorch model weights (`best_gru_model.pth`), scalers (`scaler.joblib`), and calibrators (`calibrator.joblib`).
+- **`requirements.txt`**: PyTorch and data-science dependencies.
+
+## Integration Guide (For Backend Developers)
+
+This engine is **fully built and actively used by the Fusion Engine testing pipeline**, but requires careful data prep to integrate.
+
+To run inference, you must provide a sequential window of historical data (e.g., the last N check-ins). 
+
+```python
+import torch
+import joblib
+from src.model import GRUModel
+from src.preprocessing import apply_scaler
+from src.sequence_builder import build_sliding_windows
+
+# 1. Load the architecture and weights (Do this ONCE at server startup)
+model = GRUModel(input_dim=..., hidden_dim=..., num_layers=...)
+model.load_state_dict(torch.load("models/best_gru_model.pth"))
+model.eval()
+
+scaler = joblib.load("models/scaler.joblib")
+
+# 2. Prepare Sequential Data
+# You must pull the last N historical records for the victim from the database
+historical_data = get_patient_history_df("Victim_X")
+
+# 3. Preprocess and Build Tensor
+scaled_data = apply_scaler(historical_data, scaler)
+sequence_tensor = build_sliding_windows(scaled_data) # Shape: (1, seq_len, features)
+
+# 4. Inference
+with torch.no_grad():
+    temporal_risk_score = model(sequence_tensor).item()
+    
+# 5. Pass to Fusion Engine
+# fusion_input.temporal = adapt_temporal_output(temporal_risk_score)
+```

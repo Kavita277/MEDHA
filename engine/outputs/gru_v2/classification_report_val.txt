@@ -1,0 +1,10 @@
+V2 GRU Validation Classification Report (Threshold = 0.75):
+
+                   precision    recall  f1-score   support
+
+No Escalation (0)     0.9434    0.9019    0.9222      2162
+   Escalation (1)     0.3634    0.5084    0.4238       238
+
+         accuracy                         0.8629      2400
+        macro avg     0.6534    0.7052    0.6730      2400
+     weighted avg     0.8859    0.8629    0.8728      2400

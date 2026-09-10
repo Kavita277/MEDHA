@@ -1,0 +1,20 @@
+{
+    "labels": [
+        "Distress_Label",
+        "Fear_Label",
+        "Threat_Label",
+        "Negative_Affect_Label",
+        "Urgency_Label"
+    ],
+    "num_labels": 5,
+    "thresholds": {
+        "Distress_Label": 0.24,
+        "Fear_Label": 0.5,
+        "Threat_Label": 0.45,
+        "Negative_Affect_Label": 0.29,
+        "Urgency_Label": 0.72
+    },
+    "model_name": "google/muril-base-cased",
+    "test_macro_f1": 0.948,
+    "test_micro_f1": 0.9762
+}

@@ -1,0 +1,31 @@
+# ================================================================
+# MEDHA System — Requirements
+# ================================================================
+
+# --- Core Framework & Web APIs ---
+fastapi>=0.100.0
+uvicorn>=0.22.0
+pydantic>=2.0.0
+python-multipart>=0.0.6
+bcrypt>=4.0.0
+pyjwt>=2.8.0
+
+# --- Data Science & Tabular / XGBoost Engine ---
+numpy>=1.24.0
+pandas>=2.0.0
+scipy>=1.10.0
+scikit-learn>=1.2.0
+xgboost>=1.7.0
+shap>=0.42.0
+joblib>=1.2.0
+
+# --- Deep Learning & NLP (Text / MuRIL Engine & GRU Temporal) ---
+torch>=2.0.0
+transformers>=4.30.0
+
+# --- Audio & Speech (Voice Engine) ---
+librosa>=0.10.0
+soundfile>=0.12.0
+
+# --- Testing & Quality Assurance (Fusion Engine & Unit Tests) ---
+pytest>=7.4.0

@@ -1,0 +1,6 @@
+feature,gain_importance
+Voice_Distress,0.6063262
+Speech_Rate_Deviation,0.24658966
+Energy_Deviation,0.06934352
+Acoustic_Indicator,0.042623024
+Pause_Ratio,0.03511754

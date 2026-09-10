@@ -1,0 +1,5 @@
+Stratum,N,Pct_Test_Set,Fusion_MAE,Fusion_RMSE,Fusion_R2,Fusion_Pearson,Structured_MAE,Structured_RMSE,MAE_Diff_vs_Struct
+"A. All Modalities Available (Text=1, Voice=1)",1269,28.2,5.8929,7.4174,0.7076,0.8417,6.3121,7.8811,0.4192
+"B. Voice Missing, Text Available (Text=1, Voice=0)",2093,46.51,5.9411,7.5209,0.6752,0.8218,6.1231,7.7266,0.182
+"C. Text Missing, Voice Available (Text=0, Voice=1)",423,9.4,6.0344,7.4876,0.6422,0.8076,6.069,7.623,0.0346
+"D. Both Text & Voice Missing (Text=0, Voice=0)",715,15.89,6.0504,7.5444,0.6199,0.7888,6.0584,7.5634,0.008

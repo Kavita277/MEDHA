@@ -1,0 +1,10 @@
+{
+  "candidate": "A_WeightedAvg",
+  "derived_from": "OOF Training MAE",
+  "weights": {
+    "structured": 0.266292,
+    "text": 0.257896,
+    "voice": 0.254184,
+    "behaviour": 0.221627
+  }
+}

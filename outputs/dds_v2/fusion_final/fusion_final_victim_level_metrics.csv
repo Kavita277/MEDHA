@@ -1,0 +1,3 @@
+Model,MAE,RMSE,R2,Pearson,Spearman,N
+Victim-Mean Fusion,1.4167,1.7681,0.9642,0.9839,0.979,150
+Victim-Mean Structured,1.728,2.1944,0.9449,0.9781,0.9722,150

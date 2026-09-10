@@ -1,0 +1,204 @@
+{
+  "step": "10C_FINAL_EVALUATION",
+  "timestamp": "2026-09-06T14:08:55.463228",
+  "model_architecture": "Candidate C: XGBoost Stacking Regressor",
+  "training_protocol": "5-fold victim-level cross-fitting (OOF) on 700 train victims",
+  "selection_basis": {
+    "dataset": "Validation Set (150 victims, 4,500 rows)",
+    "metric": "Validation MAE",
+    "validation_mae": 5.8851,
+    "test_set_used_for_selection": false
+  },
+  "preliminary_benchmark_reference": {
+    "preliminary_test_mae": 6.0626,
+    "status": "PRELIMINARY / EXPLORATORY / TEST-SELECTED (NON-CANONICAL)"
+  },
+  "final_unbiased_test_performance": {
+    "N": 4500,
+    "MAE": 5.9537,
+    "RMSE": 7.4925,
+    "R2": 0.675,
+    "Pearson": 0.8217,
+    "Spearman": 0.8272
+  },
+  "specialist_test_performance": {
+    "Structured": {
+      "Model": "Structured Specialist (XGBoost)",
+      "MAE": 6.1611,
+      "RMSE": 7.7353,
+      "R2": 0.6536,
+      "Pearson": 0.8086,
+      "Spearman": 0.8146,
+      "N": 4500
+    },
+    "Text_Available_Only": {
+      "Model": "Text Specialist (Ridge Core-5)",
+      "MAE": 6.4352,
+      "RMSE": 8.0783,
+      "R2": 0.6365,
+      "Pearson": 0.7978,
+      "Spearman": 0.8067,
+      "N": 3362
+    },
+    "Voice_Available_Only": {
+      "Model": "Voice Specialist (Ridge Core-5)",
+      "MAE": 6.307,
+      "RMSE": 7.9104,
+      "R2": 0.6529,
+      "Pearson": 0.8082,
+      "Spearman": 0.8179,
+      "N": 1692
+    },
+    "Behaviour": {
+      "Model": "Behaviour Specialist (Ridge Ext-10)",
+      "MAE": 7.353,
+      "RMSE": 9.1945,
+      "R2": 0.5106,
+      "Pearson": 0.7147,
+      "Spearman": 0.7332,
+      "N": 4500
+    },
+    "Train_Mean_Baseline": {
+      "Model": "Train-Mean Baseline",
+      "MAE": 12.9648,
+      "RMSE": 16.1965,
+      "R2": -0.5187,
+      "Pearson": NaN,
+      "Spearman": NaN,
+      "N": 4500
+    }
+  },
+  "improvements": {
+    "over_structured_specialist_pct": 3.3663,
+    "over_best_specialist_pct": 3.3663,
+    "over_baseline_pct": 54.078
+  },
+  "availability_stratification": [
+    {
+      "Stratum": "A. All Modalities Available (Text=1, Voice=1)",
+      "N": 1269,
+      "Pct_Test_Set": 28.2,
+      "Fusion_MAE": 5.8929,
+      "Fusion_RMSE": 7.4174,
+      "Fusion_R2": 0.7076,
+      "Fusion_Pearson": 0.8417,
+      "Structured_MAE": 6.3121,
+      "Structured_RMSE": 7.8811,
+      "MAE_Diff_vs_Struct": 0.4192
+    },
+    {
+      "Stratum": "B. Voice Missing, Text Available (Text=1, Voice=0)",
+      "N": 2093,
+      "Pct_Test_Set": 46.51,
+      "Fusion_MAE": 5.9411,
+      "Fusion_RMSE": 7.5209,
+      "Fusion_R2": 0.6752,
+      "Fusion_Pearson": 0.8218,
+      "Structured_MAE": 6.1231,
+      "Structured_RMSE": 7.7266,
+      "MAE_Diff_vs_Struct": 0.182
+    },
+    {
+      "Stratum": "C. Text Missing, Voice Available (Text=0, Voice=1)",
+      "N": 423,
+      "Pct_Test_Set": 9.4,
+      "Fusion_MAE": 6.0344,
+      "Fusion_RMSE": 7.4876,
+      "Fusion_R2": 0.6422,
+      "Fusion_Pearson": 0.8076,
+      "Structured_MAE": 6.069,
+      "Structured_RMSE": 7.623,
+      "MAE_Diff_vs_Struct": 0.0346
+    },
+    {
+      "Stratum": "D. Both Text & Voice Missing (Text=0, Voice=0)",
+      "N": 715,
+      "Pct_Test_Set": 15.89,
+      "Fusion_MAE": 6.0504,
+      "Fusion_RMSE": 7.5444,
+      "Fusion_R2": 0.6199,
+      "Fusion_Pearson": 0.7888,
+      "Structured_MAE": 6.0584,
+      "Structured_RMSE": 7.5634,
+      "MAE_Diff_vs_Struct": 0.008
+    }
+  ],
+  "error_analysis": {
+    "mean_residual": 0.1195,
+    "median_absolute_error": 4.9761,
+    "max_absolute_error": 28.419,
+    "pct_gt_5": 49.73,
+    "pct_gt_10": 18.18,
+    "pct_gt_15": 4.8,
+    "pct_gt_20": 0.87,
+    "range_stratification": [
+      {
+        "DDS_Range": "0\u201325 (Low Distress)",
+        "N": 578,
+        "Pct_Test_Set": 12.84,
+        "MAE": 7.8017,
+        "Mean_Residual": 6.9852
+      },
+      {
+        "DDS_Range": "25\u201350 (Moderate Distress)",
+        "N": 2782,
+        "Pct_Test_Set": 61.82,
+        "MAE": 5.4376,
+        "Mean_Residual": 0.7919
+      },
+      {
+        "DDS_Range": "50\u201375 (High Distress)",
+        "N": 1132,
+        "Pct_Test_Set": 25.16,
+        "MAE": 6.1844,
+        "Mean_Residual": -4.9019
+      },
+      {
+        "DDS_Range": "75\u2013100 (Severe Distress)",
+        "N": 8,
+        "Pct_Test_Set": 0.18,
+        "MAE": 19.2235,
+        "Mean_Residual": -19.2235
+      }
+    ]
+  },
+  "victim_level_longitudinal_diagnostic": {
+    "fusion": {
+      "Model": "Victim-Mean Fusion",
+      "MAE": 1.4167,
+      "RMSE": 1.7681,
+      "R2": 0.9642,
+      "Pearson": 0.9839,
+      "Spearman": 0.979,
+      "N": 150
+    },
+    "structured": {
+      "Model": "Victim-Mean Structured",
+      "MAE": 1.728,
+      "RMSE": 2.1944,
+      "R2": 0.9449,
+      "Pearson": 0.9781,
+      "Spearman": 0.9722,
+      "N": 150
+    }
+  },
+  "reproducibility": {
+    "status": "DETERMINISTIC",
+    "max_run_difference": 0.0,
+    "test_rows": 4500,
+    "test_victims": 150,
+    "model_file": "C:\\Users\\jnark\\Documents\\MEDHA\\MEDHA\\engine\\models\\v2\\fusion_oof\\fusion_model.json",
+    "timestamp": "2026-09-06T14:08:55.336712"
+  },
+  "feature_order": [
+    "Struct_Pred",
+    "Text_Pred",
+    "Voice_Pred",
+    "Behav_Pred",
+    "Struct_Available",
+    "Text_Available",
+    "Voice_Available",
+    "Behav_Available"
+  ],
+  "clinical_disclaimer": "This is a DDS regression system, not a clinical diagnosis. Performance does not establish causal or clinical validity."
+}

@@ -1,0 +1,4 @@
+split,unique_victims,rows,positive_future_escalation_count,negative_future_escalation_count,positive_rate
+train,700,21000,1106.0,14994.0,0.06869565217391305
+val,150,4500,276.0,3174.0,0.08
+test,150,4500,229.0,3221.0,0.0663768115942029

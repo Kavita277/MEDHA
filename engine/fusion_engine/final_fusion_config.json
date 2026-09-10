@@ -1,0 +1,11 @@
+{
+    "architecture": "Manual Normalized Weights",
+    "weights": {
+        "text_risk": 0.25,
+        "voice_risk": 0.15,
+        "behaviour_risk": 0.15,
+        "structured_risk": 0.25,
+        "temporal_risk_score": 0.2
+    },
+    "selected_threshold": 0.19
+}

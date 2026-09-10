@@ -1,0 +1,28 @@
+{
+    "voice_distress_model": {
+        "features": [
+            "angry",
+            "sad",
+            "neutral",
+            "happy",
+            "speaking_rate",
+            "pitch_mean",
+            "pitch_std",
+            "rms"
+        ],
+        "MAE": 0.0759,
+        "RMSE": 0.1334,
+        "R2": 0.8572
+    },
+    "acoustic_indicator_model": {
+        "features": [
+            "speaking_rate",
+            "pitch_mean",
+            "pitch_std",
+            "rms"
+        ],
+        "MAE": 0.001,
+        "RMSE": 0.0035,
+        "R2": 0.9986
+    }
+}
