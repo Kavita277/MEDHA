@@ -7,7 +7,7 @@ def test_voice_checkin_success(client, user_token_headers, db_session, test_user
     Test a successful voice checkin upload.
     """
     # Mock the case lookup to return the test_case
-    with patch("backend.api.v1.endpoints.voice.get_active_case_for_user") as mock_get_case, \
+    with patch("backend.services.case_service.CaseService.get_active_case_for_user") as mock_get_case, \
          patch("backend.services.voice_service.MedhaVoiceAdapter") as mock_adapter_class:
         
         mock_get_case.return_value = test_case

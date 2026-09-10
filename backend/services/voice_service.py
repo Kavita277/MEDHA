@@ -32,13 +32,13 @@ def process_voice_checkin(
         # 2. Invoke MedhaVoiceAdapter
         # For the purpose of voice adapter, we instantiate an empty state.
         # In a real integrated flow, this might pull the current MedhaState from DB.
-        state = MedhaState()
+        state = MedhaState(victim_id=case.victim_id, session_id=str(session_id) if session_id else None)
         
         adapter = MedhaVoiceAdapter()
         adapter.process_and_update_state(state, temp_path)
 
         # 3. Persist metadata into voice_records
-        available = state.modality_availability.get("voice", 0.0)
+        available = state.voice_available if state.voice_available is not None else 0.0
         
         record = VoiceRecordModel(
             case_id=case.id,

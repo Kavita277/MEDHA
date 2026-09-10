@@ -3,29 +3,27 @@ import uuid
 import pytest
 from unittest.mock import patch, MagicMock
 
-from backend.jobs.prediction_queue import enqueue_prediction, process_queue, _queue
+from backend.jobs.prediction_queue import enqueue_prediction, process_queue, _get_queue, reset_queue
 
 @pytest.mark.asyncio
 async def test_enqueue_prediction():
-    # Clear queue first just in case
-    while not _queue.empty():
-        _queue.get_nowait()
+    reset_queue()
+    q = _get_queue()
         
     case_id = uuid.uuid4()
     timepoint = 1
     
     await enqueue_prediction(case_id, timepoint)
     
-    assert _queue.qsize() == 1
-    enqueued_case, enqueued_tp = _queue.get_nowait()
+    assert q.qsize() == 1
+    enqueued_case, enqueued_tp = q.get_nowait()
     assert enqueued_case == case_id
     assert enqueued_tp == timepoint
 
 @pytest.mark.asyncio
 async def test_process_queue_runs_prediction():
-    # Clear queue first just in case
-    while not _queue.empty():
-        _queue.get_nowait()
+    reset_queue()
+    q = _get_queue()
 
     case_id = uuid.uuid4()
     timepoint = 1
@@ -55,4 +53,4 @@ async def test_process_queue_runs_prediction():
         assert args[1] == case_id
         assert args[2] == timepoint
         
-        assert _queue.empty()
+        assert q.empty()

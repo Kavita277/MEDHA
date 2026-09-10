@@ -58,6 +58,7 @@ def submit_answer(
 
 
 from backend.jobs.prediction_queue import enqueue_prediction
+from backend.persistence.repositories.session import SessionRepository
 
 @router.post("/{checkin_id}/complete", response_model=CheckInResponse)
 def complete_checkin(
@@ -73,9 +74,10 @@ def complete_checkin(
     response = service.complete_checkin(checkin_id, current_user)
     
     # Enqueue background prediction
-    case_id = response.case_id
-    timepoint = response.timepoint
-    background_tasks.add_task(enqueue_prediction, case_id, timepoint)
+    session_repo = SessionRepository(db)
+    session_obj = session_repo.get(response.session_id)
+    if session_obj:
+        background_tasks.add_task(enqueue_prediction, session_obj.case_id, session_obj.timepoint)
     
     return response
 
