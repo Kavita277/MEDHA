@@ -1,0 +1,89 @@
+"""
+Case Model
+==========
+
+SQLAlchemy 2.0 model representing a longitudinal case container
+linking a patient (User) to an assigned clinician (Therapist) and Victim_ID.
+"""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from typing import List, Optional, TYPE_CHECKING
+
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Uuid
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from backend.persistence.base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from backend.persistence.models.user import User
+    from backend.persistence.models.therapist import Therapist
+    from backend.persistence.models.session import SessionModel
+
+
+class Case(Base, TimestampMixin):
+    """
+    Longitudinal container connecting a patient to an assigned therapist.
+    Maintains Victim_ID for compatibility with the frozen MEDHA V2 pipeline.
+    """
+    __tablename__ = "cases"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    victim_id: Mapped[str] = mapped_column(
+        String(100),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    therapist_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("therapists.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    current_timepoint: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=1,
+    )
+    status: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="active",
+        index=True,
+    )
+    closed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    # Relationships
+    user: Mapped["User"] = relationship(
+        "User",
+        back_populates="cases",
+    )
+    therapist: Mapped["Therapist"] = relationship(
+        "Therapist",
+        back_populates="cases",
+    )
+    sessions: Mapped[List["SessionModel"]] = relationship(
+        "SessionModel",
+        back_populates="case",
+        cascade="all, delete-orphan",
+    )
+
+    def __repr__(self) -> str:
+        return f"<Case id={self.id} victim_id={self.victim_id!r} user_id={self.user_id} therapist_id={self.therapist_id}>"
+
