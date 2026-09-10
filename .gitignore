@@ -28,3 +28,6 @@ Thumbs.db
 venv/
 env/
 
+# Scratch & Logs
+scratch_*.txt
+*.log
