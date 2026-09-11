@@ -16,6 +16,8 @@ from backend.api.v1.endpoints import (
     journal,
     sessions,
     therapist,
+    therapist_insights,
+    therapist_recommendations,
     therapist_results,
     voice,
 )
@@ -30,6 +32,16 @@ api_v1_router.include_router(
     therapist_results.router,
     prefix="/therapist",
     tags=["Therapist Results"],
+)
+api_v1_router.include_router(
+    therapist_insights.router,
+    prefix="/therapist",
+    tags=["Therapist Insights"],
+)
+api_v1_router.include_router(
+    therapist_recommendations.router,
+    prefix="/therapist",
+    tags=["Therapist Recommendations & Safety"],
 )
 api_v1_router.include_router(sessions.router, prefix="/sessions", tags=["Sessions"])
 api_v1_router.include_router(chat.router, prefix="/chat", tags=["Chat"])

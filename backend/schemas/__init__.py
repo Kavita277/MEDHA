@@ -36,6 +36,19 @@ from backend.schemas.session import (
     SessionResponse,
     SessionStatusUpdate,
 )
+from backend.schemas.insights import (
+    CaseInsightsResponse,
+    InsightFactorItem,
+    InsightActivitySummary,
+    InsightSignalsSummary,
+    InsightContextSummary,
+)
+from backend.schemas.recommendations import (
+    RecommendationItem,
+    SelfHelpResourceItem,
+    SafetyProtocolResponse,
+    CaseRecommendationsResponse,
+)
 
 __all__ = [
     "HealthResponse",
@@ -60,5 +73,15 @@ __all__ = [
     "SessionCreateRequest",
     "SessionResponse",
     "SessionStatusUpdate",
+    "CaseInsightsResponse",
+    "InsightFactorItem",
+    "InsightActivitySummary",
+    "InsightSignalsSummary",
+    "InsightContextSummary",
+    "RecommendationItem",
+    "SelfHelpResourceItem",
+    "SafetyProtocolResponse",
+    "CaseRecommendationsResponse",
 ]
+
 
