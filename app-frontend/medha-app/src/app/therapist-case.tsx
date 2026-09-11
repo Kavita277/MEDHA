@@ -228,7 +228,7 @@ export default function TherapistCaseScreen() {
                     </Text>
                   </View>
                   <Text style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: v.voice_score != null ? COLORS.deepForest : COLORS.mutedText }}>
-                    {v.voice_score != null ? `Score: ${(v.voice_score * 100).toFixed(1)}%` : 'Processing'}
+                    {v.voice_score != null ? `Score: ${(v.voice_score <= 1.0 ? v.voice_score * 100 : v.voice_score).toFixed(1)}%` : 'Processing'}
                   </Text>
                 </View>
 

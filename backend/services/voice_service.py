@@ -95,7 +95,10 @@ def process_voice_checkin(
 
         # Parse numeric timepoint
         try:
-            t_int = int(str(timepoint).replace("Day ", "").replace("T", "").strip())
+            if not timepoint or str(timepoint).strip().lower() in ("auto", "current", "none", ""):
+                t_int = case.current_timepoint or (db_session.timepoint if db_session else 1)
+            else:
+                t_int = int(str(timepoint).replace("Day ", "").replace("T", "").strip())
         except Exception:
             t_int = case.current_timepoint or 1
 

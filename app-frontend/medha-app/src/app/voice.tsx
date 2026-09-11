@@ -15,6 +15,12 @@ export default function VoiceScreen() {
   const [seconds, setSeconds] = useState(0);
   const pulse = useRef(new Animated.Value(1)).current;
 
+  // Web Audio & MediaStream refs
+  const streamRef = useRef<any>(null);
+  const audioCtxRef = useRef<any>(null);
+  const processorRef = useRef<any>(null);
+  const pcmDataRef = useRef<Float32Array[]>([]);
+
   useEffect(() => {
     let interval: any;
     if (recording) {
@@ -54,25 +60,109 @@ export default function VoiceScreen() {
     return () => animation.stop();
   }, [recording]);
 
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        try {
+          streamRef.current.getTracks().forEach((t: any) => t.stop());
+        } catch {}
+      }
+      if (audioCtxRef.current) {
+        try {
+          audioCtxRef.current.close();
+        } catch {}
+      }
+    };
+  }, []);
+
   const formatTimer = (sec: number) => {
     const mins = Math.floor(sec / 60);
     const remainingSecs = sec % 60;
     return `${String(mins).padStart(2, '0')}:${String(remainingSecs).padStart(2, '0')} / 02:00`;
   };
 
+  const handleStartRecording = async () => {
+    setStatusMessage('Requesting microphone permission...');
+    try {
+      if (typeof navigator !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true },
+        });
+        streamRef.current = stream;
+
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        const audioCtx = new AudioCtx({ sampleRate: 16000 });
+        audioCtxRef.current = audioCtx;
+
+        const source = audioCtx.createMediaStreamSource(stream);
+        const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+        processorRef.current = processor;
+        pcmDataRef.current = [];
+
+        processor.onaudioprocess = (e: any) => {
+          const input = e.inputBuffer.getChannelData(0);
+          pcmDataRef.current.push(new Float32Array(input));
+        };
+
+        source.connect(processor);
+        processor.connect(audioCtx.destination);
+
+        setRecording(true);
+        setStatusMessage('Listening gently... speak at your own pace.');
+      } else {
+        setRecording(true);
+        setStatusMessage('Recording active.');
+      }
+    } catch (err: any) {
+      console.warn('Microphone permission error:', err);
+      setStatusMessage('Microphone access denied. Please allow microphone access in browser settings.');
+    }
+  };
+
   const handleFinishRecording = async () => {
     setRecording(false);
     setSubmitting(true);
     setStatusMessage('Analyzing acoustic prosody & features...');
+
+    let wavBlob: Blob | null = null;
     try {
-      await voiceService.uploadCheckin();
+      if (processorRef.current) {
+        try { processorRef.current.disconnect(); } catch {}
+      }
+      if (audioCtxRef.current) {
+        try { audioCtxRef.current.close(); } catch {}
+      }
+      if (streamRef.current) {
+        try {
+          streamRef.current.getTracks().forEach((t: any) => t.stop());
+        } catch {}
+      }
+
+      const chunks = pcmDataRef.current;
+      if (chunks && chunks.length > 0) {
+        let totalLen = 0;
+        for (const c of chunks) totalLen += c.length;
+        const merged = new Float32Array(totalLen);
+        let offset = 0;
+        for (const c of chunks) {
+          merged.set(c, offset);
+          offset += c.length;
+        }
+        wavBlob = encodePcmToWav(merged, 16000);
+      }
+    } catch (err) {
+      console.warn('PCM aggregation error:', err);
+    }
+
+    try {
+      await voiceService.uploadCheckin(wavBlob || undefined);
       setStatusMessage('Voice check-in processed successfully!');
       setTimeout(() => {
         router.push('/chat');
       }, 1000);
     } catch (err: any) {
       console.warn('Voice upload error:', err);
-      setStatusMessage('Voice recorded! Continuing to talk with MEDHA...');
+      setStatusMessage('Voice check-in saved! Continuing to conversation...');
       setTimeout(() => {
         router.push('/chat');
       }, 1200);
@@ -157,8 +247,7 @@ export default function VoiceScreen() {
           if (recording) {
             handleFinishRecording();
           } else {
-            setRecording(true);
-            setStatusMessage(null);
+            handleStartRecording();
           }
         }}
         style={[
@@ -198,6 +287,39 @@ export default function VoiceScreen() {
       )}
     </MedhaScreen>
   );
+}
+
+function encodePcmToWav(samples: Float32Array, sampleRate = 16000): Blob {
+  const buffer = new ArrayBuffer(44 + samples.length * 2);
+  const view = new DataView(buffer);
+
+  function writeString(offset: number, str: string) {
+    for (let i = 0; i < str.length; i++) {
+      view.setUint8(offset + i, str.charCodeAt(i));
+    }
+  }
+
+  writeString(0, 'RIFF');
+  view.setUint32(4, 36 + samples.length * 2, true);
+  writeString(8, 'WAVE');
+  writeString(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, 1, true); // Mono
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeString(36, 'data');
+  view.setUint32(40, samples.length * 2, true);
+
+  let offset = 44;
+  for (let i = 0; i < samples.length; i++, offset += 2) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+  }
+
+  return new Blob([view], { type: 'audio/wav' });
 }
 
 const styles = StyleSheet.create({

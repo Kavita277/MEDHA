@@ -158,7 +158,7 @@ export const journalService = {
 };
 
 export const voiceService = {
-  uploadCheckin: async (audioUri?: string, timepoint: string = '1', sessionId?: string) => {
+  uploadCheckin: async (audioData?: string | Blob, timepoint: string = 'current', sessionId?: string) => {
     await ensureAuthenticated();
     const formData = new FormData();
     formData.append('timepoint', timepoint);
@@ -168,9 +168,11 @@ export const voiceService = {
     
     if (isWeb) {
       let blob: Blob;
-      if (audioUri && (audioUri.startsWith('blob:') || audioUri.startsWith('data:'))) {
+      if (audioData instanceof Blob) {
+        blob = audioData;
+      } else if (typeof audioData === 'string' && (audioData.startsWith('blob:') || audioData.startsWith('data:'))) {
         try {
-          const res = await fetch(audioUri);
+          const res = await fetch(audioData);
           blob = await res.blob();
         } catch {
           blob = createSilenceWav();
@@ -180,7 +182,7 @@ export const voiceService = {
       }
       formData.append('audio_file', blob, 'voice_checkin.wav');
     } else {
-      const uri = audioUri || 'file:///dummy/voice_checkin.wav';
+      const uri = (typeof audioData === 'string' ? audioData : null) || 'file:///dummy/voice_checkin.wav';
       const filename = uri.split('/').pop() || 'recording.wav';
       const match = /\.(\w+)$/.exec(filename);
       const type = match ? `audio/${match[1]}` : 'audio/wav';
