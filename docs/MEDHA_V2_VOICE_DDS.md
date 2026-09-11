@@ -89,7 +89,7 @@ Converting missing voice samples into "0.0 distress" would introduce severe clin
 | `Energy_Deviation` | Core Feature | 63.35% | 0.729 | Variation in acoustic root-mean-square energy |
 | `Acoustic_Indicator` | Core Feature | 63.35% | 0.726 | Composite acoustic biomarker index |
 | `Baseline_Voice_Distress` | Extended Trait | 11.20% | 0.443 | Static victim baseline voice distress |
-| `Voice_Distress_Deviation` | Extended Trait | 66.74% | 0.475 | Instantaneous deviation from baseline |
+| `Voice_Distress_Deviation` | Extended Trait | 66.74% | 0.475 | Instantaneous de   viation from baseline |
 | `Voice_Distress_Trend` | Extended Trait | 88.60% | 0.082 | Trajectory trend over preceding timepoints |
 | `Voice_Available` | Availability Flag | 0.00% | 0.002 | Modality availability indicator (1/0) |
 
