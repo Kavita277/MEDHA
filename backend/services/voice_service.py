@@ -1,3 +1,4 @@
+import logging
 import os
 import tempfile
 import shutil
@@ -9,6 +10,8 @@ from chatbot.state.medha_state import MedhaState
 from chatbot.engines.voice_adapter import MedhaVoiceAdapter
 from backend.persistence.models.voice_record import VoiceRecordModel
 from backend.persistence.models.case import Case
+
+logger = logging.getLogger(__name__)
 
 def process_voice_checkin(
     db: Session,
@@ -54,9 +57,11 @@ def process_voice_checkin(
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Voice processing failed: {str(e)}")
+        logger.error(f"Voice check-in processing failed for case {case.id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Voice processing failed.")
 
     finally:
         # 4. Securely delete the temporary raw audio file
         if temp_path and os.path.exists(temp_path):
             os.remove(temp_path)
+

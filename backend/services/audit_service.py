@@ -25,57 +25,10 @@ from sqlalchemy.orm import Session
 
 from backend.persistence.models.audit_log import AuditLogModel
 from backend.persistence.repositories.audit_log import AuditLogRepository
+from backend.security.redaction import sanitize_payload
 
 logger = logging.getLogger(__name__)
 
-# Keys that must NEVER be persisted in audit log payloads
-_REDACTION_BLACKLIST_KEYS: Set[str] = {
-    "password",
-    "password_hash",
-    "hashed_password",
-    "token",
-    "access_token",
-    "refresh_token",
-    "secret",
-    "jwt",
-    "authorization",
-    "auth",
-    "credentials",
-    "content",
-    "transcript",
-    "text",
-    "raw_audio",
-    "voice_bytes",
-    "audio_payload",
-    "journal_text",
-    "chat_message",
-}
-
-
-def sanitize_payload(payload: Any) -> Any:
-    """
-    Recursively redacts sensitive keys and values from dictionary and list structures.
-    """
-    if payload is None:
-        return None
-    if isinstance(payload, dict):
-        sanitized = {}
-        for k, v in payload.items():
-            key_str = str(k).lower()
-            if any(blacklisted in key_str for blacklisted in _REDACTION_BLACKLIST_KEYS):
-                sanitized[k] = "[REDACTED]"
-            else:
-                sanitized[k] = sanitize_payload(v)
-        return sanitized
-    if isinstance(payload, (list, tuple, set)):
-        return [sanitize_payload(item) for item in payload]
-    if isinstance(payload, (int, float, bool)):
-        return payload
-    # For strings and other types, ensure no obvious token/password leaks
-    val_str = str(payload)
-    if "bearer " in val_str.lower() or "eyjhbgcioi" in val_str.lower():
-        return "[REDACTED_TOKEN]"
-    return val_str
 
 
 class AuditService:

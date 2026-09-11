@@ -29,6 +29,12 @@ from fastapi.responses import JSONResponse
 from backend.api.v1.router import api_v1_router
 from backend.config import Settings, get_settings
 from backend.jobs.prediction_queue import process_queue, reset_queue
+from backend.security.redaction import (
+    sanitize_url,
+    sanitize_validation_errors,
+    mask_internal_error,
+)
+
 
 
 # ===========================================================================
@@ -118,10 +124,11 @@ def create_application() -> FastAPI:
         process_time_ms = (time.perf_counter() - start_time) * 1000.0
         response.headers["X-Process-Time-Ms"] = f"{process_time_ms:.2f}"
         
-        # Log HTTP access
+        # Log HTTP access with sanitized query string
         client_ip = request.client.host if request.client else "unknown"
+        sanitized_uri = sanitize_url(str(request.url.path) + (f"?{request.url.query}" if request.url.query else ""))
         logger.info(
-            f"{client_ip} - \"{request.method} {request.url.path}\" "
+            f"{client_ip} - \"{request.method} {sanitized_uri}\" "
             f"{response.status_code} ({process_time_ms:.2f}ms)"
         )
         return response
@@ -131,43 +138,49 @@ def create_application() -> FastAPI:
     # -----------------------------------------------------------------------
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request: Request, exc: HTTPException):
-        logger.warning(f"HTTP {exc.status_code} on {request.url.path}: {exc.detail}")
+        masked_detail = mask_internal_error(str(exc.detail))
+        sanitized_path = sanitize_url(str(request.url.path))
+        logger.warning(f"HTTP {exc.status_code} on {sanitized_path}: {masked_detail}")
         return JSONResponse(
             status_code=exc.status_code,
             content={
                 "error": True,
                 "status_code": exc.status_code,
-                "detail": exc.detail,
-                "path": str(request.url.path),
+                "detail": masked_detail,
+                "path": sanitized_path,
             },
         )
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(request: Request, exc: RequestValidationError):
-        logger.warning(f"Validation error on {request.url.path}: {exc.errors()}")
+        sanitized_errors = sanitize_validation_errors(exc.errors())
+        sanitized_path = sanitize_url(str(request.url.path))
+        logger.warning(f"Validation error on {sanitized_path}: {sanitized_errors}")
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content={
                 "error": True,
                 "status_code": status.HTTP_422_UNPROCESSABLE_ENTITY,
                 "detail": "Request validation failed",
-                "errors": exc.errors(),
-                "path": str(request.url.path),
+                "errors": sanitized_errors,
+                "path": sanitized_path,
             },
         )
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception):
-        logger.error(f"Unhandled exception on {request.url.path}: {exc}", exc_info=True)
+        sanitized_path = sanitize_url(str(request.url.path))
+        logger.error(f"Unhandled exception on {sanitized_path}: {mask_internal_error(str(exc))}", exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
                 "error": True,
                 "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
                 "detail": "Internal server error occurred.",
-                "path": str(request.url.path),
+                "path": sanitized_path,
             },
         )
+
 
     # -----------------------------------------------------------------------
     # Router Mounts

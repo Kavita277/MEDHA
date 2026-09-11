@@ -8,6 +8,7 @@ the ConversationManager, and message persistence.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from typing import Union
 
@@ -30,6 +31,9 @@ from backend.schemas.chat import (
 )
 from backend.services.session_service import SessionService
 from chatbot.conversation_manager import ConversationManager
+
+logger = logging.getLogger(__name__)
+
 
 
 class ChatbotService:
@@ -84,10 +88,12 @@ class ChatbotService:
                 metadata=payload.metadata,
             )
         except Exception as e:
+            logger.error(f"ConversationManager error for session {session_obj.id}: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"ConversationManager error: {str(e)}",
+                detail="Conversation processing failed.",
             )
+
 
         # 5. Extract updated state and sync to snapshot
         updated_state_dict = sync_from_conversation_manager(self.manager, session_obj)
