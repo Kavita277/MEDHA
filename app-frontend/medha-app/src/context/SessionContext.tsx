@@ -92,7 +92,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Only act for authenticated patients (therapists don't use this context)
-    if (!isAuthenticated || !token || user?.role !== 'USER') {
+    if (!isAuthenticated || !token || user?.role?.toUpperCase() !== 'USER') {
       return;
     }
 

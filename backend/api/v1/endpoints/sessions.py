@@ -11,7 +11,7 @@ Provides endpoints for creating, retrieving, and ending conversation sessions:
 from __future__ import annotations
 
 from typing import Any, Dict, Optional
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from backend.dependencies import get_db
@@ -75,6 +75,24 @@ def create_session(
 
 
 @router.get(
+    "",
+    response_model=list[SessionResponse],
+    status_code=status.HTTP_200_OK,
+    summary="List Conversation Sessions",
+)
+def list_sessions(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[SessionResponse]:
+    """Lists the authenticated patient's non-empty conversation sessions."""
+    session_service = SessionService(db)
+    return [
+        _build_session_response(session_obj)
+        for session_obj in session_service.list_sessions_for_user(current_user)
+    ]
+
+
+@router.get(
     "/{session_id}",
     response_model=SessionResponse,
     status_code=status.HTTP_200_OK,
@@ -108,3 +126,19 @@ def end_session(
     session_service = SessionService(db)
     session_obj = session_service.close_session(session_id=session_id, current_user=current_user)
     return _build_session_response(session_obj)
+
+
+@router.delete(
+    "/{session_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete Conversation Session",
+)
+def delete_session(
+    session_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Deletes an authorized conversation and its persisted chat messages."""
+    session_service = SessionService(db)
+    session_service.delete_session(session_id=session_id, current_user=current_user)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

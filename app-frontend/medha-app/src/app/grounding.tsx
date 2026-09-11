@@ -55,11 +55,7 @@ export default function GroundingScreen() {
     return () => scale.stopAnimation();
   }, [running]);
 
-  useEffect(() => {
-    return () => {
-      player.pause();
-    };
-  }, [player]);
+
 
   return (
     <MedhaScreen

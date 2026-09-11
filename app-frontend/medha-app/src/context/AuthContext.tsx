@@ -53,17 +53,17 @@ async function storeToken(token: string): Promise<void> {
 async function getStoredToken(): Promise<string | null> {
   if (Platform.OS === 'web') {
     try {
-      const val = await AsyncStorage.getItem(TOKEN_KEY);
+      const val = await AsyncStorage.getItem(TOKEN_KEY) || await AsyncStorage.getItem('MEDHA_JWT');
       if (val) return val;
     } catch {
       // fallback to localStorage
     }
     if (typeof window !== 'undefined' && window.localStorage) {
-      return window.localStorage.getItem(TOKEN_KEY);
+      return window.localStorage.getItem(TOKEN_KEY) || window.localStorage.getItem('MEDHA_JWT');
     }
     return null;
   } else {
-    return await SecureStore.getItemAsync(TOKEN_KEY);
+    return await SecureStore.getItemAsync(TOKEN_KEY) || await SecureStore.getItemAsync('MEDHA_JWT');
   }
 }
 
@@ -99,7 +99,7 @@ interface AuthContextValue {
   error: string | null;
 
   /** Authenticate with email + password → persists token, sets user */
-  login: (credentials: LoginRequest) => Promise<void>;
+  login: (credentials: LoginRequest) => Promise<UserResponse>;
   /** Clear all auth state + storage */
   logout: () => Promise<void>;
   /** Clear the current error */
@@ -164,13 +164,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // login()
   // -------------------------------------------------------------------------
 
-  const login = useCallback(async (credentials: LoginRequest) => {
+  const login = useCallback(async (credentials: LoginRequest): Promise<UserResponse> => {
     setError(null);
     try {
       const response = await api.post<TokenResponse>('/auth/login', credentials);
       await storeToken(response.access_token);
       setToken(response.access_token);
       setUser(response.user);
+      return response.user;
     } catch (err) {
       const message = resolveErrorMessage(err);
       setError(message);

@@ -21,7 +21,10 @@ import * as SecureStore from 'expo-secure-store';
 // Configuration
 // ---------------------------------------------------------------------------
 
-const RAW_BASE = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000';
+const debuggerHost = Constants.expoConfig?.hostUri;
+const localhost = debuggerHost ? debuggerHost.split(':')[0] : (Platform.OS === 'android' ? '10.0.2.2' : 'localhost');
+const RAW_BASE = process.env.EXPO_PUBLIC_API_URL ?? `http://${localhost}:8000`;
+
 // Strip trailing slash so callers can freely use '/path' prefix
 export const API_BASE_URL = RAW_BASE.replace(/\/+$/, '');
 export const API_PREFIX = '/api/v1';
@@ -165,35 +168,27 @@ export const api = {
 // ---------------------------------------------------------------------------
 // DO NOT use these in new code. They are here only to keep unmigrated screens from crashing.
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 const getLegacyToken = async () => {
-  return await SecureStore.getItemAsync('MEDHA_JWT');
-};
-
-export const journalService = {
-  createEntry: async (content: string) => {
-    const t = await getLegacyToken();
-    return api.post<any>('/journal', { content }, { token: t });
-  },
-  listEntries: async () => {
-    const t = await getLegacyToken();
-    return api.get<any>('/journal', { token: t });
-  },
-};
-
-export const checkinService = {
-  startCheckin: async (sessionId?: string) => {
-    const t = await getLegacyToken();
-    return api.post<any>(`/checkins/sessions/${sessionId || 'temp'}`, undefined, { token: t }).catch(() => null);
-  },
-  getTodayStatus: async () => {
-    const t = await getLegacyToken();
-    return api.get<{ completed_today: boolean; active_checkin_id: string | null; status: string }>('/checkins/status/today', { token: t }).catch(() => ({ completed_today: true, active_checkin_id: null, status: 'mocked' }));
-  },
-  submitAnswer: async (checkinId: string, answer: any) => {
-    const t = await getLegacyToken();
-    return api.post<any>(`/checkins/${checkinId}/answer`, { answer }, { token: t });
+  if (Platform.OS === 'web') {
+    try {
+      const val = await AsyncStorage.getItem('medha_access_token') || await AsyncStorage.getItem('MEDHA_JWT');
+      if (val) return val;
+    } catch {
+      // ignore
+    }
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage.getItem('medha_access_token') || window.localStorage.getItem('MEDHA_JWT');
+    }
+    return null;
   }
+  return await SecureStore.getItemAsync('medha_access_token') || await SecureStore.getItemAsync('MEDHA_JWT');
 };
+
+
+
+// legacy checkinService has been migrated to services/checkin.ts
 
 export const chatService = {
   sendMessage: async (sessionId: string, message: string, language?: string) => {
