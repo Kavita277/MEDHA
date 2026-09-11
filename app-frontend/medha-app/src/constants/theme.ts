@@ -31,6 +31,10 @@ export const SHADOW = {
   },
 };
 
+export const Colors = COLORS;
+export const Spacing = SPACING;
+export const MaxContentWidth = 1200;
+
 export const THEME = {
   colors: COLORS,
   spacing: SPACING,

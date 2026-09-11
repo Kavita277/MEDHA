@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -67,17 +67,35 @@ class SessionSummaryResponse(BaseModel):
 # Therapist Historical Data Schemas
 # ---------------------------------------------------------------------------
 
+class CheckinQuestionItemResponse(BaseModel):
+    """
+    Detailed question item asked during a checkin by the Question Engine.
+    """
+    question_id: str = Field(..., description="Question identifier")
+    question_text: str = Field(..., description="Question text from Question Engine")
+    domain: Optional[str] = Field(None, description="Clinical domain evaluated")
+    answer: Optional[Dict[str, Any]] = Field(None, description="Patient's answer data")
+    answer_status: str = Field("pending", description="Answer status")
+    answered_at: Optional[datetime] = Field(None, description="When answered")
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class CheckinSummaryResponse(BaseModel):
     """
-    Compact checkin summary for historical view.
+    Compact checkin summary for historical view with questions asked.
     """
     checkin_id: uuid.UUID = Field(..., description="Check-in ID")
     timepoint: int = Field(..., description="Timepoint of the check-in")
     status: str = Field(..., description="Lifecycle status (e.g., completed)")
     started_at: datetime = Field(..., description="When check-in was started")
     completed_at: Optional[datetime] = Field(None, description="When check-in was completed")
+    questions: List[CheckinQuestionItemResponse] = Field(default_factory=list, description="Questions asked during check-in")
 
     model_config = ConfigDict(from_attributes=True)
+
+
+CheckinSummaryResponse.model_rebuild()
 
 
 class BehaviourSummaryResponse(BaseModel):

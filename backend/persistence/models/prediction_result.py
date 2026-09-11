@@ -21,8 +21,8 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional, TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Uuid
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, Uuid
+from sqlalchemy.orm import Mapped, mapped_column, relationship, synonym
 
 from backend.persistence.base import Base, TimestampMixin
 
@@ -69,41 +69,27 @@ class PredictionResultModel(Base, TimestampMixin):
     )
 
     # ------------------------------------------------------------------
-    # Core V2 Outputs
+    # Unified Prediction Outputs (Single Source of Truth)
     # ------------------------------------------------------------------
-    # Fusion_DDS_Prediction (0.0 – 100.0); null = unavailable
-    fusion_dds_prediction: Mapped[Optional[float]] = mapped_column(
-        Float,
-        nullable=True,
-    )
+    # Canonical columns (nullable; missing != zero, NULL not NaN)
+    structured_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    text_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    voice_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    behaviour_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    fusion_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    temporal_risk: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    future_escalation_flag: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    triage_level: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
+    explanation: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    recommendation: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    # Temporal_Risk_Score (0.0 – 1.0); null = GRU unavailable (<7 timesteps)
-    temporal_risk_score: Mapped[Optional[float]] = mapped_column(
-        Float,
-        nullable=True,
-    )
-
-    # 1 = future escalation predicted, 0 = safe, null = unavailable
-    future_escalation_flag: Mapped[Optional[int]] = mapped_column(
-        Integer,
-        nullable=True,
-    )
-
-    # Downstream triage assignment: CRITICAL, HIGH, MEDIUM, LOW, UNKNOWN
-    triage_level: Mapped[Optional[str]] = mapped_column(
-        String(16),
-        nullable=True,
-    )
-
-    # ------------------------------------------------------------------
-    # Specialist Predictions (all nullable: missing != zero)
-    # ------------------------------------------------------------------
-    struct_pred: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    text_pred: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    voice_pred: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-
-    # behav_pred remains null until Step 10 is unblocked
-    behav_pred: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    # Backward-compatible SQLAlchemy synonyms
+    struct_pred = synonym("structured_score")
+    text_pred = synonym("text_score")
+    voice_pred = synonym("voice_score")
+    behav_pred = synonym("behaviour_score")
+    fusion_dds_prediction = synonym("fusion_score")
+    temporal_risk_score = synonym("temporal_risk")
 
     # ------------------------------------------------------------------
     # Modality Availability Flags (persisted for auditability)

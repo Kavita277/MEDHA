@@ -5,12 +5,39 @@ import { Ionicons } from '@expo/vector-icons';
 import { MedhaScreen } from '../components/medha-screen';
 import { COLORS } from '../constants/colors';
 
+<<<<<<< HEAD
+=======
+import { journalService } from '../services/api';
+
+>>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
 const moods = ['Calm', 'Grateful', 'Stressed', 'Hopeful', 'Tired', 'Unsure'];
 
 export default function JournalScreen() {
   const router = useRouter();
   const [text, setText] = useState('');
   const [mood, setMood] = useState<string | null>(null);
+<<<<<<< HEAD
+=======
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!text.trim()) {
+      router.push('/home');
+      return;
+    }
+    setSaving(true);
+    try {
+      const fullContent = mood ? `[Mood: ${mood}] ${text.trim()}` : text.trim();
+      await journalService.createEntry(fullContent);
+      router.push('/home');
+    } catch (err) {
+      console.warn("Journal save error:", err);
+      router.push('/home');
+    } finally {
+      setSaving(false);
+    }
+  };
+>>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
 
   return (
     <MedhaScreen
@@ -21,7 +48,13 @@ export default function JournalScreen() {
     >
       <View style={styles.datePill}>
         <Ionicons name="calendar-outline" size={14} color={COLORS.deepForest} />
+<<<<<<< HEAD
         <Text style={styles.dateText}>Mon, 1 Jun 2026</Text>
+=======
+        <Text style={styles.dateText}>
+          {new Date().toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+        </Text>
+>>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
       </View>
 
       <View style={styles.paper}>
@@ -54,8 +87,13 @@ export default function JournalScreen() {
         })}
       </View>
 
+<<<<<<< HEAD
       <Pressable style={styles.save} onPress={() => router.push('/home')}>
         <Text style={styles.saveText}>Save Entry</Text>
+=======
+      <Pressable style={[styles.save, saving && { opacity: 0.7 }]} onPress={handleSave} disabled={saving}>
+        <Text style={styles.saveText}>{saving ? 'Saving...' : 'Save Entry'}</Text>
+>>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
       </Pressable>
     </MedhaScreen>
   );

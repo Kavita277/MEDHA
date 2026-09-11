@@ -64,7 +64,7 @@ export default function CheckInScreen() {
 
       <Pressable
         disabled={!selected}
-        onPress={() => router.push({ pathname: '/check-in-follow-up', params: { mood: selected ?? '' } })}
+        onPress={() => router.push({ pathname: '/check-in-follow-up' as any, params: { mood: selected ?? '' } })}
         style={({ pressed }) => [
           styles.button,
           !selected && styles.buttonDisabled,

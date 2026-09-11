@@ -167,7 +167,11 @@ function Guide({ module, onBack }: { module: Module; onBack: () => void }) {
             if (!source) return null;
             return (
               <Pressable key={source.id} style={styles.sourceRow} onPress={() => Linking.openURL(source.url)}>
+<<<<<<< HEAD
                 <View style={styles.sourceIcon}><Ionicons name="arrow-up-right" size={14} color={COLORS.forest} /></View>
+=======
+                <View style={styles.sourceIcon}><Ionicons name="open-outline" size={14} color={COLORS.forest} /></View>
+>>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
                 <View style={{ flex: 1 }}><Text style={styles.sourceOrg}>{source.org}</Text><Text style={styles.sourceTitle}>{source.title}</Text></View>
               </Pressable>
             );

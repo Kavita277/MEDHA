@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
+  KeyboardAvoidingView,
+  Platform,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
+  ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TextInput,
   View,
 } from 'react-native';
@@ -17,8 +22,15 @@ import { COLORS } from '../constants/colors';
 type Message = { id: string; from: 'medha' | 'you'; text: string };
 
 export default function ChatScreen() {
+import { chatService, sessionService } from '../services/api';
+
+type Message = { id: string; from: 'medha' | 'you'; text: string };
+
+export default function ChatScreen() {
   const router = useRouter();
   const [text, setText] = useState('');
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
@@ -27,19 +39,54 @@ export default function ChatScreen() {
     },
   ]);
 
-  const send = () => {
+  React.useEffect(() => {
+    sessionService.createSession().then((sess) => {
+      setSessionId(sess.id);
+    }).catch(err => {
+      console.warn("Session init error:", err);
+    });
+  }, []);
+
+  const send = async () => {
     const value = text.trim();
-    if (!value) return;
+    if (!value || sending) return;
+    
+    const userMsgId = `${Date.now()}`;
     setMessages((current) => [
       ...current,
-      { id: `${Date.now()}`, from: 'you', text: value },
-      {
-        id: `${Date.now()}-reply`,
-        from: 'medha',
-        text: 'I’m listening. Take your time — you don’t have to explain everything at once.',
-      },
+      { id: userMsgId, from: 'you', text: value },
     ]);
     setText('');
+    setSending(true);
+
+    try {
+      let activeSid = sessionId;
+      if (!activeSid) {
+        const newSess = await sessionService.createSession();
+        activeSid = newSess.id;
+        setSessionId(activeSid);
+      }
+      const res = await chatService.sendMessage(activeSid, value);
+      setMessages((current) => [
+        ...current,
+        {
+          id: `${Date.now()}-reply`,
+          from: 'medha',
+          text: res.assistant_response || 'I am here with you. Take a gentle breath.',
+        },
+      ]);
+    } catch (e: any) {
+      setMessages((current) => [
+        ...current,
+        {
+          id: `${Date.now()}-reply`,
+          from: 'medha',
+          text: 'I hear you. Take your time — I am listening and supporting you.',
+        },
+      ]);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -113,7 +160,7 @@ export default function ChatScreen() {
           </View>
           <Pressable
             style={styles.voiceButton}
-            onPress={() => router.push('/voice-assistant')}
+            onPress={() => router.push('/voice-assistant' as any)}
             accessibilityRole="button"
             accessibilityLabel="Start voice chat with MEDHA"
           >
@@ -132,7 +179,7 @@ export default function ChatScreen() {
             textAlignVertical="center"
           />
           <Pressable
-            onPress={() => router.push('/voice-assistant')}
+            onPress={() => router.push('/voice-assistant' as any)}
             style={styles.micButton}
             accessibilityRole="button"
             accessibilityLabel="Open voice chat"
