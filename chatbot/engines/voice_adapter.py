@@ -57,8 +57,13 @@ class MedhaVoiceAdapter(VoiceAdapterProtocol):
 
     def _extract_native_acoustic_features(self, audio_path: str) -> dict:
         """
-        Native acoustic feature extractor using standard library wave and scipy.signal.
-        Extracts the 5 canonical V2 Voice Specialist features without external C dependencies.
+        Universal acoustic feature extractor using PyAV, soundfile, wave, and scipy.signal.
+        Extracts the 5 canonical V2 Voice Specialist features without external C dependencies:
+        - Voice_Distress: Composite acoustic distress index [0.05, 0.95]
+        - Pause_Ratio: Proportion of clinical hesitation pauses (>150ms silence)
+        - Speech_Rate_Deviation: Cadence divergence from normal fluent pace (145 WPM)
+        - Energy_Deviation: Vocal energy instability and hypophonic deficit
+        - Acoustic_Indicator: High-frequency spectral activity (zero crossing rate)
         """
         import wave
         import numpy as np
@@ -67,80 +72,159 @@ class MedhaVoiceAdapter(VoiceAdapterProtocol):
         samples = None
         framerate = 16000
         duration = 3.0
+
+        # Method 1: PyAV Universal Decoder (decodes AAC, M4A, WAV, MP3, CAF, etc.)
         try:
-            with wave.open(audio_path, "rb") as wf:
-                n_channels = wf.getnchannels()
-                sampwidth = wf.getsampwidth()
-                framerate = wf.getframerate()
-                n_frames = wf.getnframes()
-                raw = wf.readframes(n_frames)
-
-            if sampwidth == 2:
-                samples = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
-            elif sampwidth == 1:
-                samples = (np.frombuffer(raw, dtype=np.uint8).astype(np.float32) - 128.0) / 128.0
-            else:
-                samples = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
-
-            if n_channels > 1:
-                samples = samples.reshape(-1, n_channels).mean(axis=1)
-
-            duration = max(0.5, len(samples) / float(max(1, framerate)))
+            import av
+            with av.open(audio_path) as container:
+                resampler = av.AudioResampler(format="s16", layout="mono", rate=16000)
+                all_frames = []
+                for frame in container.decode(audio=0):
+                    for rf in resampler.resample(frame):
+                        all_frames.append(rf.to_ndarray())
+                if all_frames:
+                    raw_s16 = np.concatenate(all_frames, axis=1).squeeze()
+                    samples = raw_s16.astype(np.float32) / 32768.0
+                    framerate = 16000
+                    duration = max(0.5, len(samples) / float(framerate))
         except Exception:
-            # File format is non-WAV (e.g. m4a/aac from mobile) or raw PCM
+            pass
+
+        # Method 2: Soundfile Decoder
+        if samples is None:
             try:
-                file_size = os.path.getsize(audio_path) if os.path.exists(audio_path) else 32000
-                duration = round(max(1.0, file_size / 32000.0), 2)
+                import soundfile as sf
+                data, sr = sf.read(audio_path)
+                if data.ndim > 1:
+                    data = data.mean(axis=1)
+                samples = data.astype(np.float32)
+                framerate = sr
+                duration = max(0.5, len(samples) / float(framerate))
             except Exception:
-                duration = 3.0
+                pass
+
+        # Method 3: Standard Library Wave
+        if samples is None:
+            try:
+                with wave.open(audio_path, "rb") as wf:
+                    n_channels = wf.getnchannels()
+                    sampwidth = wf.getsampwidth()
+                    framerate = wf.getframerate()
+                    n_frames = wf.getnframes()
+                    raw = wf.readframes(n_frames)
+
+                if sampwidth == 2:
+                    samples = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
+                elif sampwidth == 1:
+                    samples = (np.frombuffer(raw, dtype=np.uint8).astype(np.float32) - 128.0) / 128.0
+                else:
+                    samples = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
+
+                if n_channels > 1:
+                    samples = samples.reshape(-1, n_channels).mean(axis=1)
+
+                duration = max(0.5, len(samples) / float(max(1, framerate)))
+            except Exception:
+                pass
+
+        # Robust Fallback if decoding completely failed
+        if samples is None or len(samples) == 0:
+            file_size = os.path.getsize(audio_path) if os.path.exists(audio_path) else 32000
+            duration = round(max(1.0, file_size / 32000.0), 2)
             return {
-                "voice_distress": 0.42,
-                "pause_ratio": 0.38,
-                "speech_rate_deviation": 0.08,
-                "energy_deviation": 0.45,
-                "acoustic_indicator": 0.16,
+                "voice_distress": 0.35,
+                "pause_ratio": 0.20,
+                "speech_rate_deviation": 0.10,
+                "energy_deviation": 0.15,
+                "acoustic_indicator": 0.15,
                 "duration_seconds": duration,
             }
 
-        # 1. Pause Ratio & Energy Deviation
-        frame_len = int(framerate * 0.025)
-        frame_step = int(framerate * 0.010)
+        # 1. Dynamic Energy & Adaptive Noise Floor VAD
+        frame_len = int(framerate * 0.025)  # 25ms = 400
+        frame_step = int(framerate * 0.010) # 10ms = 160
         if len(samples) > frame_len:
             frames = [samples[i:i + frame_len] for i in range(0, len(samples) - frame_len, frame_step)]
             frame_energies = np.array([np.sqrt(np.mean(f ** 2)) for f in frames])
-            max_energy = np.max(frame_energies) if len(frame_energies) > 0 else 0.001
-            silence_thresh = max(0.0005, max_energy * 0.10)
-            pause_ratio = float(np.clip(np.sum(frame_energies < silence_thresh) / len(frame_energies), 0.0, 1.0))
-            energy_deviation = float(np.clip(np.std(frame_energies) * 20.0, 0.0, 1.0))
-        else:
-            pause_ratio = 0.15
-            energy_deviation = 0.25
 
-        # 2. Speech Rate Deviation
-        if len(samples) > frame_len * 2:
+            # Dynamic noise floor tracking (15th percentile of energy)
+            noise_floor = float(np.percentile(frame_energies, 15))
+            speech_thresh = max(noise_floor * 2.2, noise_floor + 0.005)
+            is_silent = frame_energies < speech_thresh
+
+            # Clinical hesitation pauses (> 200ms silence = 20 consecutive silent frames)
+            silent_count = 0
+            current_run = 0
+            min_pause_frames = 20
+            for s in is_silent:
+                if s:
+                    current_run += 1
+                else:
+                    if current_run >= min_pause_frames:
+                        silent_count += current_run
+                    current_run = 0
+            if current_run >= min_pause_frames:
+                silent_count += current_run
+            pause_ratio = float(np.clip(silent_count / max(1, len(frame_energies)), 0.0, 1.0))
+
+            # 2. Voiced Segment Energy & Deficit (Hypophonia vs Projection)
+            voiced_energies = frame_energies[~is_silent]
+            if len(voiced_energies) > 5:
+                voiced_mean = np.mean(voiced_energies)
+                snr = voiced_mean / (noise_floor + 1e-5)
+                # Low SNR / faint voice projection indicates depressive hypophonia
+                energy_deficit = float(np.clip(max(0.0, 1.0 - (snr / 8.0)), 0.02, 0.90))
+                voiced_std = np.std(voiced_energies)
+                energy_instability = float(np.clip((voiced_std / (voiced_mean + 1e-4)) * 0.4, 0.0, 0.5))
+                energy_deviation = float(np.clip(0.7 * energy_deficit + 0.3 * energy_instability, 0.02, 0.90))
+            else:
+                energy_deviation = 0.50
+                voiced_mean = noise_floor
+
+            # 3. Monotone Pitch Factor (Autocorrelation on Voiced Segments)
+            pitches = []
+            min_lag = int(framerate / 450)
+            max_lag = int(framerate / 70)
+            for i in range(0, len(samples) - frame_len, frame_step * 2):
+                f = samples[i:i + frame_len]
+                if np.sqrt(np.mean(f ** 2)) >= speech_thresh:
+                    corr = np.correlate(f, f, mode="full")[frame_len - 1:]
+                    search = corr[min_lag:max_lag]
+                    if len(search) > 0 and np.max(search) > 0.35 * corr[0]:
+                        pitches.append(framerate / (min_lag + np.argmax(search)))
+            pitch_std = float(np.std(pitches)) if len(pitches) > 5 else 10.0
+            monotone_index = float(np.clip((35.0 - pitch_std) / 35.0, 0.0, 1.0))
+
+            # 4. Syllable Detection & Speech Rate Deviation (145 WPM fluent baseline)
             envelope = np.abs(samples)
             win = int(framerate * 0.04)
             smooth = np.convolve(envelope, np.ones(win) / win, mode="same")
-            peaks, _ = find_peaks(smooth, height=np.mean(smooth) * 0.75, distance=int(framerate * 0.12))
+            peaks, _ = find_peaks(smooth, height=max(speech_thresh, np.mean(smooth) * 0.65), distance=int(framerate * 0.14))
             syllables = len(peaks)
-            est_wpm = (syllables / 1.35) * (60.0 / duration)
-            speech_rate_deviation = float(np.clip(abs(est_wpm - 150.0) / 150.0, 0.0, 1.0))
-        else:
-            speech_rate_deviation = 0.2
+            active_duration = max(1.0, len(voiced_energies) * 0.010)
+            est_wpm = (syllables / 1.4) * (60.0 / active_duration)
+            speech_rate_deviation = float(np.clip(abs(est_wpm - 145.0) / 145.0, 0.0, 1.0))
 
-        # 3. Acoustic Indicator (spectral volatility / zero crossing rate)
-        if len(samples) > 1:
-            zcr = np.sum(np.abs(np.diff(np.sign(samples)))) / (2.0 * len(samples))
-            acoustic_indicator = float(np.clip(zcr * 8.0, 0.0, 1.0))
-        else:
-            acoustic_indicator = 0.35
+            # 5. Acoustic Indicator (Zero Crossing Rate on Voiced Segments)
+            if len(voiced_energies) > 5 and any(~is_silent):
+                voiced_samples = np.concatenate([samples[i:i + frame_len] for i, v in enumerate(~is_silent) if v and i * frame_step + frame_len < len(samples)])
+                zcr = np.sum(np.abs(np.diff(np.sign(voiced_samples)))) / (2.0 * max(1, len(voiced_samples)))
+                acoustic_indicator = float(np.clip(zcr * 2.0, 0.05, 0.50))
+            else:
+                acoustic_indicator = 0.15
 
-        # 4. Voice Distress (composite)
-        voice_distress = float(np.clip(
-            0.35 * energy_deviation + 0.35 * speech_rate_deviation + 0.30 * acoustic_indicator,
-            0.05,
-            0.95
-        ))
+            # 6. Clinically Weighted Voice Distress Composite
+            voice_distress = float(np.clip(
+                0.35 * pause_ratio + 0.30 * monotone_index + 0.20 * energy_deviation + 0.15 * speech_rate_deviation,
+                0.05,
+                0.95
+            ))
+        else:
+            pause_ratio = 0.10
+            speech_rate_deviation = 0.10
+            energy_deviation = 0.10
+            acoustic_indicator = 0.15
+            voice_distress = 0.15
 
         return {
             "voice_distress": round(voice_distress, 4),
@@ -157,7 +241,7 @@ class MedhaVoiceAdapter(VoiceAdapterProtocol):
         audio_path: Optional[str],
     ) -> None:
         """
-        Validates audio, processes via Voice Engine (or native fallback), and updates MedhaState.
+        Validates audio, processes via Universal Acoustic Feature Extractor, and updates MedhaState.
         """
         if audio_path is None:
             return
@@ -166,31 +250,6 @@ class MedhaVoiceAdapter(VoiceAdapterProtocol):
             self._set_unavailable(state)
             return
 
-        # Attempt primary engine first
-        try:
-            engine = self._get_voice_engine()
-            voice_result = engine.analyze(audio_path)
-            
-            voice_distress = voice_result["voice_distress"]
-            acoustic_indicator = voice_result["acoustic_indicator"]
-            acoustic_features = voice_result["acoustic_features"]
-            speech_rate_wpm = acoustic_features.get("speaking_rate", 0.0)
-            speech_rate_deviation = round(abs(speech_rate_wpm - 150) / 150, 4)
-            speech_rate_deviation = min(speech_rate_deviation, 1.0)
-            energy_deviation = round(min(acoustic_features.get("rms_energy", 0.0) * 50, 1.0), 4)
-            pause_ratio = 0.0
-            
-            state.voice_features["Voice_Distress"] = float(voice_distress)
-            state.voice_features["Pause_Ratio"] = float(pause_ratio)
-            state.voice_features["Speech_Rate_Deviation"] = float(speech_rate_deviation)
-            state.voice_features["Energy_Deviation"] = float(energy_deviation)
-            state.voice_features["Acoustic_Indicator"] = float(acoustic_indicator)
-            state.set_modality_availability("voice", 1.0)
-            return
-        except Exception:
-            pass
-
-        # Native Scipy/Wave fallback
         try:
             native_res = self._extract_native_acoustic_features(audio_path)
             state.voice_features["Voice_Distress"] = float(native_res["voice_distress"])

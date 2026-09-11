@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { AudioModule, useAudioRecorder, RecordingPresets } from 'expo-audio';
+import { setAudioModeAsync, requestRecordingPermissionsAsync, useAudioRecorder, RecordingPresets } from 'expo-audio';
+import * as DocumentPicker from 'expo-document-picker';
 
 import { MedhaScreen } from '../components/medha-screen';
 import { COLORS } from '../constants/colors';
@@ -15,6 +16,7 @@ export default function VoiceScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [seconds, setSeconds] = useState(0);
+  const [pickedFile, setPickedFile] = useState<{ uri: string; name: string; size?: number; file?: any } | null>(null);
   const pulse = useRef(new Animated.Value(1)).current;
 
   // Web Audio & MediaStream refs
@@ -87,7 +89,11 @@ export default function VoiceScreen() {
     setStatusMessage('Requesting microphone permission...');
     try {
       if (Platform.OS !== 'web') {
-        const perm = await AudioModule.requestRecordingPermissionsAsync();
+        await setAudioModeAsync({
+          allowsRecording: true,
+          playsInSilentMode: true,
+        });
+        const perm = await requestRecordingPermissionsAsync();
         if (!perm.granted) {
           setStatusMessage('Microphone access denied. Please allow microphone access in device settings.');
           return;
@@ -143,6 +149,12 @@ export default function VoiceScreen() {
       try {
         await recorder.stop();
         const fileUri = recorder.uri;
+        try {
+          await setAudioModeAsync({
+            allowsRecording: false,
+            playsInSilentMode: true,
+          });
+        } catch {}
         await voiceService.uploadCheckin(fileUri || undefined);
         setStatusMessage('Voice check-in processed successfully!');
         setTimeout(() => {
@@ -203,6 +215,49 @@ export default function VoiceScreen() {
       setTimeout(() => {
         router.push('/chat');
       }, 1200);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handlePickAudio = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['audio/*', 'audio/m4a', 'audio/mp4', 'audio/wav', 'audio/mpeg', 'audio/aac', 'audio/x-m4a'],
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        setPickedFile({
+          uri: asset.uri,
+          name: asset.name,
+          size: asset.size,
+          file: (asset as any).file,
+        });
+        setStatusMessage(`Selected "${asset.name}". Ready to analyze.`);
+      }
+    } catch (err: any) {
+      console.warn('Document picker error:', err);
+      setStatusMessage('Could not open file picker.');
+    }
+  };
+
+  const handleUploadPickedFile = async () => {
+    if (!pickedFile) return;
+    setSubmitting(true);
+    setStatusMessage(`Analyzing acoustic features from "${pickedFile.name}"...`);
+
+    try {
+      const payload = (Platform.OS === 'web' && pickedFile.file) ? pickedFile.file : pickedFile.uri;
+      await voiceService.uploadCheckin(payload, 'current', undefined, pickedFile.name);
+      setStatusMessage('Voice check-in analyzed successfully!');
+      setTimeout(() => {
+        router.push('/chat');
+      }, 1000);
+    } catch (err: any) {
+      console.warn('Voice upload error:', err);
+      setStatusMessage(err?.message || 'Voice upload failed. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -311,6 +366,75 @@ export default function VoiceScreen() {
             : 'Tap to speak'}
         </Text>
       </Pressable>
+
+      {!recording && !submitting && (
+        <View style={styles.uploadSection}>
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>OR UPLOAD AUDIO NOTE</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {pickedFile ? (
+            <View style={styles.selectedFileCard}>
+              <View style={styles.fileInfoRow}>
+                <View style={styles.fileIconBox}>
+                  <Ionicons name="musical-notes" size={20} color={COLORS.forest} />
+                </View>
+                <View style={styles.fileDetails}>
+                  <Text style={styles.fileName} numberOfLines={1}>
+                    {pickedFile.name}
+                  </Text>
+                  {pickedFile.size ? (
+                    <Text style={styles.fileSize}>
+                      {(pickedFile.size / 1024).toFixed(1)} KB
+                    </Text>
+                  ) : null}
+                </View>
+                <Pressable
+                  onPress={() => setPickedFile(null)}
+                  style={styles.clearFileBtn}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Remove selected file"
+                >
+                  <Ionicons name="close-circle" size={22} color={COLORS.mutedText} />
+                </Pressable>
+              </View>
+
+              <Pressable
+                disabled={submitting}
+                onPress={handleUploadPickedFile}
+                style={({ pressed }) => [
+                  styles.uploadConfirmBtn,
+                  pressed && { opacity: 0.8 },
+                ]}
+              >
+                <Ionicons name="cloud-upload" size={18} color={COLORS.white} />
+                <Text style={styles.uploadConfirmText}>
+                  Analyze & Submit Selected Note
+                </Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              onPress={handlePickAudio}
+              style={({ pressed }) => [
+                styles.uploadPickBtn,
+                pressed && styles.uploadPickBtnPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Upload audio file"
+            >
+              <Ionicons name="cloud-upload-outline" size={22} color={COLORS.forest} />
+              <View style={styles.uploadPickTextCol}>
+                <Text style={styles.uploadPickTitle}>Upload existing voice note</Text>
+                <Text style={styles.uploadPickSub}>Accepts .m4a, .wav, .mp3, .aac files</Text>
+              </View>
+            </Pressable>
+          )}
+        </View>
+      )}
 
       {!recording && !submitting && (
         <Pressable
@@ -474,5 +598,126 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     color: COLORS.mutedText,
     fontSize: 10,
+  },
+
+  uploadSection: {
+    marginTop: 18,
+    width: '100%',
+  },
+
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: COLORS.border,
+  },
+
+  dividerText: {
+    marginHorizontal: 12,
+    fontFamily: 'Inter-Medium',
+    fontSize: 9,
+    color: COLORS.mutedText,
+    letterSpacing: 1.2,
+  },
+
+  uploadPickBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderRadius: 16,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderStyle: 'dashed',
+    gap: 12,
+  },
+
+  uploadPickBtnPressed: {
+    backgroundColor: COLORS.mist,
+  },
+
+  uploadPickTextCol: {
+    alignItems: 'flex-start',
+  },
+
+  uploadPickTitle: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 12,
+    color: COLORS.deepForest,
+  },
+
+  uploadPickSub: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 10,
+    color: COLORS.mutedText,
+    marginTop: 2,
+  },
+
+  selectedFileCard: {
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.forest,
+    gap: 12,
+  },
+
+  fileInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+
+  fileIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(170,188,180,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  fileDetails: {
+    flex: 1,
+  },
+
+  fileName: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 12,
+    color: COLORS.deepForest,
+  },
+
+  fileSize: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 10,
+    color: COLORS.mutedText,
+    marginTop: 2,
+  },
+
+  clearFileBtn: {
+    padding: 4,
+  },
+
+  uploadConfirmBtn: {
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.forest,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+
+  uploadConfirmText: {
+    color: COLORS.white,
+    fontFamily: 'Inter-Medium',
+    fontSize: 12,
   },
 });

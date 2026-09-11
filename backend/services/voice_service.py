@@ -54,19 +54,40 @@ def process_voice_checkin(
             with os.fdopen(fd, "wb") as f:
                 shutil.copyfileobj(audio_file.file, f)
 
-            # Estimate duration if possible
+            # Estimate duration accurately via PyAV or soundfile or wave
+            duration_seconds = None
             try:
-                import wave
-                with wave.open(temp_path, "rb") as wf:
-                    frames = wf.getnframes()
-                    rate = wf.getframerate()
-                    duration_seconds = round(frames / float(rate), 2)
+                import av
+                with av.open(temp_path) as container:
+                    stream = container.streams.audio[0]
+                    if stream.duration and stream.time_base:
+                        duration_seconds = round(float(stream.duration * stream.time_base), 2)
+                    elif container.duration:
+                        duration_seconds = round(float(container.duration / 1000000.0), 2)
             except Exception:
+                pass
+
+            if not duration_seconds:
                 try:
-                    file_size = os.path.getsize(temp_path)
-                    duration_seconds = round(max(1.0, file_size / 32000.0), 2)
+                    import soundfile as sf
+                    info = sf.info(temp_path)
+                    duration_seconds = round(info.duration, 2)
                 except Exception:
-                    duration_seconds = 10.0
+                    pass
+
+            if not duration_seconds:
+                try:
+                    import wave
+                    with wave.open(temp_path, "rb") as wf:
+                        frames = wf.getnframes()
+                        rate = wf.getframerate()
+                        duration_seconds = round(frames / float(rate), 2)
+                except Exception:
+                    try:
+                        file_size = os.path.getsize(temp_path)
+                        duration_seconds = round(max(1.0, file_size / 32000.0), 2)
+                    except Exception:
+                        duration_seconds = 5.0
 
         # 2. Restore MedhaState from session or create initial state
         if db_session and db_session.state_snapshot:

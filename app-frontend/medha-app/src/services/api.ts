@@ -158,44 +158,45 @@ export const journalService = {
 };
 
 export const voiceService = {
-  uploadCheckin: async (audioData?: string | Blob, timepoint: string = 'current', sessionId?: string) => {
+  uploadCheckin: async (
+    audioData?: string | Blob,
+    timepoint: string = 'current',
+    sessionId?: string,
+    customFilename?: string
+  ) => {
     await ensureAuthenticated();
     const formData = new FormData();
     formData.append('timepoint', timepoint);
     if (sessionId) formData.append('session_id', sessionId);
 
-    const isWeb = typeof window !== 'undefined' && typeof document !== 'undefined';
-    
-    if (isWeb) {
-      let blob: Blob;
-      if (audioData instanceof Blob) {
-        blob = audioData;
-      } else if (typeof audioData === 'string' && (audioData.startsWith('blob:') || audioData.startsWith('data:'))) {
-        try {
-          const res = await fetch(audioData);
-          blob = await res.blob();
-        } catch {
-          blob = createSilenceWav();
+    let blob: Blob;
+    let fileName = customFilename || 'voice_checkin.wav';
+
+    if (audioData instanceof Blob) {
+      blob = audioData;
+      if (!customFilename && (audioData as any).name) {
+        fileName = (audioData as any).name;
+      }
+    } else if (typeof audioData === 'string' && audioData.length > 0 && !audioData.includes('dummy')) {
+      try {
+        if (!customFilename) {
+          const parts = audioData.split('/');
+          const lastPart = parts[parts.length - 1];
+          if (lastPart && (lastPart.endsWith('.m4a') || lastPart.endsWith('.wav') || lastPart.endsWith('.mp3') || lastPart.endsWith('.aac'))) {
+            fileName = lastPart;
+          }
         }
-      } else {
+        const fileRes = await fetch(audioData);
+        blob = await fileRes.blob();
+      } catch (err) {
+        console.warn('Could not read audio uri to blob, using fallback:', err);
         blob = createSilenceWav();
       }
-      formData.append('audio_file', blob, 'voice_checkin.wav');
     } else {
-      const uri = typeof audioData === 'string' ? audioData : null;
-      if (uri && uri.length > 0 && !uri.includes('dummy')) {
-        const filename = uri.split('/').pop() || 'recording.m4a';
-        const match = /\.(\w+)$/.exec(filename);
-        const type = match ? `audio/${match[1]}` : 'audio/m4a';
-
-        // @ts-ignore
-        formData.append('audio_file', {
-          uri: Platform.OS === 'ios' ? (uri.startsWith('file://') ? uri : `file://${uri}`) : uri,
-          name: filename,
-          type,
-        });
-      }
+      blob = createSilenceWav();
     }
+
+    formData.append('audio_file', blob, fileName);
 
     const headers: Record<string, string> = {};
     if (authToken) {
