@@ -4,18 +4,12 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { MedhaScreen } from '../components/medha-screen';
 import { COLORS } from '../constants/colors';
-
-<<<<<<< HEAD
-=======
 import { authService } from '../services/api';
 
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
 export default function TherapistLoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-<<<<<<< HEAD
-=======
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,7 +44,6 @@ export default function TherapistLoginScreen() {
   const handleDemo = () => {
     handleLogin('demo.therapist@medha.org', 'TherapistDemo123!');
   };
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
 
   return (
     <MedhaScreen
@@ -63,15 +56,12 @@ export default function TherapistLoginScreen() {
         <Ionicons name="lock-closed-outline" size={25} color={COLORS.forest} />
       </View>
 
-<<<<<<< HEAD
-=======
       {error && (
         <View style={{ backgroundColor: '#ffebee', padding: 12, borderRadius: 12, marginBottom: 8 }}>
           <Text style={{ color: '#c62828', fontSize: 11, fontFamily: 'Inter-Medium' }}>{error}</Text>
         </View>
       )}
 
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
       <TextInput
         value={email}
         onChangeText={setEmail}
@@ -91,37 +81,21 @@ export default function TherapistLoginScreen() {
       />
 
       <Pressable
-<<<<<<< HEAD
-        style={styles.login}
-        onPress={() => router.replace('/therapist')}
-      >
-        <Text style={styles.loginText}>Sign in</Text>
-=======
         style={[styles.login, loading && { opacity: 0.7 }]}
         onPress={() => handleLogin()}
         disabled={loading}
       >
         <Text style={styles.loginText}>{loading ? 'Authenticating...' : 'Sign in'}</Text>
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
         <Ionicons name="arrow-forward" size={17} color={COLORS.white} />
       </Pressable>
 
       <View style={styles.demo}>
-<<<<<<< HEAD
-        <Text style={styles.demoTitle}>Prototype access</Text>
-        <Text style={styles.demoText}>
-          The dashboard is already built, but a real clinician authentication endpoint is not connected to this frontend yet. This button is only for demonstrating the therapist flow.
-        </Text>
-        <Pressable onPress={() => router.replace('/therapist')} style={styles.demoButton}>
-          <Text style={styles.demoButtonText}>Open therapist dashboard</Text>
-=======
         <Text style={styles.demoTitle}>Verified clinician access</Text>
         <Text style={styles.demoText}>
           Authenticate using verified clinical seed credentials to review assigned active cases.
         </Text>
         <Pressable onPress={handleDemo} style={styles.demoButton} disabled={loading}>
           <Text style={styles.demoButtonText}>Sign in as Demo Clinician (demo.therapist@medha.org)</Text>
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
         </Pressable>
       </View>
     </MedhaScreen>

@@ -1,20 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { MedhaScreen } from '../components/medha-screen';
 import { COLORS } from '../constants/colors';
 
 const AMBIENT = require('../../assets/medha-grounding-ambient.wav');
 
-const AMBIENT = require('../../assets/medha-grounding-ambient.wav');
-
 export default function GroundingScreen() {
   const router = useRouter();
-  const player = useAudioPlayer(AMBIENT, { loop: true });
+  const player = useAudioPlayer(AMBIENT);
   const status = useAudioPlayerStatus(player);
   const [running, setRunning] = useState(false);
   const [phase, setPhase] = useState('Ready');
@@ -25,7 +21,6 @@ export default function GroundingScreen() {
       scale.stopAnimation();
       scale.setValue(0.75);
       setPhase('Ready');
-      if (status.playing) player.pause();
       if (status.playing) player.pause();
       return;
     }
@@ -41,11 +36,8 @@ export default function GroundingScreen() {
         useNativeDriver: true,
       }).start(({ finished }) => {
         if (!finished) return;
-      }).start(({ finished }) => {
-        if (!finished) return;
         setPhase('Hold');
         setTimeout(() => {
-          if (!running) return;
           if (!running) return;
           setPhase('Breathe out');
           Animated.timing(scale, {
@@ -69,17 +61,8 @@ export default function GroundingScreen() {
     };
   }, [player]);
 
-  useEffect(() => {
-    return () => {
-      player.pause();
-    };
-  }, [player]);
-
   return (
     <MedhaScreen
-      eyebrow="Find your centre"
-      title="Breathe with me."
-      subtitle="A calmer mind is just a few deep breaths away."
       eyebrow="Find your centre"
       title="Breathe with me."
       subtitle="A calmer mind is just a few deep breaths away."
@@ -88,10 +71,8 @@ export default function GroundingScreen() {
     >
       <View style={styles.center}>
         <Animated.View style={[styles.field, { transform: [{ scale }] }]}>
-        <Animated.View style={[styles.field, { transform: [{ scale }] }]}>
           <View style={styles.core}>
             <Text style={styles.phase}>{phase}</Text>
-            {running && <Text style={styles.count}>4  ·  4  ·  6</Text>}
             {running && <Text style={styles.count}>4  ·  4  ·  6</Text>}
           </View>
         </Animated.View>
@@ -117,20 +98,6 @@ export default function GroundingScreen() {
           />
           <Text style={styles.buttonText}>{running ? 'Pause' : 'Begin'}</Text>
         </Pressable>
-      <View style={styles.controls}>
-        <Pressable
-          onPress={() => setRunning((value) => !value)}
-          style={styles.button}
-          accessibilityRole="button"
-          accessibilityLabel={running ? 'Pause breathing and music' : 'Begin breathing and play music'}
-        >
-          <Ionicons
-            name={running ? 'pause' : 'leaf-outline'}
-            size={18}
-            color={COLORS.white}
-          />
-          <Text style={styles.buttonText}>{running ? 'Pause' : 'Begin'}</Text>
-        </Pressable>
 
         <Pressable
           onPress={() => setRunning(false)}
@@ -142,7 +109,7 @@ export default function GroundingScreen() {
         </Pressable>
       </View>
 
-      <Pressable onPress={() => router.push('/home')} style={styles.done}>
+      <Pressable onPress={() => router.push('/home' as any)} style={styles.done}>
         <Text style={styles.doneText}>I’m feeling ready</Text>
       </Pressable>
     </MedhaScreen>

@@ -1,22 +1,12 @@
-<<<<<<< HEAD
-import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-=======
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { COLORS } from '../constants/colors';
-<<<<<<< HEAD
-
-function Stat({ value, label }: { value: string; label: string }) {
-=======
 import { therapistService } from '../services/api';
 
 function Stat({ value, label }: { value: string | number; label: string }) {
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
   return (
     <View style={styles.stat}>
       <Text style={styles.statValue}>{value}</Text>
@@ -26,8 +16,6 @@ function Stat({ value, label }: { value: string | number; label: string }) {
 }
 
 export default function TherapistDashboardScreen() {
-<<<<<<< HEAD
-=======
   const [cases, setCases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,7 +80,6 @@ export default function TherapistDashboardScreen() {
 
   const activeCases = cases.filter(c => c.status === 'active').length;
 
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
   return (
     <View style={styles.screen}>
       <ScrollView
@@ -107,70 +94,21 @@ export default function TherapistDashboardScreen() {
               Support tomorrow’s conversations.
             </Text>
           </View>
-<<<<<<< HEAD
-          <Pressable style={styles.profile}>
-=======
           <Pressable style={styles.profile} onPress={() => router.push('/profile')}>
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
             <Ionicons name="person-outline" size={18} color={COLORS.deepForest} />
           </Pressable>
         </View>
 
         <View style={styles.stats}>
-<<<<<<< HEAD
-          <Stat value="—" label="Active cases" />
-          <Stat value="—" label="High priority" />
-          <Stat value="—" label="Follow-ups" />
-          <Stat value="—" label="Patients" />
-=======
           <Stat value={loading ? '...' : activeCases} label="Active cases" />
           <Stat value={loading ? '...' : cases.length} label="Patients" />
           <Stat value="V2" label="Pipeline" />
           <Stat value="Active" label="Status" />
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
         </View>
 
         <View style={styles.notice}>
           <Ionicons name="information-circle-outline" size={18} color={COLORS.forest} />
           <Text style={styles.noticeText}>
-<<<<<<< HEAD
-            Live case values will appear when the therapist API returns them.
-            Missing predictions remain unavailable and are never shown as zero.
-          </Text>
-        </View>
-
-        <View style={styles.sectionHeader}>
-          <View>
-            <Text style={styles.sectionEyebrow}>CASE QUEUE</Text>
-            <Text style={styles.sectionTitle}>Recent cases</Text>
-          </View>
-          <Text style={styles.viewAll}>Live data</Text>
-        </View>
-
-        <View style={styles.emptyCard}>
-          <View style={styles.emptyIcon}>
-            <Ionicons name="folder-open-outline" size={22} color={COLORS.forest} />
-          </View>
-          <Text style={styles.emptyTitle}>No case data connected yet</Text>
-          <Text style={styles.emptyText}>
-            The visual dashboard is ready. Connect the existing therapist-owned
-            case listing API before showing real patient records.
-          </Text>
-          <Pressable
-            onPress={() =>
-              router.push({
-                pathname: '/therapist-case',
-                params: { caseId: 'CASE_LAYOUT_PREVIEW' },
-              })
-            }
-            style={styles.previewButton}
-          >
-            <Text style={styles.previewButtonText}>Open case layout</Text>
-            <Ionicons name="arrow-forward" size={16} color={COLORS.white} />
-          </Pressable>
-        </View>
-
-=======
             Cases strictly isolated to your authenticated clinician credentials.
             Missing predictions remain unavailable and are never fabricated as zero.
           </Text>
@@ -449,7 +387,6 @@ export default function TherapistDashboardScreen() {
           </View>
         )}
 
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
         <View style={styles.footerCard}>
           <Ionicons name="shield-checkmark-outline" size={23} color={COLORS.forest} />
           <View style={styles.footerCopy}>

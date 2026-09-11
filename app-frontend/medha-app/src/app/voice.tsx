@@ -1,11 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-<<<<<<< HEAD
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
-=======
-import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from 'react-native';
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
 
 import { MedhaScreen } from '../components/medha-screen';
 import { COLORS } from '../constants/colors';
@@ -14,12 +10,9 @@ import { voiceService } from '../services/api';
 export default function VoiceScreen() {
   const router = useRouter();
   const [recording, setRecording] = useState(false);
-<<<<<<< HEAD
-=======
   const [submitting, setSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [seconds, setSeconds] = useState(0);
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
   const pulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -44,13 +37,8 @@ export default function VoiceScreen() {
     const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, {
-<<<<<<< HEAD
           toValue: 1.1,
           duration: 1800,
-=======
-          toValue: recording ? 1.15 : 1.05,
-          duration: recording ? 1000 : 1800,
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
           useNativeDriver: true,
         }),
         Animated.timing(pulse, {
@@ -62,7 +50,6 @@ export default function VoiceScreen() {
     );
 
     animation.start();
-
     return () => animation.stop();
   }, [recording]);
 
@@ -80,13 +67,13 @@ export default function VoiceScreen() {
       await voiceService.uploadCheckin();
       setStatusMessage('Voice check-in processed successfully!');
       setTimeout(() => {
-        router.push('/chat');
+        router.push('/chat' as any);
       }, 1000);
     } catch (err: any) {
       console.warn('Voice upload error:', err);
       setStatusMessage('Voice recorded! Continuing to talk with MEDHA...');
       setTimeout(() => {
-        router.push('/chat');
+        router.push('/chat' as any);
       }, 1200);
     } finally {
       setSubmitting(false);
@@ -100,70 +87,21 @@ export default function VoiceScreen() {
       subtitle="Speak freely about how you’re feeling today."
       onBack={() => router.back()}
     >
-      {/* HOME BUTTON */}
-<<<<<<< HEAD
-
-=======
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
-      <View style={styles.homeRow}>
-        <Pressable
-          onPress={() => router.replace('/home')}
-          style={({ pressed }) => [
-            styles.homeButton,
-            pressed && styles.homeButtonPressed,
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel="Go to home"
-        >
-          <Ionicons
-            name="home-outline"
-            size={17}
-            color={COLORS.forest}
-          />
-        </Pressable>
-      </View>
-
       <View style={styles.center}>
-        <Animated.View
-          style={[
-            styles.outer,
-            { transform: [{ scale: pulse }] },
-          ]}
-        >
+        <Animated.View style={[styles.outer, { transform: [{ scale: pulse }] }]}>
           <View style={styles.middle}>
-            <View
-              style={[
-                styles.inner,
-                recording && styles.recording,
-              ]}
-            >
-<<<<<<< HEAD
+            <View style={[styles.inner, recording && styles.recording]}>
               <Ionicons
-                name={recording ? 'mic' : 'mic-outline'}
-                size={35}
-                color={COLORS.deepForest}
+                name="mic"
+                size={36}
+                color={recording ? COLORS.forest : COLORS.mutedText}
               />
-=======
-              {submitting ? (
-                <ActivityIndicator size="large" color={COLORS.forest} />
-              ) : (
-                <Ionicons
-                  name={recording ? 'mic' : 'mic-outline'}
-                  size={35}
-                  color={COLORS.deepForest}
-                />
-              )}
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
             </View>
           </View>
         </Animated.View>
 
         <Text style={styles.timer}>
-<<<<<<< HEAD
-          {recording ? '00:12 / 02:00' : '00:00 / 02:00'}
-=======
-          {formatTimer(seconds)}
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
+          {recording ? formatTimer(seconds) : '00:00 / 02:00'}
         </Text>
 
         <Text style={styles.status}>
@@ -175,37 +113,21 @@ export default function VoiceScreen() {
         </Text>
 
         <Text style={styles.hint}>
-<<<<<<< HEAD
           You can stop whenever you want.
-=======
-          {statusMessage || (recording ? 'You can stop whenever you want.' : 'Speak at your own pace.')}
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
         </Text>
       </View>
 
       <Pressable
-<<<<<<< HEAD
-        onPress={() => {
-          if (recording) {
-            setRecording(false);
-            router.push('/chat');
-          } else {
-            setRecording(true);
-=======
-        disabled={submitting}
         onPress={() => {
           if (recording) {
             handleFinishRecording();
           } else {
             setRecording(true);
-            setStatusMessage(null);
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
           }
         }}
         style={[
           styles.button,
           recording && styles.stop,
-<<<<<<< HEAD
         ]}
       >
         <Ionicons
@@ -216,25 +138,6 @@ export default function VoiceScreen() {
 
         <Text style={styles.buttonText}>
           {recording
-=======
-          submitting && { opacity: 0.6 },
-        ]}
-      >
-        {submitting ? (
-          <ActivityIndicator color={COLORS.white} size="small" />
-        ) : (
-          <Ionicons
-            name={recording ? 'stop' : 'mic'}
-            size={20}
-            color={COLORS.white}
-          />
-        )}
-
-        <Text style={styles.buttonText}>
-          {submitting
-            ? 'Analyzing acoustic features...'
-            : recording
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
             ? 'Finish & talk with MEDHA'
             : 'Tap to speak'}
         </Text>
@@ -242,7 +145,7 @@ export default function VoiceScreen() {
 
       {!recording && !submitting && (
         <Pressable
-          onPress={() => router.push('/chat')}
+          onPress={() => router.push('/chat' as any)}
           style={styles.skip}
         >
           <Text style={styles.skipText}>
@@ -255,28 +158,6 @@ export default function VoiceScreen() {
 }
 
 const styles = StyleSheet.create({
-  homeRow: {
-    alignItems: 'flex-end',
-    marginTop: -4,
-    marginBottom: -8,
-  },
-
-  homeButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  homeButtonPressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.94 }],
-  },
-
   center: {
     flex: 1,
     minHeight: 390,

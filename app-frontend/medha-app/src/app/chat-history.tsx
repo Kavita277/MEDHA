@@ -98,14 +98,14 @@ export default function ChatHistoryScreen() {
                 <Text style={styles.date}>{formatDate(session.created_at)}</Text>
                 {session.state_summary?.latest_assistant_response ? (
                   <Text style={styles.preview} numberOfLines={2}>
-                    {session.state_summary.latest_assistant_response}
+                    {String(session.state_summary.latest_assistant_response)}
                   </Text>
                 ) : (
                   <Text style={styles.preview}>No messages yet</Text>
                 )}
                 <View style={styles.metaRow}>
                   <Text style={styles.metaText}>
-                    {session.state_summary?.turn_count || 0} messages
+                    {String(session.state_summary?.turn_count || 0)} messages
                   </Text>
                 </View>
               </Pressable>

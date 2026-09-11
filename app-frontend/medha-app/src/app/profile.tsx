@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { MedhaScreen } from '../components/medha-screen';
 import { COLORS } from '../constants/colors';
-import { authService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const languages = [
   { code: 'en', label: 'English' },
@@ -13,32 +13,28 @@ const languages = [
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { user, logout } = useAuth();
   const [language, setLanguage] = useState(languages[0]);
   const [languageModal, setLanguageModal] = useState(false);
-<<<<<<< HEAD
-=======
-  const [user, setUser] = useState<any>(null);
-
-  React.useEffect(() => {
-    let active = true;
-    authService.getMe()
-      .then((data) => {
-        if (active && data) setUser(data);
-      })
-      .catch(() => {});
-    return () => { active = false; };
-  }, []);
-
-  const handleLogout = () => {
-    authService.logout();
-    router.replace('/' as any);
-  };
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
 
   const displayName = user?.name || 'Patient';
   const displayEmail = user?.email || 'Authenticated User';
   const initial = displayName.charAt(0).toUpperCase() || 'P';
   const roleTag = user?.role === 'THERAPIST' ? 'Clinician' : 'Patient';
+
+  const handleLogout = () => {
+    Alert.alert('Sign out', 'Are you sure you want to sign out of MEDHA?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign out',
+        style: 'destructive',
+        onPress: async () => {
+          await logout();
+          router.replace('/');
+        },
+      },
+    ]);
+  };
 
   return (
     <>
@@ -49,10 +45,6 @@ export default function ProfileScreen() {
         onBack={() => router.back()}
       >
         <View style={styles.profile}>
-<<<<<<< HEAD
-          <View style={styles.avatar}><Text style={styles.avatarText}>E</Text></View>
-          <View><Text style={styles.name}>Esha</Text><Text style={styles.email}>Your private MEDHA space</Text></View>
-=======
           <View style={styles.avatar}><Text style={styles.avatarText}>{initial}</Text></View>
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -63,7 +55,6 @@ export default function ProfileScreen() {
             </View>
             <Text style={styles.email}>{displayEmail}</Text>
           </View>
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
         </View>
 
         <Text style={styles.section}>PREFERENCES</Text>
@@ -103,11 +94,7 @@ export default function ProfileScreen() {
             <Text style={styles.settingText}>Help & feedback</Text>
             <Ionicons name="chevron-forward" size={17} color={COLORS.mutedText} />
           </Pressable>
-<<<<<<< HEAD
-          <Pressable style={styles.setting} onPress={() => router.push('/therapist-login')}>
-=======
           <Pressable style={styles.setting} onPress={() => router.push('/therapist-login' as any)}>
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
             <View style={styles.settingIcon}><Ionicons name="lock-closed-outline" size={18} color={COLORS.forest} /></View>
             <View style={{ flex: 1 }}>
               <Text style={styles.settingText}>Therapist workspace</Text>
@@ -117,8 +104,6 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
-<<<<<<< HEAD
-=======
         <Text style={styles.section}>ACCOUNT</Text>
         <View style={styles.settings}>
           <Pressable style={styles.setting} onPress={handleLogout}>
@@ -133,7 +118,6 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
->>>>>>> 40e4450e4d451d2bd31862d1ee53d8149e4a204c
         <Text style={styles.version}>MEDHA · 0.1 PROTOTYPE</Text>
       </MedhaScreen>
 

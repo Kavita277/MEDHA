@@ -459,14 +459,15 @@ def execute_fusion_and_temporal(
 # Backward-Compatible Full State Aggregator
 # ---------------------------------------------------------------------------
 
-def get_latest_session(db: Session, case_id: uuid.UUID, timepoint: int) -> Optional[SessionModel]:
-    return db.query(SessionModel).filter(
+def get_latest_session_state(db: Session, case_id: uuid.UUID, timepoint: int) -> Dict[str, Any]:
+    session_model = db.query(SessionModel).filter(
         SessionModel.case_id == case_id,
         SessionModel.timepoint == timepoint
     ).order_by(desc(SessionModel.updated_at)).first()
 
 def get_latest_session_state(db: Session, case_id: uuid.UUID, timepoint: int) -> Dict[str, Any]:
     session_model = get_latest_session(db, case_id, timepoint)
+
     if session_model and session_model.state_snapshot:
         return session_model.state_snapshot
     return {}

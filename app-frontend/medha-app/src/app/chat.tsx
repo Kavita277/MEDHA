@@ -1,16 +1,11 @@
-import React, { useState } from 'react';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  KeyboardAvoidingView,
-  Platform,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
-  ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TextInput,
   View,
 } from 'react-native';
@@ -18,18 +13,16 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { MedhaScreen } from '../components/medha-screen';
 import { COLORS } from '../constants/colors';
-
-type Message = { id: string; from: 'medha' | 'you'; text: string };
-
-export default function ChatScreen() {
-import { chatService, sessionService } from '../services/api';
+import { chatService } from '../services/api';
+import { useSession } from '../context/SessionContext';
 
 type Message = { id: string; from: 'medha' | 'you'; text: string };
 
 export default function ChatScreen() {
   const router = useRouter();
+  const { sessionId, startNewSession } = useSession();
+  
   const [text, setText] = useState('');
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -38,14 +31,6 @@ export default function ChatScreen() {
       text: 'Hi. I’m here with you. You can tell me what’s on your mind, in your own words.',
     },
   ]);
-
-  React.useEffect(() => {
-    sessionService.createSession().then((sess) => {
-      setSessionId(sess.id);
-    }).catch(err => {
-      console.warn("Session init error:", err);
-    });
-  }, []);
 
   const send = async () => {
     const value = text.trim();
@@ -60,13 +45,10 @@ export default function ChatScreen() {
     setSending(true);
 
     try {
-      let activeSid = sessionId;
-      if (!activeSid) {
-        const newSess = await sessionService.createSession();
-        activeSid = newSess.id;
-        setSessionId(activeSid);
+      if (!sessionId) {
+        throw new Error("No active session");
       }
-      const res = await chatService.sendMessage(activeSid, value);
+      const res = await chatService.sendMessage(sessionId, value);
       setMessages((current) => [
         ...current,
         {
@@ -96,6 +78,16 @@ export default function ChatScreen() {
       subtitle="Type what you’re feeling, or switch to voice when speaking feels easier."
       onBack={() => router.back()}
       scroll={false}
+      rightIcon="time-outline"
+      onRightPress={() => router.push('/chat-history' as any)}
+      rightIcon2="add"
+      onRightPress2={() => {
+        startNewSession().then(() => setMessages([{
+          id: 'welcome',
+          from: 'medha',
+          text: 'Hi. I’m here with you. You can tell me what’s on your mind, in your own words.',
+        }]));
+      }}
     >
       <KeyboardAvoidingView
         style={styles.keyboard}
