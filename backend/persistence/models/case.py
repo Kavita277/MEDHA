@@ -23,6 +23,8 @@ if TYPE_CHECKING:
     from backend.persistence.models.session import SessionModel
     from backend.persistence.models.voice_record import VoiceRecordModel
     from backend.persistence.models.journal_entry import JournalEntryModel
+    from backend.persistence.models.case_history import CaseHistoryModel
+    from backend.persistence.models.clinical_event import ClinicalEventModel
 
 
 class Case(Base, TimestampMixin):
@@ -94,6 +96,18 @@ class Case(Base, TimestampMixin):
         "JournalEntryModel",
         back_populates="case",
         cascade="all, delete-orphan",
+    )
+    case_history: Mapped[Optional["CaseHistoryModel"]] = relationship(
+        "CaseHistoryModel",
+        back_populates="case",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    clinical_events: Mapped[List["ClinicalEventModel"]] = relationship(
+        "ClinicalEventModel",
+        back_populates="case",
+        cascade="all, delete-orphan",
+        order_by="desc(ClinicalEventModel.occurred_at)",
     )
 
     def __repr__(self) -> str:

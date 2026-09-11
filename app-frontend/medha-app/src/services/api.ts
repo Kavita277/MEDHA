@@ -279,6 +279,30 @@ export const therapistService = {
   getCaseSafetyProtocol: async (caseId: string) => {
     return request<any>(`/therapist/cases/${caseId}/safety-protocol`);
   },
+  getCaseHistory: async (caseId: string) => {
+    return request<any>(`/therapist/cases/${caseId}/history`);
+  },
+  updateCaseHistory: async (caseId: string, data: any) => {
+    return request<any>(`/therapist/cases/${caseId}/history`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+  getCaseEvents: async (caseId: string, eventType?: string) => {
+    const query = eventType ? `?event_type=${encodeURIComponent(eventType)}` : '';
+    return request<any[]>(`/therapist/cases/${caseId}/events${query}`);
+  },
+  addCaseEvent: async (caseId: string, data: any) => {
+    return request<any>(`/therapist/cases/${caseId}/events`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+  deleteCaseEvent: async (caseId: string, eventId: string) => {
+    return request<any>(`/therapist/cases/${caseId}/events/${eventId}`, {
+      method: 'DELETE',
+    });
+  },
 };
 
 export const apiService = {

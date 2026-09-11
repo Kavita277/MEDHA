@@ -16,6 +16,7 @@ from backend.api.v1.endpoints import (
     journal,
     sessions,
     therapist,
+    therapist_case_history,
     therapist_insights,
     therapist_recommendations,
     therapist_results,
@@ -28,6 +29,11 @@ api_v1_router = APIRouter()
 api_v1_router.include_router(health.router, tags=["Health & Status"])
 api_v1_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 api_v1_router.include_router(therapist.router, prefix="/therapist", tags=["Therapist"])
+api_v1_router.include_router(
+    therapist_case_history.router,
+    prefix="/therapist",
+    tags=["Therapist Case History & Events"],
+)
 api_v1_router.include_router(
     therapist_results.router,
     prefix="/therapist",

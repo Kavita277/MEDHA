@@ -20,6 +20,8 @@ from backend.persistence.models.voice_record import VoiceRecordModel
 from backend.persistence.models.journal_entry import JournalEntryModel
 from backend.persistence.models.safety_event import SafetyEventModel
 from backend.persistence.models.audit_log import AuditLogModel
+from backend.persistence.models.case_history import CaseHistoryModel
+from backend.persistence.models.clinical_event import ClinicalEventModel
 
 __all__ = [
     "Base",
@@ -41,5 +43,7 @@ __all__ = [
     "JournalEntryModel",
     "SafetyEventModel",
     "AuditLogModel",
+    "CaseHistoryModel",
+    "ClinicalEventModel",
 ]
 
