@@ -12,6 +12,7 @@ class VoiceCheckInResponse(BaseModel):
     audio_filename: Optional[str] = None
     duration_seconds: Optional[float] = None
     voice_score: Optional[float] = None
+    extracted_features: Optional[Dict[str, Any]] = None
     transcript: Optional[str] = None
     processed_at: Optional[datetime] = None
     message: str = "Voice check-in processed securely."

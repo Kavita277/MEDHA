@@ -12,14 +12,11 @@ from backend.schemas.voice import VoiceCheckInResponse
 
 router = APIRouter()
 
-from backend.jobs.prediction_queue import enqueue_prediction
-
 @router.post("/checkin", response_model=VoiceCheckInResponse)
 def upload_voice_checkin(
-    background_tasks: BackgroundTasks,
-    timepoint: str = Form(...),
+    timepoint: Optional[str] = Form(None),
     session_id: Optional[str] = Form(None),
-    audio_file: UploadFile = File(...),
+    audio_file: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -33,14 +30,5 @@ def upload_voice_checkin(
     # 2. Process the voice recording
     parsed_session = uuid.UUID(session_id) if session_id else None
     record = process_voice_checkin(db, case, timepoint, audio_file, parsed_session)
-    
-    # Extract timepoint int
-    try:
-        t_int = int(timepoint.replace("Day ", ""))
-    except Exception:
-        t_int = 1
-
-    # Enqueue Prediction
-    background_tasks.add_task(enqueue_prediction, case.id, t_int)
     
     return VoiceCheckInResponse.model_validate(record)

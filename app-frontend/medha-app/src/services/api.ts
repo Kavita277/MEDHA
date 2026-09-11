@@ -212,7 +212,7 @@ export const sessionService = {
 
 export const authService = {
   login: async (email?: string, password?: string) => ({ access_token: 'mock', token_type: 'bearer', user: { role: 'PATIENT' } }),
-  logout: () => {},
+  logout: () => { },
   getMe: async () => ({}),
 };
 
@@ -230,7 +230,70 @@ export const therapistService = {
 };
 
 export const voiceService = {
-  uploadCheckin: async (audioUri?: string, timepoint: string = '1', sessionId?: string) => {
-    return { status: 'mocked' };
-  }
+  uploadCheckin: async (
+    audioData?: string | Blob,
+    timepoint: string = 'current',
+    sessionId?: string,
+    customFilename?: string
+  ) => {
+    const token = await getLegacyToken();
+    const formData = new FormData();
+    formData.append('timepoint', timepoint);
+    if (sessionId) formData.append('session_id', sessionId);
+
+    let blob: Blob;
+    let fileName = customFilename || 'voice_checkin.wav';
+
+    if (audioData instanceof Blob) {
+      blob = audioData;
+      if (!customFilename && (audioData as any).name) {
+        fileName = (audioData as any).name;
+      }
+    } else if (typeof audioData === 'string' && audioData.length > 0 && !audioData.includes('dummy')) {
+      try {
+        if (!customFilename) {
+          const parts = audioData.split('/');
+          const lastPart = parts[parts.length - 1];
+          if (lastPart && (lastPart.endsWith('.m4a') || lastPart.endsWith('.wav') || lastPart.endsWith('.mp3') || lastPart.endsWith('.aac'))) {
+            fileName = lastPart;
+          }
+        }
+        const fileRes = await fetch(audioData);
+        blob = await fileRes.blob();
+      } catch (err) {
+        console.warn('Could not read audio uri to blob, using fallback:', err);
+        blob = createSilenceWav();
+      }
+    } else {
+      blob = createSilenceWav();
+    }
+
+    formData.append('audio_file', blob, fileName);
+
+    return api.upload<any>('/voice/checkin', formData, { token });
+  },
 };
+
+function createSilenceWav(): Blob {
+  const sampleRate = 8000;
+  const numSamples = 8000; // 1 second
+  const buffer = new ArrayBuffer(44 + numSamples * 2);
+  const view = new DataView(buffer);
+
+  // RIFF identifier
+  view.setUint32(0, 0x52494646, false);
+  view.setUint32(4, 36 + numSamples * 2, true);
+  view.setUint32(8, 0x57415645, false); // WAVE
+  view.setUint32(12, 0x666d7420, false); // fmt 
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, 1, true); // mono
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  view.setUint32(36, 0x64617461, false); // data
+  view.setUint32(40, numSamples * 2, true);
+
+  return new Blob([buffer], { type: 'audio/wav' });
+}

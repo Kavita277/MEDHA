@@ -8,7 +8,10 @@
     "scheme": "medhaapp",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "MEDHA requires microphone access to record voice reflections and clinical acoustic prosody."
+      }
     },
     "android": {
       "adaptiveIcon": {
