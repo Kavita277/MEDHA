@@ -9,12 +9,14 @@ from backend.persistence.models.behaviour_snapshot import BehaviourFeatureSnapsh
 from backend.persistence.models.prediction_result import PredictionResultModel
 from backend.integrations.medha_v2 import run_v2_inference
 
-def get_latest_session_state(db: Session, case_id: uuid.UUID, timepoint: int) -> Dict[str, Any]:
-    session_model = db.query(SessionModel).filter(
+def get_latest_session(db: Session, case_id: uuid.UUID, timepoint: int) -> Optional[SessionModel]:
+    return db.query(SessionModel).filter(
         SessionModel.case_id == case_id,
         SessionModel.timepoint == timepoint
     ).order_by(desc(SessionModel.updated_at)).first()
-    
+
+def get_latest_session_state(db: Session, case_id: uuid.UUID, timepoint: int) -> Dict[str, Any]:
+    session_model = get_latest_session(db, case_id, timepoint)
     if session_model and session_model.state_snapshot:
         return session_model.state_snapshot
     return {}
@@ -46,7 +48,8 @@ def generate_predictions(db: Session, case_id: uuid.UUID, timepoint: int) -> Pre
     if not case:
         raise ValueError(f"Case {case_id} not found")
 
-    state_snapshot = get_latest_session_state(db, case_id, timepoint)
+    latest_session = get_latest_session(db, case_id, timepoint)
+    state_snapshot = latest_session.state_snapshot if latest_session and latest_session.state_snapshot else {}
     behav_snapshot = get_behaviour_snapshot(db, case_id, timepoint)
 
     # 1. Aggregate Features
@@ -57,11 +60,9 @@ def generate_predictions(db: Session, case_id: uuid.UUID, timepoint: int) -> Pre
     current_features.update(state_snapshot.get("text_features", {}))
     current_features.update(state_snapshot.get("voice_features", {}))
     
-    # Flags
-    availabilities = state_snapshot.get("modality_availability", {})
-    current_features["Struct_Available"] = availabilities.get("structured", 0.0)
-    current_features["Text_Available"] = availabilities.get("text", 0.0)
-    current_features["Voice_Available"] = availabilities.get("voice", 0.0)
+    current_features["Struct_Available"] = state_snapshot.get("struct_available", 0.0)
+    current_features["Text_Available"] = state_snapshot.get("text_available", 0.0)
+    current_features["Voice_Available"] = state_snapshot.get("voice_available", 0.0)
     current_features["Behav_Available"] = 1.0 if behav_snapshot else 0.0
     
     # 1b. From Behaviour
@@ -99,7 +100,8 @@ def generate_predictions(db: Session, case_id: uuid.UUID, timepoint: int) -> Pre
         struct_available=bool(current_features["Struct_Available"]),
         text_available=bool(current_features["Text_Available"]),
         voice_available=bool(current_features["Voice_Available"]),
-        behav_available=bool(current_features["Behav_Available"])
+        behav_available=bool(current_features["Behav_Available"]),
+        session_id=latest_session.id if latest_session else None
     )
 
     db.add(prediction_record)

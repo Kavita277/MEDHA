@@ -31,6 +31,10 @@ def run_v2_inference(victim_id: str, timepoint: int, current_features: Dict[str,
     # 1. Start with a copy of features
     row_data = current_features.copy()
     
+    for k, v in row_data.items():
+        if v is None:
+            row_data[k] = np.nan
+    
     # 2. Inject structural identifiers
     row_data["Victim_ID"] = victim_id
     row_data["Timepoint"] = timepoint

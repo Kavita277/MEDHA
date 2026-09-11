@@ -183,6 +183,27 @@ def results_test_db():
             session_identifier="sess_p1_001",
             timepoint=3,
             status=SessionStatus.ENDED.value,
+            state_snapshot={
+                "conversation_summary": {
+                    "important_facts": ["Fact 1"],
+                    "current_concerns": ["Concern 1"],
+                    "recent_events": [],
+                    "support_context": [],
+                    "preferences": [],
+                    "ongoing_topics": [],
+                    "unresolved_topics": [],
+                    "important_observations": [],
+                },
+                "question_history": [
+                    {
+                        "question_id": "SA-01",
+                        "question_text": "Do you feel safe?",
+                        "response_text": "Yes",
+                        "intent": "safety_support",
+                        "asked_at": "2026-09-11T12:28:40.391448+00:00"
+                    }
+                ]
+            }
         )
         session_p2 = SessionModel(
             id=uuid.uuid4(),
@@ -190,6 +211,7 @@ def results_test_db():
             session_identifier="sess_p2_001",
             timepoint=1,
             status=SessionStatus.ACTIVE.value,
+            state_snapshot={} # Missing summary and history
         )
         session_p3 = SessionModel(
             id=uuid.uuid4(),
@@ -799,6 +821,49 @@ def test_triage_low():
 def test_triage_unknown():
     from backend.services.triage_service import compute_triage_level
     assert compute_triage_level(None, None) == "UNKNOWN"
+
+# ---------------------------------------------------------------------------
+# Patient Context Tests (Step 14)
+# ---------------------------------------------------------------------------
+def test_therapist_receives_patient_context(client):
+    tc, db = client
+    token_a = _token(tc, "alpha@medha.test", "TherapistA123!")
+    case_id = db["case_p1_id"]
+
+    resp = tc.get(
+        f"/api/v1/therapist/cases/{case_id}/results",
+        headers={"Authorization": f"Bearer {token_a}"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "patient_context" in data
+    assert data["patient_context"] is not None
+    
+    summary = data["patient_context"]["conversation_summary"]
+    assert summary is not None
+    assert summary["important_facts"] == ["Fact 1"]
+    assert summary["current_concerns"] == ["Concern 1"]
+    
+    history = data["patient_context"]["checkin_responses"]
+    assert len(history) == 1
+    assert history[0]["question_id"] == "SA-01"
+    assert history[0]["question_text"] == "Do you feel safe?"
+    assert history[0]["response_text"] == "Yes"
+    assert history[0]["intent"] == "safety_support"
+    assert history[0]["timestamp"] == "2026-09-11T12:28:40.391448Z"
+
+def test_missing_patient_context_does_not_crash(client):
+    tc, db = client
+    token_a = _token(tc, "alpha@medha.test", "TherapistA123!")
+    case_id = db["case_p2_id"] # Has empty state_snapshot
+
+    resp = tc.get(
+        f"/api/v1/therapist/cases/{case_id}/results",
+        headers={"Authorization": f"Bearer {token_a}"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["patient_context"] is None
 
 
 def test_triage_one_signal_unavailable():

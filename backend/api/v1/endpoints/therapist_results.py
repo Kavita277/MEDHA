@@ -68,6 +68,9 @@ from backend.schemas.results import (
     AlertSummaryResponse,
     AlertHandleRequest,
     AlertHandleResponse,
+    PatientContextResponse,
+    ConversationSummary,
+    CheckinResponseItem,
 )
 from backend.security.dependencies import get_current_therapist
 from backend.services.triage_service import compute_triage_level, TRIAGE_LEVEL_UNKNOWN
@@ -128,6 +131,7 @@ def _build_result_response(
     case: Case,
     prediction: "PredictionResultModel | None",
     session_id: "uuid.UUID | None" = None,
+    session_model: "SessionModel | None" = None,
 ) -> CaseResultResponse:
     """
     Builds a CaseResultResponse from a Case and an optional PredictionResultModel.
@@ -137,6 +141,43 @@ def _build_result_response(
     """
     # Resolve patient info from case relationship
     user: User = case.user
+
+    patient_context = None
+    if session_model and session_model.state_snapshot:
+        snapshot = session_model.state_snapshot
+        
+        raw_summary = snapshot.get("conversation_summary")
+        summary_obj = None
+        if raw_summary:
+            summary_obj = ConversationSummary(
+                important_facts=raw_summary.get("important_facts", []),
+                current_concerns=raw_summary.get("current_concerns", []),
+                recent_events=raw_summary.get("recent_events", []),
+                support_context=raw_summary.get("support_context", []),
+                preferences=raw_summary.get("preferences", []),
+                ongoing_topics=raw_summary.get("ongoing_topics", []),
+                unresolved_topics=raw_summary.get("unresolved_topics", []),
+                important_observations=raw_summary.get("important_observations", []),
+                updated_at=raw_summary.get("updated_at")
+            )
+            
+        raw_questions = snapshot.get("question_history", [])
+        checkin_items = []
+        for q in raw_questions:
+            checkin_items.append(
+                CheckinResponseItem(
+                    question_id=q.get("question_id", ""),
+                    question_text=q.get("question_text", ""),
+                    response_text=q.get("response_text"),
+                    intent=q.get("intent"),
+                    timestamp=q.get("asked_at")
+                )
+            )
+            
+        patient_context = PatientContextResponse(
+            conversation_summary=summary_obj,
+            checkin_responses=checkin_items
+        )
 
     if prediction is None:
         return CaseResultResponse(
@@ -164,6 +205,7 @@ def _build_result_response(
             ),
             predicted_at=None,
             result_record_created_at=None,
+            patient_context=patient_context,
         )
 
     # Compute or use stored triage level
@@ -199,6 +241,7 @@ def _build_result_response(
         ),
         predicted_at=prediction.predicted_at,
         result_record_created_at=prediction.created_at,
+        patient_context=patient_context,
     )
 
 
@@ -282,8 +325,13 @@ def get_case_results(
         request=request,
     )
     db.commit()
+    
+    session_model = None
+    if prediction and prediction.session_id:
+        session_repo = SessionRepository(db)
+        session_model = session_repo.get(prediction.session_id)
 
-    return _build_result_response(case=case, prediction=prediction)
+    return _build_result_response(case=case, prediction=prediction, session_model=session_model)
 
 
 @router.get(
@@ -392,7 +440,7 @@ def get_session_results(
     )
     db.commit()
 
-    return _build_result_response(case=case, prediction=prediction, session_id=session.id)
+    return _build_result_response(case=case, prediction=prediction, session_id=session.id, session_model=session)
 
 
 @router.get(

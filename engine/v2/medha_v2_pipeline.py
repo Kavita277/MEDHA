@@ -163,8 +163,9 @@ class MedhaV2Pipeline:
             
         X_behav_all_imp = pd.DataFrame(self.behav_preproc.transform(behav_df), columns=self.behaviour_features_all)
         
-        out_df["Behav_Available"] = 1.0
-        out_df["Behav_Pred"] = np.round(self.behav_model.predict(X_behav_all_imp), 4)
+        out_df["Behav_Available"] = out_df.get("Behav_Available", 0).fillna(0).astype(float)
+        behav_preds = self.behav_model.predict(X_behav_all_imp)
+        out_df["Behav_Pred"] = np.where(out_df["Behav_Available"] == 1, np.round(behav_preds, 4), np.nan)
         
         # --- 2. Fusion Inference ---
         fusion_input = out_df[self.fusion_features].copy()
