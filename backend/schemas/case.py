@@ -69,3 +69,10 @@ class TherapistUserResponse(UserResponse):
 
     model_config = ConfigDict(from_attributes=True)
 
+
+class CaseUpdateRequest(BaseModel):
+    """Payload for updating case attributes (timepoint, status)."""
+    current_timepoint: Optional[int] = Field(None, ge=1, le=10, description="Updated timepoint index")
+    status: Optional[str] = Field(None, max_length=32, description="Updated case lifecycle status")
+
+

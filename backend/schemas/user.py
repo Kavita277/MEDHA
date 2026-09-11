@@ -60,3 +60,9 @@ class UserResponse(UserBase):
     last_login_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserStatusUpdateRequest(BaseModel):
+    """Payload for updating user account status."""
+    status: UserStatus = Field(..., description="Target account status (ACTIVE, SUSPENDED, DEACTIVATED)")
+

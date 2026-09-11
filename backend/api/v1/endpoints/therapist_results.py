@@ -57,6 +57,7 @@ from backend.persistence.models.safety_event import SafetyEventModel
 from backend.persistence.repositories.case import CaseRepository
 from backend.persistence.repositories.session import SessionRepository
 from backend.persistence.repositories.prediction_result import PredictionResultRepository
+from datetime import datetime, timezone
 from backend.schemas.results import (
     CaseSummaryResponse,
     CaseResultResponse,
@@ -65,12 +66,15 @@ from backend.schemas.results import (
     CheckinSummaryResponse,
     BehaviourSummaryResponse,
     AlertSummaryResponse,
+    AlertHandleRequest,
+    AlertHandleResponse,
 )
 from backend.security.dependencies import get_current_therapist
 from backend.services.triage_service import compute_triage_level, TRIAGE_LEVEL_UNKNOWN
 from backend.services.audit_service import audit_service
 
 router = APIRouter()
+
 
 
 # ---------------------------------------------------------------------------
@@ -510,5 +514,75 @@ def list_case_alerts(
         )
         for a in alerts
     ]
+
+
+@router.patch(
+    "/cases/{case_id}/alerts/{alert_id}",
+    response_model=AlertHandleResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Handle / Resolve a Safety Alert",
+    description="Allows a therapist to handle or update the resolution status of an active safety alert for an assigned case.",
+)
+def handle_case_alert(
+    case_id: uuid.UUID,
+    alert_id: uuid.UUID,
+    payload: AlertHandleRequest,
+    request: Request,
+    current_therapist: Therapist = Depends(get_current_therapist),
+    db: Session = Depends(get_db),
+) -> AlertHandleResponse:
+    """Updates safety alert lifecycle status and records audit event."""
+    case = _get_authorized_case(case_id, current_therapist, db, request=request)
+
+    alert: SafetyEventModel | None = (
+        db.query(SafetyEventModel)
+        .filter(SafetyEventModel.id == alert_id, SafetyEventModel.case_id == case.id)
+        .first()
+    )
+
+    if alert is None:
+        audit_service.log_event(
+            db=db,
+            action="ACCESS_DENIED",
+            actor_user_id=current_therapist.user_id,
+            actor_role="therapist",
+            resource_type="alert",
+            resource_id=str(alert_id),
+            status="DENIED",
+            metadata={"case_id": str(case_id), "alert_id": str(alert_id), "reason": "alert_not_found_or_foreign_case"},
+            request=request,
+        )
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Alert not found or access denied.",
+        )
+
+    alert.status = payload.status
+    if payload.status.lower() in ("handled", "resolved", "dismissed"):
+        alert.handled_by = current_therapist.user_id
+        alert.handled_at = datetime.now(timezone.utc)
+
+    audit_service.log_event(
+        db=db,
+        action="ALERT_HANDLED",
+        actor_user_id=current_therapist.user_id,
+        actor_role="therapist",
+        resource_type="alert",
+        resource_id=str(alert.id),
+        status="SUCCESS",
+        metadata={
+            "case_id": str(case.id),
+            "event_type": alert.event_type,
+            "severity": alert.severity,
+            "new_status": alert.status,
+        },
+        request=request,
+    )
+    db.commit()
+    db.refresh(alert)
+
+    return AlertHandleResponse.model_validate(alert)
+
 
 

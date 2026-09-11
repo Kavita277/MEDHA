@@ -13,6 +13,7 @@ from backend.schemas.user import (
     UserResponse,
     UserRole,
     UserStatus,
+    UserStatusUpdateRequest,
 )
 from backend.schemas.therapist import (
     TherapistBase,
@@ -28,6 +29,7 @@ from backend.schemas.case import (
     CaseBase,
     CaseCreate,
     CaseResponse,
+    CaseUpdateRequest,
     TherapistCreateUserRequest,
     TherapistUserResponse,
 )
@@ -49,6 +51,11 @@ from backend.schemas.recommendations import (
     SafetyProtocolResponse,
     CaseRecommendationsResponse,
 )
+from backend.schemas.results import (
+    AlertSummaryResponse,
+    AlertHandleRequest,
+    AlertHandleResponse,
+)
 from backend.schemas.audit import (
     AuditLogResponse,
     AuditLogListResponse,
@@ -63,6 +70,7 @@ __all__ = [
     "UserResponse",
     "UserRole",
     "UserStatus",
+    "UserStatusUpdateRequest",
     "TherapistBase",
     "TherapistCreate",
     "TherapistUpdate",
@@ -72,6 +80,7 @@ __all__ = [
     "CaseBase",
     "CaseCreate",
     "CaseResponse",
+    "CaseUpdateRequest",
     "TherapistCreateUserRequest",
     "TherapistUserResponse",
     "SessionCreateRequest",
@@ -86,9 +95,13 @@ __all__ = [
     "SelfHelpResourceItem",
     "SafetyProtocolResponse",
     "CaseRecommendationsResponse",
+    "AlertSummaryResponse",
+    "AlertHandleRequest",
+    "AlertHandleResponse",
     "AuditLogResponse",
     "AuditLogListResponse",
 ]
+
 
 
 

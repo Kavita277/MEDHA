@@ -99,12 +99,24 @@ class AlertSummaryResponse(BaseModel):
     id: uuid.UUID = Field(..., description="Alert ID")
     event_type: str = Field(..., description="Type of alert (e.g., self_harm_intent)")
     severity: str = Field(..., description="Severity of the alert")
-    status: str = Field(..., description="Lifecycle status (active/resolved)")
+    status: str = Field(..., description="Lifecycle status (active/resolved/handled)")
     detected_at: datetime = Field(..., description="When the alert was detected")
     handled_by: Optional[uuid.UUID] = Field(None, description="Therapist who handled the alert")
     handled_at: Optional[datetime] = Field(None, description="When the alert was handled")
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class AlertHandleRequest(BaseModel):
+    """Payload for updating or resolving a safety alert."""
+    status: str = Field(default="handled", description="Updated status: handled, resolved, dismissed, active")
+    resolution_note: Optional[str] = Field(None, max_length=500, description="Optional resolution note")
+
+
+class AlertHandleResponse(AlertSummaryResponse):
+    """Response model after handling a safety alert."""
+    pass
+
 
 
 # ---------------------------------------------------------------------------
