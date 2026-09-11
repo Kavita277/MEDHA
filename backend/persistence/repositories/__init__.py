@@ -57,6 +57,7 @@ from backend.persistence.repositories.therapist import TherapistRepository
 from backend.persistence.repositories.case import CaseRepository
 from backend.persistence.repositories.session import SessionRepository
 from backend.persistence.repositories.prediction_result import PredictionResultRepository
+from backend.persistence.repositories.audit_log import AuditLogRepository
 
 __all__ = [
     "BaseRepository",
@@ -65,6 +66,8 @@ __all__ = [
     "CaseRepository",
     "SessionRepository",
     "PredictionResultRepository",
+    "AuditLogRepository",
 ]
+
 
 

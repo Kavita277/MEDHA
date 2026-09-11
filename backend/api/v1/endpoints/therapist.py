@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import uuid
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -21,15 +21,19 @@ from backend.persistence.models.therapist import Therapist
 from backend.persistence.models.user import User, UserRole, UserStatus
 from backend.persistence.repositories.case import CaseRepository
 from backend.persistence.repositories.user import UserRepository
+from backend.persistence.repositories.audit_log import AuditLogRepository
 from backend.schemas.case import (
     CaseResponse,
     TherapistCreateUserRequest,
     TherapistUserResponse,
 )
+from backend.schemas.audit import AuditLogResponse
 from backend.security.dependencies import get_current_therapist
 from backend.security.passwords import hash_password
+from backend.services.audit_service import audit_service
 
 router = APIRouter()
+
 
 
 @router.post(
@@ -41,6 +45,7 @@ router = APIRouter()
 )
 def create_patient_user(
     payload: TherapistCreateUserRequest,
+    request: Request,
     current_therapist: Therapist = Depends(get_current_therapist),
     db: Session = Depends(get_db),
 ) -> TherapistUserResponse:
@@ -98,9 +103,27 @@ def create_patient_user(
     )
     case_repo.create(new_case)
 
+    # 7. Audit log patient provisioning
+    audit_service.log_event(
+        db=db,
+        action="THERAPIST_CREATED_USER",
+        actor_user_id=current_therapist.user_id,
+        actor_role="therapist",
+        resource_type="user",
+        resource_id=str(new_user.id),
+        status="SUCCESS",
+        metadata={
+            "patient_email": normalized_email,
+            "victim_id": victim_id,
+            "case_id": str(new_case.id),
+        },
+        request=request,
+    )
+
     db.commit()
     db.refresh(new_user)
     db.refresh(new_case)
+
 
     return TherapistUserResponse(
         id=new_user.id,
@@ -155,3 +178,29 @@ def list_patient_users(
             )
         )
     return results
+
+
+@router.get(
+    "/audit-logs",
+    response_model=List[AuditLogResponse],
+    status_code=status.HTTP_200_OK,
+    summary="List Therapist Audit Logs",
+    description="Returns compliance audit logs initiated by the authenticated therapist. Strict isolation: cannot see actions of other actors.",
+)
+def list_therapist_audit_logs(
+    action: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+    current_therapist: Therapist = Depends(get_current_therapist),
+    db: Session = Depends(get_db),
+) -> List[AuditLogResponse]:
+    """Returns audit logs for the authenticated therapist."""
+    repo = AuditLogRepository(db)
+    logs = repo.list_logs(
+        actor_user_id=current_therapist.user_id,
+        action=action,
+        limit=min(limit, 100),
+        offset=offset,
+    )
+    return [AuditLogResponse.model_validate(log) for log in logs]
+

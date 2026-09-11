@@ -23,7 +23,7 @@ Session Ownership Verification:
 from __future__ import annotations
 
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from backend.dependencies import get_db
@@ -38,6 +38,7 @@ from backend.schemas.recommendations import (
 )
 from backend.security.dependencies import get_current_therapist
 from backend.services.recommendation_service import RecommendationService
+from backend.services.audit_service import audit_service
 
 router = APIRouter()
 recommendation_service = RecommendationService()
@@ -47,14 +48,28 @@ def _get_authorized_case(
     case_id: uuid.UUID,
     current_therapist: Therapist,
     db: Session,
+    request: Request | None = None,
 ) -> Case:
     """
     Retrieves a Case and verifies it belongs to the requesting therapist.
     Returns HTTP 403 (not 404) on mismatch to prevent case-ID enumeration.
+    Logs an ACCESS_DENIED audit event on failure without altering the 403 response.
     """
     case_repo = CaseRepository(db)
     case = case_repo.get(case_id)
     if case is None or case.therapist_id != current_therapist.id:
+        audit_service.log_event(
+            db=db,
+            action="ACCESS_DENIED",
+            actor_user_id=current_therapist.user_id,
+            actor_role="therapist",
+            resource_type="case",
+            resource_id=str(case_id),
+            status="DENIED",
+            metadata={"case_id": str(case_id), "reason": "unauthorized_or_not_found"},
+            request=request,
+        )
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Case not found or access denied.",
@@ -75,12 +90,32 @@ def _get_authorized_case(
 )
 def get_case_recommendations(
     case_id: uuid.UUID,
+    request: Request,
     current_therapist: Therapist = Depends(get_current_therapist),
     db: Session = Depends(get_db),
 ) -> CaseRecommendationsResponse:
     """Returns clinical recommendations for a therapist-owned case."""
-    case = _get_authorized_case(case_id, current_therapist, db)
-    return recommendation_service.get_case_recommendations(db=db, case=case)
+    case = _get_authorized_case(case_id, current_therapist, db, request=request)
+    recs = recommendation_service.get_case_recommendations(db=db, case=case)
+
+    audit_service.log_event(
+        db=db,
+        action="THERAPIST_VIEWED_RECOMMENDATIONS",
+        actor_user_id=current_therapist.user_id,
+        actor_role="therapist",
+        resource_type="case",
+        resource_id=str(case.id),
+        status="SUCCESS",
+        metadata={
+            "results_available": recs.results_available,
+            "recommendation_count": len(recs.recommendations),
+            "safety_alert_triggered": recs.safety_protocol.alert_triggered if recs.safety_protocol else False,
+        },
+        request=request,
+    )
+    db.commit()
+
+    return recs
 
 
 @router.get(
@@ -95,6 +130,7 @@ def get_case_recommendations(
 )
 def get_session_recommendations(
     session_id: uuid.UUID,
+    request: Request,
     current_therapist: Therapist = Depends(get_current_therapist),
     db: Session = Depends(get_db),
 ) -> CaseRecommendationsResponse:
@@ -103,13 +139,45 @@ def get_session_recommendations(
     session: SessionModel | None = session_repo.get(session_id)
 
     if session is None:
+        audit_service.log_event(
+            db=db,
+            action="ACCESS_DENIED",
+            actor_user_id=current_therapist.user_id,
+            actor_role="therapist",
+            resource_type="session",
+            resource_id=str(session_id),
+            status="DENIED",
+            metadata={"session_id": str(session_id), "reason": "session_not_found"},
+            request=request,
+        )
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Session not found or access denied.",
         )
 
-    case = _get_authorized_case(session.case_id, current_therapist, db)
-    return recommendation_service.get_case_recommendations(db=db, case=case, session_id=session.id)
+    case = _get_authorized_case(session.case_id, current_therapist, db, request=request)
+    recs = recommendation_service.get_case_recommendations(db=db, case=case, session_id=session.id)
+
+    audit_service.log_event(
+        db=db,
+        action="THERAPIST_VIEWED_RECOMMENDATIONS",
+        actor_user_id=current_therapist.user_id,
+        actor_role="therapist",
+        resource_type="session",
+        resource_id=str(session.id),
+        status="SUCCESS",
+        metadata={
+            "case_id": str(case.id),
+            "results_available": recs.results_available,
+            "recommendation_count": len(recs.recommendations),
+            "safety_alert_triggered": recs.safety_protocol.alert_triggered if recs.safety_protocol else False,
+        },
+        request=request,
+    )
+    db.commit()
+
+    return recs
 
 
 @router.get(
@@ -124,12 +192,32 @@ def get_session_recommendations(
 )
 def get_case_safety_protocol(
     case_id: uuid.UUID,
+    request: Request,
     current_therapist: Therapist = Depends(get_current_therapist),
     db: Session = Depends(get_db),
 ) -> SafetyProtocolResponse:
     """Returns evaluated safety protocol for a therapist-owned case."""
-    case = _get_authorized_case(case_id, current_therapist, db)
-    return recommendation_service.get_safety_protocol(db=db, case=case)
+    case = _get_authorized_case(case_id, current_therapist, db, request=request)
+    protocol = recommendation_service.get_safety_protocol(db=db, case=case)
+
+    audit_service.log_event(
+        db=db,
+        action="THERAPIST_VIEWED_SAFETY_PROTOCOL",
+        actor_user_id=current_therapist.user_id,
+        actor_role="therapist",
+        resource_type="case",
+        resource_id=str(case.id),
+        status="SUCCESS",
+        metadata={
+            "alert_triggered": protocol.alert_triggered,
+            "priority": protocol.priority,
+            "alert_type": protocol.alert_type,
+        },
+        request=request,
+    )
+    db.commit()
+
+    return protocol
 
 
 @router.get(
@@ -144,6 +232,7 @@ def get_case_safety_protocol(
 )
 def get_session_safety_protocol(
     session_id: uuid.UUID,
+    request: Request,
     current_therapist: Therapist = Depends(get_current_therapist),
     db: Session = Depends(get_db),
 ) -> SafetyProtocolResponse:
@@ -152,10 +241,42 @@ def get_session_safety_protocol(
     session: SessionModel | None = session_repo.get(session_id)
 
     if session is None:
+        audit_service.log_event(
+            db=db,
+            action="ACCESS_DENIED",
+            actor_user_id=current_therapist.user_id,
+            actor_role="therapist",
+            resource_type="session",
+            resource_id=str(session_id),
+            status="DENIED",
+            metadata={"session_id": str(session_id), "reason": "session_not_found"},
+            request=request,
+        )
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Session not found or access denied.",
         )
 
-    case = _get_authorized_case(session.case_id, current_therapist, db)
-    return recommendation_service.get_safety_protocol(db=db, case=case, session_id=session.id)
+    case = _get_authorized_case(session.case_id, current_therapist, db, request=request)
+    protocol = recommendation_service.get_safety_protocol(db=db, case=case, session_id=session.id)
+
+    audit_service.log_event(
+        db=db,
+        action="THERAPIST_VIEWED_SAFETY_PROTOCOL",
+        actor_user_id=current_therapist.user_id,
+        actor_role="therapist",
+        resource_type="session",
+        resource_id=str(session.id),
+        status="SUCCESS",
+        metadata={
+            "case_id": str(case.id),
+            "alert_triggered": protocol.alert_triggered,
+            "priority": protocol.priority,
+            "alert_type": protocol.alert_type,
+        },
+        request=request,
+    )
+    db.commit()
+
+    return protocol

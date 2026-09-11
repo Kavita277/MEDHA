@@ -42,8 +42,7 @@ from __future__ import annotations
 
 import uuid
 from typing import List
-
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from backend.dependencies import get_db
@@ -69,6 +68,7 @@ from backend.schemas.results import (
 )
 from backend.security.dependencies import get_current_therapist
 from backend.services.triage_service import compute_triage_level, TRIAGE_LEVEL_UNKNOWN
+from backend.services.audit_service import audit_service
 
 router = APIRouter()
 
@@ -88,21 +88,36 @@ def _get_authorized_case(
     case_id: uuid.UUID,
     current_therapist: Therapist,
     db: Session,
+    request: Request | None = None,
 ) -> Case:
     """
     Retrieves a Case and verifies it belongs to the requesting therapist.
 
     Returns HTTP 403 (not 404) regardless of whether the case exists but
     belongs to another therapist, to prevent case-ID enumeration.
+    Logs an ACCESS_DENIED audit event on failure without altering the 403 response.
     """
     case_repo = CaseRepository(db)
     case = case_repo.get(case_id)
     if case is None or case.therapist_id != current_therapist.id:
+        audit_service.log_event(
+            db=db,
+            action="ACCESS_DENIED",
+            actor_user_id=current_therapist.user_id,
+            actor_role="therapist",
+            resource_type="case",
+            resource_id=str(case_id),
+            status="DENIED",
+            metadata={"case_id": str(case_id), "reason": "unauthorized_or_not_found"},
+            request=request,
+        )
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Case not found or access denied.",
         )
     return case
+
 
 
 def _build_result_response(
@@ -238,14 +253,31 @@ def list_therapist_cases(
 )
 def get_case_results(
     case_id: uuid.UUID,
+    request: Request,
     current_therapist: Therapist = Depends(get_current_therapist),
     db: Session = Depends(get_db),
 ) -> CaseResultResponse:
     """Returns the latest prediction result for a therapist-owned case."""
-    case = _get_authorized_case(case_id, current_therapist, db)
+    case = _get_authorized_case(case_id, current_therapist, db, request=request)
 
     pred_repo = PredictionResultRepository(db)
     prediction = pred_repo.get_latest_for_case(case.id)
+
+    audit_service.log_event(
+        db=db,
+        action="THERAPIST_VIEWED_PREDICTION",
+        actor_user_id=current_therapist.user_id,
+        actor_role="therapist",
+        resource_type="case",
+        resource_id=str(case.id),
+        status="SUCCESS",
+        metadata={
+            "results_available": prediction is not None,
+            "timepoint": case.current_timepoint,
+        },
+        request=request,
+    )
+    db.commit()
 
     return _build_result_response(case=case, prediction=prediction)
 
@@ -262,11 +294,12 @@ def get_case_results(
 )
 def list_case_sessions(
     case_id: uuid.UUID,
+    request: Request,
     current_therapist: Therapist = Depends(get_current_therapist),
     db: Session = Depends(get_db),
 ) -> List[SessionSummaryResponse]:
     """Returns all sessions for a therapist-owned case."""
-    case = _get_authorized_case(case_id, current_therapist, db)
+    case = _get_authorized_case(case_id, current_therapist, db, request=request)
 
     session_repo = SessionRepository(db)
     sessions = session_repo.list_for_case(case.id)
@@ -298,6 +331,7 @@ def list_case_sessions(
 )
 def get_session_results(
     session_id: uuid.UUID,
+    request: Request,
     current_therapist: Therapist = Depends(get_current_therapist),
     db: Session = Depends(get_db),
 ) -> CaseResultResponse:
@@ -313,6 +347,18 @@ def get_session_results(
     session: SessionModel | None = session_repo.get(session_id)
 
     if session is None:
+        audit_service.log_event(
+            db=db,
+            action="ACCESS_DENIED",
+            actor_user_id=current_therapist.user_id,
+            actor_role="therapist",
+            resource_type="session",
+            resource_id=str(session_id),
+            status="DENIED",
+            metadata={"session_id": str(session_id), "reason": "session_not_found"},
+            request=request,
+        )
+        db.commit()
         # Return 403 not 404 to prevent session-ID enumeration
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -320,10 +366,27 @@ def get_session_results(
         )
 
     # Verify ownership through the case
-    case = _get_authorized_case(session.case_id, current_therapist, db)
+    case = _get_authorized_case(session.case_id, current_therapist, db, request=request)
 
     pred_repo = PredictionResultRepository(db)
     prediction = pred_repo.get_latest_for_session(session.id)
+
+    audit_service.log_event(
+        db=db,
+        action="THERAPIST_VIEWED_PREDICTION",
+        actor_user_id=current_therapist.user_id,
+        actor_role="therapist",
+        resource_type="session",
+        resource_id=str(session.id),
+        status="SUCCESS",
+        metadata={
+            "case_id": str(case.id),
+            "results_available": prediction is not None,
+            "timepoint": session.timepoint,
+        },
+        request=request,
+    )
+    db.commit()
 
     return _build_result_response(case=case, prediction=prediction, session_id=session.id)
 
@@ -337,11 +400,12 @@ def get_session_results(
 )
 def list_case_checkins(
     case_id: uuid.UUID,
+    request: Request,
     current_therapist: Therapist = Depends(get_current_therapist),
     db: Session = Depends(get_db),
 ) -> List[CheckinSummaryResponse]:
     """Returns all historical check-ins for a therapist-owned case."""
-    case = _get_authorized_case(case_id, current_therapist, db)
+    case = _get_authorized_case(case_id, current_therapist, db, request=request)
 
     checkins = (
         db.query(CheckInModel)
@@ -372,11 +436,12 @@ def list_case_checkins(
 )
 def list_case_behaviour(
     case_id: uuid.UUID,
+    request: Request,
     current_therapist: Therapist = Depends(get_current_therapist),
     db: Session = Depends(get_db),
 ) -> List[BehaviourSummaryResponse]:
     """Returns historical behaviour snapshots for a therapist-owned case."""
-    case = _get_authorized_case(case_id, current_therapist, db)
+    case = _get_authorized_case(case_id, current_therapist, db, request=request)
 
     snapshots = (
         db.query(BehaviourFeatureSnapshotModel)
@@ -406,11 +471,12 @@ def list_case_behaviour(
 )
 def list_case_alerts(
     case_id: uuid.UUID,
+    request: Request,
     current_therapist: Therapist = Depends(get_current_therapist),
     db: Session = Depends(get_db),
 ) -> List[AlertSummaryResponse]:
     """Returns all safety alerts for a therapist-owned case."""
-    case = _get_authorized_case(case_id, current_therapist, db)
+    case = _get_authorized_case(case_id, current_therapist, db, request=request)
 
     alerts = (
         db.query(SafetyEventModel)
@@ -418,6 +484,19 @@ def list_case_alerts(
         .order_by(SafetyEventModel.detected_at.desc())
         .all()
     )
+
+    audit_service.log_event(
+        db=db,
+        action="THERAPIST_VIEWED_ALERT",
+        actor_user_id=current_therapist.user_id,
+        actor_role="therapist",
+        resource_type="case",
+        resource_id=str(case.id),
+        status="SUCCESS",
+        metadata={"alert_count": len(alerts)},
+        request=request,
+    )
+    db.commit()
 
     return [
         AlertSummaryResponse(
@@ -431,4 +510,5 @@ def list_case_alerts(
         )
         for a in alerts
     ]
+
 

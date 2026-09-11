@@ -49,6 +49,10 @@ from backend.schemas.recommendations import (
     SafetyProtocolResponse,
     CaseRecommendationsResponse,
 )
+from backend.schemas.audit import (
+    AuditLogResponse,
+    AuditLogListResponse,
+)
 
 __all__ = [
     "HealthResponse",
@@ -82,6 +86,9 @@ __all__ = [
     "SelfHelpResourceItem",
     "SafetyProtocolResponse",
     "CaseRecommendationsResponse",
+    "AuditLogResponse",
+    "AuditLogListResponse",
 ]
+
 
 

@@ -22,7 +22,7 @@ Session Ownership Verification:
 from __future__ import annotations
 
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from backend.dependencies import get_db
@@ -34,6 +34,7 @@ from backend.persistence.repositories.session import SessionRepository
 from backend.schemas.insights import CaseInsightsResponse
 from backend.security.dependencies import get_current_therapist
 from backend.services.insights_service import InsightService
+from backend.services.audit_service import audit_service
 
 router = APIRouter()
 insight_service = InsightService()
@@ -43,14 +44,28 @@ def _get_authorized_case(
     case_id: uuid.UUID,
     current_therapist: Therapist,
     db: Session,
+    request: Request | None = None,
 ) -> Case:
     """
     Retrieves a Case and verifies it belongs to the requesting therapist.
     Returns HTTP 403 (not 404) on mismatch to prevent case-ID enumeration.
+    Logs an ACCESS_DENIED audit event on failure without altering the 403 response.
     """
     case_repo = CaseRepository(db)
     case = case_repo.get(case_id)
     if case is None or case.therapist_id != current_therapist.id:
+        audit_service.log_event(
+            db=db,
+            action="ACCESS_DENIED",
+            actor_user_id=current_therapist.user_id,
+            actor_role="therapist",
+            resource_type="case",
+            resource_id=str(case_id),
+            status="DENIED",
+            metadata={"case_id": str(case_id), "reason": "unauthorized_or_not_found"},
+            request=request,
+        )
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Case not found or access denied.",
@@ -72,12 +87,31 @@ def _get_authorized_case(
 )
 def get_case_insights(
     case_id: uuid.UUID,
+    request: Request,
     current_therapist: Therapist = Depends(get_current_therapist),
     db: Session = Depends(get_db),
 ) -> CaseInsightsResponse:
     """Returns clinical insights for a therapist-owned case."""
-    case = _get_authorized_case(case_id, current_therapist, db)
-    return insight_service.get_case_insights(db=db, case=case)
+    case = _get_authorized_case(case_id, current_therapist, db, request=request)
+    insights = insight_service.get_case_insights(db=db, case=case)
+
+    audit_service.log_event(
+        db=db,
+        action="THERAPIST_VIEWED_INSIGHTS",
+        actor_user_id=current_therapist.user_id,
+        actor_role="therapist",
+        resource_type="case",
+        resource_id=str(case.id),
+        status="SUCCESS",
+        metadata={
+            "results_available": insights.results_available,
+            "timepoint": insights.timepoint,
+        },
+        request=request,
+    )
+    db.commit()
+
+    return insights
 
 
 @router.get(
@@ -92,6 +126,7 @@ def get_case_insights(
 )
 def get_session_insights(
     session_id: uuid.UUID,
+    request: Request,
     current_therapist: Therapist = Depends(get_current_therapist),
     db: Session = Depends(get_db),
 ) -> CaseInsightsResponse:
@@ -100,10 +135,41 @@ def get_session_insights(
     session: SessionModel | None = session_repo.get(session_id)
 
     if session is None:
+        audit_service.log_event(
+            db=db,
+            action="ACCESS_DENIED",
+            actor_user_id=current_therapist.user_id,
+            actor_role="therapist",
+            resource_type="session",
+            resource_id=str(session_id),
+            status="DENIED",
+            metadata={"session_id": str(session_id), "reason": "session_not_found"},
+            request=request,
+        )
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Session not found or access denied.",
         )
 
-    case = _get_authorized_case(session.case_id, current_therapist, db)
-    return insight_service.get_case_insights(db=db, case=case, session_id=session.id)
+    case = _get_authorized_case(session.case_id, current_therapist, db, request=request)
+    insights = insight_service.get_case_insights(db=db, case=case, session_id=session.id)
+
+    audit_service.log_event(
+        db=db,
+        action="THERAPIST_VIEWED_INSIGHTS",
+        actor_user_id=current_therapist.user_id,
+        actor_role="therapist",
+        resource_type="session",
+        resource_id=str(session.id),
+        status="SUCCESS",
+        metadata={
+            "case_id": str(case.id),
+            "results_available": insights.results_available,
+            "timepoint": insights.timepoint,
+        },
+        request=request,
+    )
+    db.commit()
+
+    return insights
