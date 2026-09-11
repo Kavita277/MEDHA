@@ -9,10 +9,12 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useAuth } from '../context/AuthContext';
 
 const MEDHA_LOGO = require('../../assets/images/medha-logo.png');
 
 export default function Index() {
+  const { isAuthenticated, user } = useAuth();
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const logoScale = useRef(new Animated.Value(0.84)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
@@ -63,15 +65,23 @@ export default function Index() {
     }, 1450);
 
     const navigationTimer = setTimeout(() => {
-      router.replace('/onboarding');
-    }, 3900);
+      if (isAuthenticated && user) {
+        if (user.role?.toUpperCase() === 'THERAPIST' || user.role?.toUpperCase() === 'ADMIN') {
+          router.replace('/therapist');
+        } else {
+          router.replace('/home');
+        }
+      } else {
+        router.replace('/onboarding');
+      }
+    }, 3200);
 
     return () => {
       clearTimeout(textTimer);
       clearTimeout(loadingTimer);
       clearTimeout(navigationTimer);
     };
-  }, []);
+  }, [isAuthenticated, user]);
 
   const spin = rotation.interpolate({
     inputRange: [0, 1],

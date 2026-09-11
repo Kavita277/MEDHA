@@ -7,8 +7,9 @@ export interface CheckinStatusResponse {
 }
 
 export const checkinService = {
-  startCheckin: async (sessionId: string, token?: string | null) => {
-    return api.post<any>(`/checkins/sessions/${sessionId}`, undefined, { token: token ?? undefined });
+  startCheckin: async (sessionId?: string, token?: string | null) => {
+    const target = sessionId || 'active';
+    return api.post<any>(`/checkins/sessions/${target}`, undefined, { token: token ?? undefined });
   },
 
   getTodayStatus: async (token?: string | null) => {

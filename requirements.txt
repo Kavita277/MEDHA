@@ -9,6 +9,9 @@ pydantic>=2.0.0
 python-multipart>=0.0.6
 bcrypt>=4.0.0
 pyjwt>=2.8.0
+SQLAlchemy>=2.0.0
+alembic>=1.12.0
+psycopg2-binary>=2.9.9
 
 # --- Data Science & Tabular / XGBoost Engine ---
 numpy>=1.24.0

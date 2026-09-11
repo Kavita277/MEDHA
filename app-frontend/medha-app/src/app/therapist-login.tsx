@@ -43,7 +43,7 @@ export default function TherapistLoginScreen() {
   };
 
   const handleDemo = () => {
-    handleLogin('demo.therapist@medha.org', 'TherapistDemo123!');
+    handleLogin('therapist@medha.org', 'TherapistPass123!');
   };
 
   return (
@@ -96,7 +96,7 @@ export default function TherapistLoginScreen() {
           Authenticate using verified clinical seed credentials to review assigned active cases.
         </Text>
         <Pressable onPress={handleDemo} style={styles.demoButton} disabled={loading}>
-          <Text style={styles.demoButtonText}>Sign in as Demo Clinician (demo.therapist@medha.org)</Text>
+          <Text style={styles.demoButtonText}>Sign in as Clinician (therapist@medha.org)</Text>
         </Pressable>
       </View>
     </MedhaScreen>

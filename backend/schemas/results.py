@@ -41,6 +41,7 @@ class CaseSummaryResponse(BaseModel):
     current_timepoint: int = Field(..., description="Current timepoint index")
     patient_name: str = Field(..., description="Patient display name")
     patient_email: str = Field(..., description="Patient email address")
+    case_type: Optional[str] = Field(default="general", description="Clinical or domain case category")
     case_created_at: datetime = Field(..., description="When the case was opened")
 
     model_config = ConfigDict(from_attributes=False)

@@ -66,6 +66,12 @@ class Case(Base, TimestampMixin):
         default="active",
         index=True,
     )
+    case_type: Mapped[Optional[str]] = mapped_column(
+        String(64),
+        nullable=True,
+        default="general",
+        index=True,
+    )
     closed_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True),
         nullable=True,

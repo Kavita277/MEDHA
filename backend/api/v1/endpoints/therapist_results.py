@@ -283,6 +283,7 @@ def list_therapist_cases(
                 current_timepoint=case.current_timepoint,
                 patient_name=user.name,
                 patient_email=user.email,
+                case_type=getattr(case, "case_type", None) or "general",
                 case_created_at=case.created_at,
             )
         )

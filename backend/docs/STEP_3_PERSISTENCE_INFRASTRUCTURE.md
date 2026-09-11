@@ -105,7 +105,7 @@ POSTGRES_DB=medha_db
 # Optional direct connection URL (overrides individual POSTGRES_* settings if set)
 # Examples:
 #   PostgreSQL: postgresql+psycopg2://postgres:postgres@localhost:5432/medha_db
-#   SQLite (for testing/local development): sqlite:///./medha_dev.db
+#   SQLite may be supplied explicitly by isolated test fixtures only.
 DATABASE_URL=
 
 # SQLAlchemy Connection Pool Settings

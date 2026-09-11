@@ -98,13 +98,19 @@ def create_patient_user(
     user_repo.create(new_user)
 
     # 6. Create linked case record
+    case_status = (payload.status or "active").strip().lower()
+    case_type = (payload.case_type or "general").strip().lower()
+    closed_at = datetime.now(timezone.utc) if case_status == "closed" else None
+
     new_case = Case(
         id=uuid.uuid4(),
         victim_id=victim_id,
         user_id=new_user.id,
         therapist_id=current_therapist.id,
         current_timepoint=1,
-        status="active",
+        status=case_status,
+        case_type=case_type,
+        closed_at=closed_at,
     )
     case_repo.create(new_case)
 

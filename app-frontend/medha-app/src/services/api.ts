@@ -16,17 +16,68 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import type {
+  CaseSummary,
+  SessionSummary,
+  CaseResultResponse,
+  CheckinSummaryResponse,
+  AlertSummaryResponse,
+  AlertHandleRequest,
+  AlertHandleResponse,
+  CaseInsightsResponse,
+  CaseRecommendationsResponse,
+  SafetyProtocolResponse,
+} from '../types/therapist';
+
+export const getStoredToken = async (): Promise<string | null> => {
+  if (Platform.OS === 'web') {
+    try {
+      const val = (await AsyncStorage.getItem('medha_access_token')) || (await AsyncStorage.getItem('MEDHA_JWT'));
+      if (val) return val;
+    } catch {
+      // ignore
+    }
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage.getItem('medha_access_token') || window.localStorage.getItem('MEDHA_JWT');
+    }
+    return null;
+  }
+  try {
+    return (await SecureStore.getItemAsync('medha_access_token')) || (await SecureStore.getItemAsync('MEDHA_JWT'));
+  } catch {
+    return null;
+  }
+};
 
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
 
-const debuggerHost = Constants.expoConfig?.hostUri;
-const localhost = debuggerHost ? debuggerHost.split(':')[0] : (Platform.OS === 'android' ? '10.0.2.2' : 'localhost');
-const RAW_BASE = process.env.EXPO_PUBLIC_API_URL ?? `http://${localhost}:8000`;
+function resolveBaseUrl(): string {
+  const debuggerHost =
+    Constants.expoConfig?.hostUri ||
+    (Constants as any).manifest2?.extra?.expoGo?.debuggerHost ||
+    (Constants as any).manifest?.debuggerHost;
 
-// Strip trailing slash so callers can freely use '/path' prefix
-export const API_BASE_URL = RAW_BASE.replace(/\/+$/, '');
+  const detectedHost = debuggerHost
+    ? debuggerHost.split(':')[0]
+    : Platform.OS === 'android'
+    ? '10.0.2.2'
+    : 'localhost';
+
+  let raw = process.env.EXPO_PUBLIC_API_URL || `http://${detectedHost}:8000`;
+
+  // On Android, 'localhost' refers to the Android device itself.
+  // Rewrite localhost / 127.0.0.1 to the dev machine's actual LAN IP or emulator loopback
+  if (Platform.OS === 'android') {
+    raw = raw.replace(/\b(localhost|127\.0\.0\.1)\b/, detectedHost);
+  }
+
+  return raw.replace(/\/+$/, '');
+}
+
+export const API_BASE_URL = resolveBaseUrl();
 export const API_PREFIX = '/api/v1';
 
 // ---------------------------------------------------------------------------
@@ -97,8 +148,9 @@ async function request<T>(
 
   const headers: Record<string, string> = {};
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  const authToken = token !== undefined ? token : await getStoredToken();
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
   }
 
   // For JSON requests set Content-Type; for multipart let the runtime
@@ -114,19 +166,28 @@ async function request<T>(
     fetchBody = JSON.stringify(body);
   }
 
+  console.log(`[MEDHA API] ${method} -> ${url}`);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
+  const combinedSignal = signal || controller.signal;
+
   let response: Response;
   try {
     response = await fetch(url, {
       method,
       headers,
       body: fetchBody,
-      signal,
+      signal: combinedSignal,
     });
-  } catch (err) {
-    // fetch throws on network failure (no connection, DNS failure, etc.)
+  } catch (err: any) {
+    if (err?.name === 'AbortError') {
+      throw new NetworkError(`Connection to ${url} timed out. Ensure backend is running with --host 0.0.0.0.`);
+    }
     throw new NetworkError(
       err instanceof Error ? err.message : 'Network request failed',
     );
+  } finally {
+    clearTimeout(timer);
   }
 
   return parseResponse<T>(response);
@@ -168,27 +229,9 @@ export const api = {
 // ---------------------------------------------------------------------------
 // DO NOT use these in new code. They are here only to keep unmigrated screens from crashing.
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+export const getLegacyToken = getStoredToken;
 
-const getLegacyToken = async () => {
-  if (Platform.OS === 'web') {
-    try {
-      const val = await AsyncStorage.getItem('medha_access_token') || await AsyncStorage.getItem('MEDHA_JWT');
-      if (val) return val;
-    } catch {
-      // ignore
-    }
-    if (typeof window !== 'undefined' && window.localStorage) {
-      return window.localStorage.getItem('medha_access_token') || window.localStorage.getItem('MEDHA_JWT');
-    }
-    return null;
-  }
-  return await SecureStore.getItemAsync('medha_access_token') || await SecureStore.getItemAsync('MEDHA_JWT');
-};
-
-
-
-// legacy checkinService has been migrated to services/checkin.ts
+export { checkinService } from './checkin';
 
 export const chatService = {
   sendMessage: async (sessionId: string, message: string, language?: string) => {
@@ -217,16 +260,28 @@ export const authService = {
 };
 
 export const therapistService = {
-  getCases: async () => api.get<any[]>('/therapist/cases'),
-  createPatient: async (data: any) => api.post<any>('/therapist/users', data),
-  getCaseResults: async (caseId: string) => api.get<any>(`/therapist/cases/${caseId}/results`),
-  getCaseSessions: async (caseId: string) => api.get<any[]>(`/therapist/cases/${caseId}/sessions`),
-  getCaseCheckins: async (caseId: string) => api.get<any[]>(`/therapist/cases/${caseId}/checkins`),
+  getCases: async () => api.get<CaseSummary[]>('/therapist/cases'),
+  createPatient: async (data: {
+    name: string;
+    email: string;
+    password: string;
+    mobile?: string;
+    victim_id?: string;
+    case_type?: string;
+    status?: string;
+  }) => api.post<any>('/therapist/users', data),
+  getCaseResults: async (caseId: string) => api.get<CaseResultResponse>(`/therapist/cases/${caseId}/results`),
+  getCaseSessions: async (caseId: string) => api.get<SessionSummary[]>(`/therapist/cases/${caseId}/sessions`),
+  getCaseCheckins: async (caseId: string) => api.get<CheckinSummaryResponse[]>(`/therapist/cases/${caseId}/checkins`),
   getCaseVoiceRecords: async (caseId: string) => api.get<any[]>(`/therapist/cases/${caseId}/voice-records`),
-  getCaseAlerts: async (caseId: string) => api.get<any[]>(`/therapist/cases/${caseId}/alerts`),
-  getCaseInsights: async (caseId: string) => api.get<any>(`/therapist/cases/${caseId}/insights`),
-  getCaseRecommendations: async (caseId: string) => api.get<any>(`/therapist/cases/${caseId}/recommendations`),
-  getCaseSafetyProtocol: async (caseId: string) => api.get<any>(`/therapist/cases/${caseId}/safety-protocol`),
+  getCaseAlerts: async (caseId: string) => api.get<AlertSummaryResponse[]>(`/therapist/cases/${caseId}/alerts`),
+  handleCaseAlert: async (caseId: string, alertId: string, data: AlertHandleRequest) =>
+    api.patch<AlertHandleResponse>(`/therapist/cases/${caseId}/alerts/${alertId}`, data),
+  getCaseInsights: async (caseId: string) => api.get<CaseInsightsResponse>(`/therapist/cases/${caseId}/insights`),
+  getCaseRecommendations: async (caseId: string) =>
+    api.get<CaseRecommendationsResponse>(`/therapist/cases/${caseId}/recommendations`),
+  getCaseSafetyProtocol: async (caseId: string) =>
+    api.get<SafetyProtocolResponse>(`/therapist/cases/${caseId}/safety-protocol`),
 };
 
 export const voiceService = {

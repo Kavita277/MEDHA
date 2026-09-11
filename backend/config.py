@@ -145,8 +145,6 @@ class Settings(BaseModel):
         Constructs the SQLAlchemy database URI.
         Prioritizes DATABASE_URL if set. If not, constructs from individual POSTGRES_* fields.
         Normalizes postgres:// -> postgresql:// for SQLAlchemy 2.0.
-        In development mode with default localhost Postgres, falls back to local SQLite
-        so tests and local runs do not require a live external PostgreSQL server.
         """
         if self.DATABASE_URL:
             url = self.DATABASE_URL
@@ -154,13 +152,10 @@ class Settings(BaseModel):
                 url = url.replace("postgres://", "postgresql://", 1)
             return url
 
-        if self.POSTGRES_SERVER != "localhost" or self.is_production:
-            return (
-                f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
-                f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
-            )
-
-        return "sqlite:///./medha_dev.db"
+        return (
+            f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
 
     @property
     def is_production(self) -> bool:
@@ -243,4 +238,3 @@ class ConfigurationError(ValueError):
 def get_settings() -> Settings:
     """Cached singleton provider for application settings."""
     return Settings()
-

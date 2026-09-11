@@ -120,8 +120,8 @@ During application startup inside FastAPI's async `lifespan`:
 ## 6. Development & Test Fallback Compatibility
 
 To ensure zero regressions across unit and integration tests without requiring an active PostgreSQL daemon on localhost:
-- If `DATABASE_URL` is not set and `POSTGRES_SERVER == "localhost"` in non-production environments, `SQLALCHEMY_DATABASE_URI` defaults to local SQLite (`sqlite:///./medha_dev.db`).
-- If an explicit `DATABASE_URL` is supplied (such as `sqlite:///:memory:` in `conftest.py`), it is respected unconditionally.
+- If `DATABASE_URL` is not set, `SQLALCHEMY_DATABASE_URI` is built from the `POSTGRES_*` settings using the PostgreSQL driver.
+- Explicit `DATABASE_URL` values are respected, including SQLite URLs used by isolated test fixtures.
 - In production, `validate_production_settings()` strictly rejects any SQLite URI, preventing accidental fallback in live environments.
 
 ---

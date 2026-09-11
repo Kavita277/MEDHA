@@ -39,6 +39,13 @@ export default function HomeScreen() {
   const [answeredCount, setAnsweredCount] = useState(0);
   const [checkinError, setCheckinError] = useState<string | null>(null);
 
+  // Guard: if authenticated as clinician, redirect to therapist workspace
+  useEffect(() => {
+    if (user?.role?.toUpperCase() === 'THERAPIST' || user?.role?.toUpperCase() === 'ADMIN') {
+      router.replace('/therapist');
+    }
+  }, [user?.role]);
+
   // Auto-pop check-in on first open if not completed today
   useEffect(() => {
     if (!token) return;

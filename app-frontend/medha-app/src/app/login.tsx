@@ -37,7 +37,7 @@ import { useAuth } from '../context/AuthContext';
 import { ApiError, NetworkError } from '../services/api';
 
 export default function LoginScreen() {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -45,12 +45,16 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // If already authenticated (e.g. back-navigation), redirect away
+  // If already authenticated (e.g. back-navigation), redirect away based on role
   React.useEffect(() => {
     if (isAuthenticated) {
-      router.replace('/home');
+      if (user?.role?.toUpperCase() === 'THERAPIST' || user?.role?.toUpperCase() === 'ADMIN') {
+        router.replace('/therapist');
+      } else {
+        router.replace('/home');
+      }
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   async function handleLogin() {
     const trimmedEmail = email.trim().toLowerCase();
@@ -65,9 +69,12 @@ export default function LoginScreen() {
     setIsLoading(true);
 
     try {
-      await login({ email: trimmedEmail, password: trimmedPassword });
-      // login() sets token + user in context; navigate to home
-      router.replace('/home');
+      const loggedUser = await login({ email: trimmedEmail, password: trimmedPassword });
+      if (loggedUser?.role?.toUpperCase() === 'THERAPIST' || loggedUser?.role?.toUpperCase() === 'ADMIN') {
+        router.replace('/therapist');
+      } else {
+        router.replace('/home');
+      }
     } catch (err) {
       // AuthContext.login already sets context error, but we also
       // show it inline on this screen.
@@ -160,6 +167,17 @@ export default function LoginScreen() {
                 <Ionicons name="arrow-forward" size={18} color={COLORS.white} />
               </>
             )}
+          </Pressable>
+
+          <Pressable
+            onPress={() => {
+              setEmail('patient@medha.org');
+              setPassword('PatientPass123!');
+            }}
+            disabled={isLoading}
+            style={styles.demoFillButton}
+          >
+            <Text style={styles.demoFillButtonText}>Fill Demo Patient (patient@medha.org)</Text>
           </Pressable>
         </View>
 
@@ -331,5 +349,19 @@ const styles = StyleSheet.create({
     fontSize: 8,
     color: COLORS.subtleText,
     marginTop: 28,
+  },
+  demoFillButton: {
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    backgroundColor: COLORS.mist,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  demoFillButtonText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 11,
+    color: COLORS.forest,
   },
 });
