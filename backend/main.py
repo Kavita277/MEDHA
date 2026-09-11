@@ -68,6 +68,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application startup and graceful shutdown hooks."""
     settings = get_settings()
     setup_logging(settings)
+
+    # Fail fast on startup in production if critical configuration is invalid
+    if settings.is_production:
+        settings.validate_production_settings()
+
     logger.info(
         f"Starting {settings.PROJECT_NAME} v{settings.VERSION} "
         f"[env={settings.ENVIRONMENT}, debug={settings.DEBUG}]"
