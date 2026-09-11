@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AudioModule, useAudioRecorder, RecordingPresets } from 'expo-audio';
 
 import { MedhaScreen } from '../components/medha-screen';
 import { COLORS } from '../constants/colors';
@@ -9,6 +10,7 @@ import { voiceService } from '../services/api';
 
 export default function VoiceScreen() {
   const router = useRouter();
+  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const [recording, setRecording] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -84,6 +86,19 @@ export default function VoiceScreen() {
   const handleStartRecording = async () => {
     setStatusMessage('Requesting microphone permission...');
     try {
+      if (Platform.OS !== 'web') {
+        const perm = await AudioModule.requestRecordingPermissionsAsync();
+        if (!perm.granted) {
+          setStatusMessage('Microphone access denied. Please allow microphone access in device settings.');
+          return;
+        }
+        await recorder.prepareToRecordAsync();
+        recorder.record();
+        setRecording(true);
+        setStatusMessage('Listening gently... speak at your own pace.');
+        return;
+      }
+
       if (typeof navigator !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: { echoCancellation: true, noiseSuppression: true },
@@ -115,7 +130,7 @@ export default function VoiceScreen() {
       }
     } catch (err: any) {
       console.warn('Microphone permission error:', err);
-      setStatusMessage('Microphone access denied. Please allow microphone access in browser settings.');
+      setStatusMessage('Microphone access denied. Please allow microphone access in browser or device settings.');
     }
   };
 
@@ -123,6 +138,28 @@ export default function VoiceScreen() {
     setRecording(false);
     setSubmitting(true);
     setStatusMessage('Analyzing acoustic prosody & features...');
+
+    if (Platform.OS !== 'web') {
+      try {
+        await recorder.stop();
+        const fileUri = recorder.uri;
+        await voiceService.uploadCheckin(fileUri || undefined);
+        setStatusMessage('Voice check-in processed successfully!');
+        setTimeout(() => {
+          router.push('/chat');
+        }, 1000);
+        return;
+      } catch (err: any) {
+        console.warn('Native voice upload error:', err);
+        setStatusMessage('Voice check-in recorded! Continuing to companion...');
+        setTimeout(() => {
+          router.push('/chat');
+        }, 1200);
+        return;
+      } finally {
+        setSubmitting(false);
+      }
+    }
 
     let wavBlob: Blob | null = null;
     try {

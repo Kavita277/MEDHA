@@ -16,7 +16,7 @@ router = APIRouter()
 def upload_voice_checkin(
     timepoint: Optional[str] = Form(None),
     session_id: Optional[str] = Form(None),
-    audio_file: UploadFile = File(...),
+    audio_file: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):

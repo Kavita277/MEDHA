@@ -182,17 +182,19 @@ export const voiceService = {
       }
       formData.append('audio_file', blob, 'voice_checkin.wav');
     } else {
-      const uri = (typeof audioData === 'string' ? audioData : null) || 'file:///dummy/voice_checkin.wav';
-      const filename = uri.split('/').pop() || 'recording.wav';
-      const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `audio/${match[1]}` : 'audio/wav';
+      const uri = typeof audioData === 'string' ? audioData : null;
+      if (uri && uri.length > 0 && !uri.includes('dummy')) {
+        const filename = uri.split('/').pop() || 'recording.m4a';
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `audio/${match[1]}` : 'audio/m4a';
 
-      // @ts-ignore
-      formData.append('audio_file', {
-        uri,
-        name: filename,
-        type,
-      });
+        // @ts-ignore
+        formData.append('audio_file', {
+          uri: Platform.OS === 'ios' ? (uri.startsWith('file://') ? uri : `file://${uri}`) : uri,
+          name: filename,
+          type,
+        });
+      }
     }
 
     const headers: Record<string, string> = {};
