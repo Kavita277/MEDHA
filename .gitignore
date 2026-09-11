@@ -1,33 +1,69 @@
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
 *$*.py
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+bin/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
 
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
 
-# Local IDEs / System files
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
-# Model weights and archives
+# Node.js & React Native / Expo
+node_modules/
+.expo/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.metro-health-check*
+
+# Environment files (NEVER commit secrets; use .env.example)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Local SQLite / Test Databases
+*.db
+*.db-journal
+*.sqlite3
+
+# Large Model Weights and Archives
 *.pt
 *.pth
 *.bin
 *.rar
+*.zip
+*.tar.gz
 
 # Excel temporary / owner files
 ~$*.xlsx
 ~$*.xls
 
-# Ignore the nested MEDHA copy if it's redundant (we can ask or just ignore cache/models globally)
-# (For now let's apply the rule globally, which will ignore *.pt and __pycache__ in both directories)
-
-# Environments & Virtual Environments
-.env
-.venv/
-venv/
-env/
-
-# Scratch & Logs
+# Logs & Scratch
 scratch_*.txt
 *.log
+scratch/
+.system_generated/
+
+# IDE / OS specific
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.pytest_cache/

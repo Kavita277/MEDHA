@@ -43,7 +43,7 @@ from __future__ import annotations
 import uuid
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from backend.dependencies import get_db
 from backend.persistence.models.case import Case
@@ -54,16 +54,19 @@ from backend.persistence.models.user import User
 from backend.persistence.models.checkin import CheckInModel
 from backend.persistence.models.behaviour_snapshot import BehaviourFeatureSnapshotModel
 from backend.persistence.models.safety_event import SafetyEventModel
+from backend.persistence.models.voice_record import VoiceRecordModel
 from backend.persistence.repositories.case import CaseRepository
 from backend.persistence.repositories.session import SessionRepository
 from backend.persistence.repositories.prediction_result import PredictionResultRepository
 from datetime import datetime, timezone
+from backend.schemas.voice import VoiceRecordReviewResponse
 from backend.schemas.results import (
     CaseSummaryResponse,
     CaseResultResponse,
     SessionSummaryResponse,
     SpecialistPredictionsResponse,
     CheckinSummaryResponse,
+    CheckinQuestionItemResponse,
     BehaviourSummaryResponse,
     AlertSummaryResponse,
     AlertHandleRequest,
@@ -395,6 +398,15 @@ def get_session_results(
     return _build_result_response(case=case, prediction=prediction, session_id=session.id)
 
 
+_CHECKIN_DOMAIN_MAP = {
+    "GW": "General Wellbeing & Mood",
+    "SF": "Sleep & Daytime Functioning",
+    "ES": "Stress & Coping",
+    "SA": "Safety & Stability",
+    "SE": "Social Support & Connection",
+}
+
+
 @router.get(
     "/cases/{case_id}/checkins",
     response_model=List[CheckinSummaryResponse],
@@ -413,22 +425,40 @@ def list_case_checkins(
 
     checkins = (
         db.query(CheckInModel)
+        .options(joinedload(CheckInModel.questions))
         .join(SessionModel)
         .filter(SessionModel.case_id == case.id)
         .order_by(CheckInModel.created_at.desc())
         .all()
     )
 
-    return [
-        CheckinSummaryResponse(
-            checkin_id=c.id,
-            timepoint=c.session.timepoint,
-            status=c.status,
-            started_at=c.created_at,
-            completed_at=c.completed_at,
+    results = []
+    for c in checkins:
+        q_items = []
+        for q in (c.questions or []):
+            prefix = q.question_id.split("-")[0] if "-" in q.question_id else q.question_id[:2]
+            domain = _CHECKIN_DOMAIN_MAP.get(prefix, "Clinical Assessment")
+            q_items.append(
+                CheckinQuestionItemResponse(
+                    question_id=q.question_id,
+                    question_text=q.question_text,
+                    domain=domain,
+                    answer=q.answer,
+                    answer_status=q.answer_status,
+                    answered_at=q.answered_at,
+                )
+            )
+        results.append(
+            CheckinSummaryResponse(
+                checkin_id=c.id,
+                timepoint=c.session.timepoint,
+                status=c.status,
+                started_at=c.created_at,
+                completed_at=c.completed_at,
+                questions=q_items,
+            )
         )
-        for c in checkins
-    ]
+    return results
 
 
 @router.get(
@@ -583,6 +613,33 @@ def handle_case_alert(
     db.refresh(alert)
 
     return AlertHandleResponse.model_validate(alert)
+
+
+@router.get(
+    "/cases/{case_id}/voice-records",
+    response_model=List[VoiceRecordReviewResponse],
+    status_code=status.HTTP_200_OK,
+    summary="List Voice Records for a Case",
+    description="Returns all historical voice check-in recordings, extracted acoustic features, and predictions for clinician review. Therapist must own the case.",
+)
+def list_case_voice_records(
+    case_id: uuid.UUID,
+    request: Request,
+    current_therapist: Therapist = Depends(get_current_therapist),
+    db: Session = Depends(get_db),
+) -> List[VoiceRecordReviewResponse]:
+    """Returns all historical voice check-in records for a therapist-owned case."""
+    case = _get_authorized_case(case_id, current_therapist, db, request=request)
+
+    records = (
+        db.query(VoiceRecordModel)
+        .filter(VoiceRecordModel.case_id == case.id)
+        .order_by(VoiceRecordModel.created_at.desc())
+        .all()
+    )
+
+    return [VoiceRecordReviewResponse.model_validate(r) for r in records]
+
 
 
 

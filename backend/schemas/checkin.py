@@ -17,6 +17,9 @@ class QuestionResponse(BaseModel):
     question_id: str
     question_text: str
     question_order: int
+    domain: Optional[str] = None
+    response_type: Optional[str] = "scale_1_5"
+    options: Optional[List[str]] = None
     answered_at: Optional[datetime] = None
     answer_status: str
 

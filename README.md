@@ -1,99 +1,184 @@
-# MEDHA V2
+# MEDHA — Multimodal AI Clinical Decision Support & Patient Companion
 
-MEDHA V2 is an advanced, multi-modal machine-learning risk prediction system. It assesses both the **Current Distress (DDS)** and the **Future Escalation Risk** of individuals based on longitudinal historical data. The models evaluate Structured data, Text data (MuRIL embeddings), Voice data (Acoustic profiles), and Behavioural app interactions to form a holistic picture, remaining robust even when unstructured modalities are missing.
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688.svg)](https://fastapi.tiangolo.com/)
+[![React Native / Expo](https://img.shields.io/badge/Expo-51.0%2B-000020.svg)](https://expo.dev/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-336791.svg)](https://www.postgresql.org/)
+[![License](https://img.shields.io/badge/License-Proprietary-red.svg)]()
 
----
-
-## 1. What does the pipeline produce?
-
-The pipeline evaluates an individual's ongoing case history and outputs:
-1. **Current DDS (0-100)**: A precise numeric estimation of current distress using an XGBoost Fusion Engine applied to all available modalities.
-2. **Future Risk Probability (0-1)**: The likelihood of case escalation in the near future, determined by a PyTorch GRU model analyzing the trailing 7-step history.
-3. **Availability Flags**: Indicators of whether adequate history or unstructured signals were present.
+MEDHA is a multi-modal clinical intelligence and longitudinal distress-monitoring platform. It empowers clinicians with AI-assisted distress scoring, safety escalation warnings, and explainable recommendations while providing patients with a non-stigmatizing daily companion for structured check-ins, journal reflections, and voice check-ins.
 
 ---
 
-## 2. Quickstart: Backend Entry Point
+## 1. Key Capabilities
 
-The singular official runtime entry point for backend integration is `MedhaV2Pipeline`.
+* **Unified Multimodal Prediction Engine**:
+  * **Structured Specialist**: Analyzes 10–15 randomized daily clinical questionnaire responses.
+  * **Text Specialist (NLP)**: Ingests journal reflections to score distress indicators.
+  * **Voice Specialist**: Extracts acoustic prosody (pitch, jitter, shimmer, HNR) from voice check-ins.
+  * **Behaviour Telemetry**: Ingests app interaction patterns and consistency.
+  * **XGBoost Multimodal Fusion Engine**: Synthesizes available signals into a holistic Dynamic Distress Score (0–100) and clinical **Triage Level** (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`).
+  * **Temporal GRU Model**: Evaluates trailing 7-day sequences to forecast Day-8 safety escalation risk (`temporal_risk`).
+* **Strict Patient Safety Safeguards**:
+  * Patients only see warm, non-clinical supportive feedback (breathing, grounding, mindfulness).
+  * Raw risk probabilities, triage classifications, and diagnostic labels are strictly isolated to authenticated clinicians.
+* **Clinician / Therapist Workspace**:
+  * Case overview with longitudinal trajectories.
+  * Real-time audit of patient check-in responses, question by question.
+  * Actionable clinical recommendations and explainability summaries.
 
-**Initialization**:
-```python
-from engine.v2.medha_v2_pipeline import MedhaV2Pipeline
+---
 
-# The pipeline automatically discovers and loads all frozen models internally.
-pipeline = MedhaV2Pipeline()
+## 2. Project Architecture
+
 ```
-
-**Providing Input Data**:
-The pipeline requires a standard Pandas DataFrame containing the required longitudinal features. 
-**Crucial Requirement**: The DataFrame MUST explicitly include the `Text_Available` and `Voice_Available` boolean/float indicator columns (as 1.0 or 0.0), even if all text/voice signal columns are blank. 
-
-**Execution & Output**:
-```python
-# Pass the complete DataFrame
-output_df = pipeline.predict_v2(input_df)
-
-# Read the newly appended columns
-fusion_dds = output_df["Fusion_DDS_Prediction"]
-temporal_risk = output_df["Temporal_Risk_Score"]
-
-# Optionally, apply engineering triage rules
-from engine.v2.priority_triage import TriageEngine
-triage = TriageEngine()
-final_df = triage.evaluate(output_df)
-```
-
-See [backend_inference_example.py](docs/examples/backend_inference_example.py) for a complete working example.
-
----
-
-## 3. Frozen Artifacts
-
-All models are fully trained, strictly evaluated on a sealed test set, and **frozen**. You must never retrain these models in a production environment. 
-* All frozen weights, configs, and preprocessors live securely in: `engine/models/`
-
----
-
-## 4. Documentation & Architecture
-
-Comprehensive technical documentation is maintained in the `docs/` directory:
-* **Architecture**: [`MEDHA_V2_ARCHITECTURE.md`](docs/MEDHA_V2_ARCHITECTURE.md)
-* **Model Configurations**: [`MEDHA_V2_MODEL_CARD.md`](docs/MEDHA_V2_MODEL_CARD.md)
-* **Performance Metrics**: [`MEDHA_V2_RESULTS.md`](docs/MEDHA_V2_RESULTS.md)
-* **Input DataFrame Schema**: [`MEDHA_V2_DATA_CONTRACT.md`](docs/MEDHA_V2_DATA_CONTRACT.md)
-* **Integration API Rules**: [`MEDHA_V2_API_HANDOFF.md`](docs/MEDHA_V2_API_HANDOFF.md)
-* **Reproducibility/Environment**: [`MEDHA_V2_REPRODUCIBILITY.md`](docs/MEDHA_V2_REPRODUCIBILITY.md)
-* **Directory Governance**: [`MEDHA_V2_REPO_GUIDE.md`](docs/MEDHA_V2_REPO_GUIDE.md)
-* **Runtime Verification**: [`MEDHA_V2_STEP17C_BACKEND_VERIFICATION.md`](docs/MEDHA_V2_STEP17C_BACKEND_VERIFICATION.md)
-
----
-
-## 5. Testing
-
-The repository contains an exhaustive suite of unit and integration tests (223+ passing tests).
-To run the full test suite in your local environment:
-```bash
-python -m pytest engine/tests/
-```
-
----
-
-## 6. Repository Layout
-
-```text
 MEDHA/
-├── README.md                 # This file
-├── docs/                     # DOCUMENTATION: Architecture, APIs, Hand-off guides
-│   └── examples/             # DOCUMENTATION: Backend inference mock scripts
-├── engine/
-│   ├── v2/                   # RUNTIME: Pipeline logic and feature whitelist policies
-│   ├── models/               # FROZEN: Locked serializers, JSONs, PTH checkpoints
-│   ├── tests/                # TESTS: Pytest unit and integration test suite
-│   ├── legacy_v1/            # ARCHIVE / HISTORICAL: V1 legacy models (Do not use)
-│   ├── gru-temporal-risk/    # ARCHIVE / HISTORICAL: V1 legacy models (Do not use)
-│   └── fusion_engine/        # ARCHIVE / HISTORICAL: V2 experimental development
-└── outputs/                  # REFERENCE: Cached inference and diagnostic metrics
+├── backend/                  # FastAPI REST API & Clinical Services
+│   ├── api/v1/               # Endpoints (Auth, Checkins, Sessions, Therapist, Voice)
+│   ├── persistence/          # SQLAlchemy 2.0 ORM Models & Repositories
+│   └── services/             # Prediction orchestration, journal, checkin services
+├── app-frontend/             # Cross-platform Patient & Therapist App (React Native / Expo)
+│   └── medha-app/            # Modern Expo Router UI (home, check-in, therapist, profile)
+├── chatbot/                  # Conversational and Question Generation Engines
+│   └── engines/              # Randomized 10-15 Question Engine across 4 domains
+├── engine/                   # Frozen Machine Learning Models & Pipeline
+│   ├── v2/                   # MedhaV2Pipeline execution logic
+│   └── models/               # Frozen model weights (XGBoost, MuRIL, GRU, preprocessors)
+├── database/                 # Database Schema & DDL Scripts
+│   └── schema.sql            # Full PostgreSQL DDL creation script
+├── docs/                     # Technical specifications & architecture docs
+│   └── DATABASE_STRUCTURE.md # Detailed schema & ER diagrams
+└── scripts/                  # Seeding, verification, and CLI inspection utilities
 ```
 
-**WARNING**: The `legacy_v1/`, `gru-temporal-risk/`, and `fusion_engine/` directories are archived purely for historical record tracking the migration path from V1 to V2. **They must never be used in a production pipeline.**
+---
+
+## 3. Prerequisites
+
+* **Python**: `3.10` or `3.11`
+* **Node.js**: `18.x` or `20.x` (with `npm` or `yarn`)
+* **PostgreSQL**: `14+` running locally or accessible via network
+* **Git**: Installed and configured
+
+---
+
+## 4. Quickstart Setup Guide
+
+### Step 1: Clone Repository & Switch to `medha-v2` Branch
+```bash
+git clone https://github.com/Kavita277/MEDHA.git
+cd MEDHA
+git checkout medha-v2
+```
+
+### Step 2: Set Up Python Backend Environment
+```bash
+# Create and activate virtual environment
+python -m venv venv
+
+# Windows (PowerShell)
+.\venv\Scripts\Activate.ps1
+
+# macOS / Linux
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### Step 3: Configure Environment Variables
+Copy `.env.example` to `.env`:
+```bash
+cp .env.example .env
+```
+Edit `.env` to configure your PostgreSQL credentials and optional Gemini API Key:
+```ini
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/medha
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+### Step 4: Initialize the PostgreSQL Database
+Ensure your PostgreSQL database (e.g. `medha`) is created:
+```sql
+CREATE DATABASE medha;
+```
+Run the seed scripts to automatically build all tables and populate default accounts:
+```bash
+# 1. Base Administrator & Patient Seeder
+python seed_db.py
+
+# 2. Multi-Case Longitudinal Clinical Demo Seeder
+python scripts/seed_demo_data.py
+```
+*(Alternatively, you can manually apply the DDL from `database/schema.sql`)*.
+
+### Step 5: Set Up Frontend (Expo Mobile & Web App)
+```bash
+cd app-frontend/medha-app
+npm install
+cd ../..
+```
+
+---
+
+## 5. Running the Application
+
+### 1. Start the Backend API Server
+```bash
+python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+```
+* **API Documentation (Swagger UI)**: [http://localhost:8000/docs](http://localhost:8000/docs)
+* **Health Check**: [http://localhost:8000/health](http://localhost:8000/health)
+
+### 2. Start the Frontend Application
+In a separate terminal:
+```bash
+cd app-frontend/medha-app
+npx expo start --web
+```
+* **Patient App**: [http://localhost:8081/home](http://localhost:8081/home)
+* **Clinician Workspace**: [http://localhost:8081/therapist-login](http://localhost:8081/therapist-login)
+
+---
+
+## 6. Pre-Configured Demo Credentials
+
+| Role | Name | Email | Password | Assigned Case |
+|---|---|---|---|---|
+| **Clinician / Therapist** | Dr. Radhika Sharma | `demo.therapist@medha.org` | `TherapistDemo123!` | Manages 4 Active Cases |
+| **Clinician / Therapist** | Dr. Jane Clinician | `therapist@medha.org` | `TherapistPass123!` | Base Clinician Account |
+| **Patient (Low Risk)** | Ananya Sharma | `ananya.sharma@medha.org` | `PatientPass123!` | `V-LOW-001` |
+| **Patient (Moderate Risk)** | Rahul Verma | `rahul.verma@medha.org` | `PatientPass123!` | `V-MED-002` |
+| **Patient (High Risk)** | Priya Patel | `priya.patel@medha.org` | `PatientPass123!` | `V-HIGH-003` |
+| **Patient (Critical / GRU)** | Kavita Rao | `kavita.rao@medha.org` | `PatientPass123!` | `V-CRIT-004` |
+
+---
+
+## 7. Useful CLI Tools
+
+* **Inspect Latest Check-In Answers**:
+  ```bash
+  python scripts/view_quiz_answers.py
+  ```
+* **Sync PostgreSQL Data to Local SQLite Replica**:
+  ```bash
+  python scripts/sync_pg_to_sqlite.py
+  ```
+* **Run Backend Unit & Integration Tests**:
+  ```bash
+  pytest backend/tests/
+  ```
+
+---
+
+## 8. Database Structure Documentation
+
+For full details regarding table relationships, foreign keys, and ML prediction schemas, refer to:
+* **[docs/DATABASE_STRUCTURE.md](docs/DATABASE_STRUCTURE.md)**
+* **[database/schema.sql](database/schema.sql)**
+
+---
+
+## 9. License
+
+This repository is proprietary and confidential. Developed for the MEDHA clinical monitoring initiative.

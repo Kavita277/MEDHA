@@ -1,9 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
-  Animated,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -11,192 +14,304 @@ import { Ionicons } from '@expo/vector-icons';
 import { MedhaScreen } from '../components/medha-screen';
 import { COLORS } from '../constants/colors';
 
-export default function VoiceScreen() {
+import { chatService, sessionService } from '../services/api';
+
+type Message = { id: string; from: 'medha' | 'you'; text: string };
+
+export default function ChatScreen() {
   const router = useRouter();
-  const [recording, setRecording] = useState(false);
+  const [text, setText] = useState('');
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: 'welcome',
+      from: 'medha',
+      text: 'Hi. I’m here with you. You can tell me what’s on your mind, in your own words.',
+    },
+  ]);
 
-  const pulse = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, {
-          toValue: 1.12,
-          duration: 1800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulse, {
-          toValue: 1,
-          duration: 1800,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    animation.start();
-
-    return () => animation.stop();
+  React.useEffect(() => {
+    sessionService.createSession().then((sess) => {
+      setSessionId(sess.id);
+    }).catch(err => {
+      console.warn("Session init error:", err);
+    });
   }, []);
+
+  const send = async () => {
+    const value = text.trim();
+    if (!value || sending) return;
+    
+    const userMsgId = `${Date.now()}`;
+    setMessages((current) => [
+      ...current,
+      { id: userMsgId, from: 'you', text: value },
+    ]);
+    setText('');
+    setSending(true);
+
+    try {
+      let activeSid = sessionId;
+      if (!activeSid) {
+        const newSess = await sessionService.createSession();
+        activeSid = newSess.id;
+        setSessionId(activeSid);
+      }
+      const res = await chatService.sendMessage(activeSid, value);
+      setMessages((current) => [
+        ...current,
+        {
+          id: `${Date.now()}-reply`,
+          from: 'medha',
+          text: res.assistant_response || 'I am here with you. Take a gentle breath.',
+        },
+      ]);
+    } catch (e: any) {
+      setMessages((current) => [
+        ...current,
+        {
+          id: `${Date.now()}-reply`,
+          from: 'medha',
+          text: 'I hear you. Take your time — I am listening and supporting you.',
+        },
+      ]);
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <MedhaScreen
-      eyebrow="Voice check-in"
-      title="I'm listening."
-      subtitle="You don't need to organise your thoughts first. Just speak."
+      eyebrow="Talk with MEDHA"
+      title="You can start anywhere."
+      subtitle="Type what you’re feeling, or switch to voice when speaking feels easier."
       onBack={() => router.back()}
+      scroll={false}
     >
-      <View style={styles.center}>
-        <Animated.View
-          style={[
-            styles.outerOrb,
-            {
-              transform: [{ scale: pulse }],
-            },
-          ]}
+      <KeyboardAvoidingView
+        style={styles.keyboard}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          style={styles.messages}
+          contentContainerStyle={styles.messageContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.middleOrb}>
+          {messages.map((message) => (
             <View
+              key={message.id}
               style={[
-                styles.innerOrb,
-                recording && styles.recordingOrb,
+                styles.bubble,
+                message.from === 'you' ? styles.youBubble : styles.medhaBubble,
               ]}
             >
-              <Ionicons
-                name={recording ? 'mic' : 'mic-outline'}
-                size={34}
-                color={COLORS.deepForest}
-              />
+              {message.from === 'medha' && (
+                <Text style={styles.sender}>MEDHA</Text>
+              )}
+              <Text
+                style={[
+                  styles.bubbleText,
+                  message.from === 'you' && styles.youText,
+                ]}
+              >
+                {message.text}
+              </Text>
+            </View>
+          ))}
+
+          <View style={styles.quickRow}>
+            {[
+              'I’m feeling anxious.',
+              'Help me sleep better.',
+              'I just want to talk.',
+            ].map((item) => (
+              <Pressable
+                key={item}
+                onPress={() => setText(item)}
+                style={styles.quickChip}
+              >
+                <Text style={styles.quickText}>{item}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
+
+        <View style={styles.voiceEntry}>
+          <View style={styles.voiceCopy}>
+            <View style={styles.voiceIcon}>
+              <Ionicons name="mic-outline" size={17} color={COLORS.forest} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.voiceTitle}>Prefer to speak?</Text>
+              <Text style={styles.voiceSubtitle}>
+                Have a natural voice conversation with MEDHA.
+              </Text>
             </View>
           </View>
-        </Animated.View>
+          <Pressable
+            style={styles.voiceButton}
+            onPress={() => router.push('/voice-assistant' as any)}
+            accessibilityRole="button"
+            accessibilityLabel="Start voice chat with MEDHA"
+          >
+            <Ionicons name="arrow-forward" size={18} color={COLORS.white} />
+          </Pressable>
+        </View>
 
-        <Text style={styles.status}>
-          {recording
-            ? 'Listening gently...'
-            : 'Tap when you’re ready'}
-        </Text>
-
-        <Text style={styles.hint}>
-          You can pause whenever you want.
-        </Text>
-      </View>
-
-      <Pressable
-        onPress={() => setRecording(!recording)}
-        style={[
-          styles.recordButton,
-          recording && styles.stopButton,
-        ]}
-      >
-        <Ionicons
-          name={recording ? 'stop' : 'mic'}
-          size={21}
-          color={COLORS.white}
-        />
-
-        <Text style={styles.recordText}>
-          {recording ? 'Finish' : 'Start speaking'}
-        </Text>
-      </Pressable>
-
-      {!recording && (
-        <Pressable
-          onPress={() => router.push('/home')}
-          style={styles.skip}
-        >
-          <Text style={styles.skipText}>
-            Maybe later
-          </Text>
-        </Pressable>
-      )}
+        <View style={styles.composer}>
+          <TextInput
+            value={text}
+            onChangeText={setText}
+            placeholder="Type a message..."
+            placeholderTextColor={COLORS.subtleText}
+            multiline
+            style={styles.input}
+            textAlignVertical="center"
+          />
+          <Pressable
+            onPress={() => router.push('/voice-assistant' as any)}
+            style={styles.micButton}
+            accessibilityRole="button"
+            accessibilityLabel="Open voice chat"
+          >
+            <Ionicons name="mic-outline" size={20} color={COLORS.forest} />
+          </Pressable>
+          <Pressable
+            onPress={send}
+            style={[styles.sendButton, !text.trim() && styles.sendDisabled]}
+            disabled={!text.trim()}
+          >
+            <Ionicons name="arrow-up" size={19} color={COLORS.white} />
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
     </MedhaScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    minHeight: 390,
-    alignItems: 'center',
-    justifyContent: 'center',
+  keyboard: { flex: 1 },
+  messages: { flex: 1 },
+  messageContent: { paddingVertical: 10, gap: 10 },
+  bubble: {
+    maxWidth: '88%',
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    borderRadius: 20,
   },
-
-  outerOrb: {
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    backgroundColor: 'rgba(166,170,145,0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  medhaBubble: {
+    alignSelf: 'flex-start',
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderBottomLeftRadius: 6,
   },
-
-  middleOrb: {
-    width: 205,
-    height: 205,
-    borderRadius: 103,
-    backgroundColor: 'rgba(170,188,180,0.32)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  youBubble: {
+    alignSelf: 'flex-end',
+    backgroundColor: COLORS.forest,
+    borderBottomRightRadius: 6,
   },
-
-  innerOrb: {
-    width: 125,
-    height: 125,
-    borderRadius: 63,
+  sender: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 8,
+    letterSpacing: 1.5,
+    color: COLORS.moss,
+    marginBottom: 6,
+  },
+  bubbleText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    lineHeight: 18,
+    color: COLORS.text,
+  },
+  youText: { color: COLORS.white },
+  quickRow: { gap: 8, paddingVertical: 8 },
+  quickChip: {
+    alignSelf: 'flex-start',
+    borderRadius: 18,
+    backgroundColor: COLORS.surfaceWarm,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+  quickText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 10,
+    color: COLORS.deepForest,
+  },
+  voiceEntry: {
+    marginTop: 8,
+    padding: 13,
+    borderRadius: 20,
+    backgroundColor: COLORS.mist,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  voiceCopy: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  voiceIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border,
   },
-
-  recordingOrb: {
-    backgroundColor: COLORS.mist,
-    borderColor: COLORS.forest,
-  },
-
-  status: {
-    fontFamily: 'CormorantGaramond-Regular',
-    fontSize: 24,
-    color: COLORS.deepForest,
-    marginTop: 32,
-  },
-
-  hint: {
-    fontFamily: 'Inter-Regular',
+  voiceTitle: {
+    fontFamily: 'Inter-Medium',
     fontSize: 11,
-    color: COLORS.mutedText,
-    marginTop: 8,
+    color: COLORS.deepForest,
   },
-
-  recordButton: {
-    height: 56,
-    borderRadius: 28,
+  voiceSubtitle: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 9,
+    lineHeight: 13,
+    color: COLORS.mutedText,
+    marginTop: 2,
+  },
+  voiceButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: COLORS.forest,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  composer: {
+    minHeight: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     flexDirection: 'row',
-    gap: 10,
-  },
-
-  stopButton: {
-    backgroundColor: COLORS.wood,
-  },
-
-  recordText: {
-    color: COLORS.white,
-    fontFamily: 'Inter-Medium',
-    fontSize: 13,
-  },
-
-  skip: {
     alignItems: 'center',
-    paddingVertical: 18,
+    paddingLeft: 17,
+    paddingRight: 6,
+    marginTop: 10,
+    marginBottom: 4,
   },
-
-  skipText: {
-    fontFamily: 'Inter-Medium',
-    color: COLORS.mutedText,
+  input: {
+    flex: 1,
+    maxHeight: 80,
+    fontFamily: 'Inter-Regular',
     fontSize: 12,
+    color: COLORS.text,
+    paddingVertical: 10,
   },
+  micButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: COLORS.forest,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendDisabled: { opacity: 0.35 },
 });

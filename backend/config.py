@@ -47,7 +47,7 @@ class Settings(BaseModel):
             origin.strip()
             for origin in os.getenv(
                 "CORS_ORIGINS",
-                "http://localhost,http://localhost:3000,http://localhost:8501,http://127.0.0.1:8501,http://localhost:8000,http://127.0.0.1:8000",
+                "http://localhost,http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8501,http://127.0.0.1:8501,http://localhost:8000,http://127.0.0.1:8000,http://localhost:8081,http://127.0.0.1:8081",
             ).split(",")
             if origin.strip()
         ]

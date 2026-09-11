@@ -29,6 +29,18 @@ def start_checkin(
     return service.start_checkin(session_id, current_user)
 
 
+@router.get("/status/today")
+def get_today_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Check if the user has completed or is currently in a check-in today.
+    """
+    service = CheckInService(db)
+    return service.get_today_checkin_status(current_user)
+
+
 @router.get("/{checkin_id}", response_model=CheckInResponse)
 def get_checkin(
     checkin_id: uuid.UUID,
@@ -42,10 +54,15 @@ def get_checkin(
     return service.get_checkin(checkin_id, current_user)
 
 
+from backend.jobs.prediction_queue import enqueue_prediction
+from backend.persistence.repositories.session import SessionRepository
+
+
 @router.post("/{checkin_id}/answer", response_model=CheckInAnswerResponse)
 def submit_answer(
     checkin_id: uuid.UUID,
     request: CheckInAnswerRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -54,11 +71,16 @@ def submit_answer(
     Updates the MedhaState structured features and asks the Question Engine for the next question.
     """
     service = CheckInService(db)
-    return service.submit_answer(checkin_id, current_user, request.answer)
+    res = service.submit_answer(checkin_id, current_user, request.answer)
 
+    # Enqueue background prediction so downstream models process latest data
+    session_repo = SessionRepository(db)
+    session_obj = session_repo.get(res.checkin.session_id)
+    if session_obj:
+        background_tasks.add_task(enqueue_prediction, session_obj.case_id, session_obj.timepoint)
 
-from backend.jobs.prediction_queue import enqueue_prediction
-from backend.persistence.repositories.session import SessionRepository
+    return res
+
 
 @router.post("/{checkin_id}/complete", response_model=CheckInResponse)
 def complete_checkin(
