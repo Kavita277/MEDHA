@@ -35,27 +35,52 @@ import torch
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
+import sys
+from pathlib import Path
+
 from backend.integrations.medha_v2 import get_v2_pipeline, run_v2_inference
 from backend.persistence.models.behaviour_snapshot import BehaviourFeatureSnapshotModel
 from backend.persistence.models.case import Case
 from backend.persistence.models.checkin import CheckInModel, QuestionRecordModel
+from backend.persistence.models.journal_entry import JournalEntryModel
 from backend.persistence.models.prediction_result import PredictionResultModel
 from backend.persistence.models.session import SessionModel
 from backend.services.checkin_service import QUESTION_TO_FEATURE_MAP
 
 logger = logging.getLogger(__name__)
 
-
 # ---------------------------------------------------------------------------
-# Text Feature Extractor
+# Text Feature Extractor (MuRIL V2 with Graceful Heuristic Fallback)
 # ---------------------------------------------------------------------------
 
-def extract_text_features(text: str) -> Dict[str, float]:
+_TEXT_ENGINE_FN = None
+
+
+def _get_text_engine():
+    """Lazily loads the standardized MuRIL text engine wrapper."""
+    global _TEXT_ENGINE_FN
+    if _TEXT_ENGINE_FN is None:
+        try:
+            repo_root = Path(__file__).resolve().parent.parent.parent
+            text_engine_path = str(repo_root / "engine" / "text engine")
+            if text_engine_path not in sys.path:
+                sys.path.insert(0, text_engine_path)
+            from medha_text_engine import medha_text_engine
+            _TEXT_ENGINE_FN = medha_text_engine
+            logger.info("Successfully loaded MEDHA MuRIL deep text engine.")
+        except Exception as e:
+            logger.warning(f"Could not load MEDHA MuRIL text engine, using fallback: {e}")
+            _TEXT_ENGINE_FN = False
+    return _TEXT_ENGINE_FN if _TEXT_ENGINE_FN is not False else None
+
+
+def extract_text_features(text: str, source: str = "diary") -> Dict[str, float]:
     """
     Extracts canonical MEDHA V2 text features from text content:
     Text_Distress, Fear, Threat_Context, Negative_Affect, Urgency (0.0 to 1.0)
+    using the fine-tuned MuRIL transformer model, with robust heuristic fallback.
     """
-    if not text:
+    if not text or not str(text).strip():
         return {
             "Text_Distress": 0.1,
             "Fear": 0.05,
@@ -64,6 +89,27 @@ def extract_text_features(text: str) -> Dict[str, float]:
             "Urgency": 0.0,
         }
 
+    engine_fn = _get_text_engine()
+    if engine_fn is not None:
+        try:
+            req = {
+                "text": str(text).strip(),
+                "source": source,
+            }
+            res = engine_fn(req)
+            raw_vec = res.get("text_vector", {})
+            if raw_vec and "text_distress" in raw_vec:
+                return {
+                    "Text_Distress": float(raw_vec["text_distress"]),
+                    "Fear": float(raw_vec["fear_signal"]),
+                    "Threat_Context": float(raw_vec["threat_context"]),
+                    "Negative_Affect": float(raw_vec["negative_affect"]),
+                    "Urgency": float(raw_vec["urgency"]),
+                }
+        except Exception as e:
+            logger.warning(f"MuRIL text engine inference failed, falling back to heuristic: {e}")
+
+    # Fallback keyword matching heuristic
     lowered = text.lower()
     distress_words = [
         "sad", "depressed", "hopeless", "crying", "miserable", "hurt", "pain",
@@ -218,6 +264,7 @@ def update_text_prediction(
     timepoint: int,
     text_content: str,
     session_id: Optional[uuid.UUID] = None,
+    source: str = "diary",
 ) -> PredictionResultModel:
     """
     Extracts text distress features from journal entry or conversational text,
@@ -226,8 +273,8 @@ def update_text_prediction(
     prediction = get_or_create_daily_prediction(db, case_id, timepoint, session_id)
     pipeline = get_v2_pipeline()
 
-    # Extract 5 core features
-    text_features = extract_text_features(text_content)
+    # Extract 5 core features using fine-tuned MuRIL / fallback
+    text_features = extract_text_features(text_content, source=source)
     df = pd.DataFrame([text_features])
 
     X_text = pipeline.text_preproc.transform(df[pipeline.text_features])
@@ -520,6 +567,19 @@ def generate_predictions(db: Session, case_id: uuid.UUID, timepoint: int) -> Pre
 
     behav_features = map_behaviour_to_v2(behav_snapshot)
     current_features.update(behav_features)
+
+    # 1b. Augment text features from journal if not in state_snapshot
+    if not current_features.get("Text_Available"):
+        latest_journal = (
+            db.query(JournalEntryModel)
+            .filter(JournalEntryModel.case_id == case_id)
+            .order_by(JournalEntryModel.created_at.desc())
+            .first()
+        )
+        if latest_journal and latest_journal.content:
+            journal_feats = extract_text_features(latest_journal.content, source="diary")
+            current_features.update(journal_feats)
+            current_features["Text_Available"] = 1.0
 
     # 1c. Augment directly from answered check-in questions for this case up to timepoint
     checkin_q_rows = (

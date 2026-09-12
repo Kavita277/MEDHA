@@ -90,9 +90,12 @@ class Settings(BaseModel):
         default_factory=lambda: os.getenv("DB_ECHO", "false").lower() in ("true", "1", "yes")
     )
 
-    # Optional Gemini Key for later steps
+    # Optional Gemini Key & Model
     GEMINI_API_KEY: str = Field(
         default_factory=lambda: os.getenv("GEMINI_API_KEY", os.getenv("GOOGLE_API_KEY", ""))
+    )
+    GEMINI_MODEL: str = Field(
+        default_factory=lambda: os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
     )
 
     # --- Authentication & JWT Security ---

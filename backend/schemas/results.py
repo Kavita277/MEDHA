@@ -211,6 +211,42 @@ class SpecialistPredictionsResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Patient Context
+# ---------------------------------------------------------------------------
+
+class CheckinResponseItem(BaseModel):
+    question_id: str = Field(..., description="The ID of the question asked")
+    question_text: str = Field(..., description="The text of the question asked")
+    response_text: Optional[str] = Field(None, description="The patient's answer")
+    intent: Optional[str] = Field(None, description="Question intent/category")
+    timestamp: Optional[datetime] = Field(None, description="When the question was asked/answered")
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ConversationSummary(BaseModel):
+    important_facts: List[str] = Field(default_factory=list)
+    current_concerns: List[str] = Field(default_factory=list)
+    recent_events: List[str] = Field(default_factory=list)
+    support_context: List[str] = Field(default_factory=list)
+    preferences: List[str] = Field(default_factory=list)
+    ongoing_topics: List[str] = Field(default_factory=list)
+    unresolved_topics: List[str] = Field(default_factory=list)
+    important_observations: List[str] = Field(default_factory=list)
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PatientContextResponse(BaseModel):
+    """Relevant human context from the patient's session"""
+    conversation_summary: Optional[ConversationSummary] = None
+    checkin_responses: List[CheckinResponseItem] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ---------------------------------------------------------------------------
 # Core result response
 # ---------------------------------------------------------------------------
 
@@ -285,6 +321,12 @@ class CaseResultResponse(BaseModel):
     result_record_created_at: Optional[datetime] = Field(
         None,
         description="When the result record was persisted. Null if no prediction exists.",
+    )
+
+    # Context
+    patient_context: Optional[PatientContextResponse] = Field(
+        None,
+        description="Relevant human context from the patient's session",
     )
 
     model_config = ConfigDict(from_attributes=False)

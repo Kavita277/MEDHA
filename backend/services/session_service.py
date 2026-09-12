@@ -200,3 +200,32 @@ class SessionService:
         session_obj = self.get_session_with_ownership_check(session_id, current_user)
         snapshot = serialize_medha_state(state)
         return self.session_repo.update_snapshot(session_obj, snapshot)
+
+    def list_sessions_for_user(self, current_user: User) -> list[SessionModel]:
+        """Lists all non-empty sessions for the current patient's active case."""
+        if current_user.role != UserRole.USER:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only patient users can list their sessions via this endpoint.",
+            )
+            
+        case = self.case_repo.get_active_case_for_user(current_user.id)
+        if not case:
+            return []
+            
+        sessions = self.session_repo.list_for_case(case.id)
+        valid_sessions = []
+        for s in sessions:
+            if s.state_snapshot:
+                history = s.state_snapshot.get("conversation_history", [])
+                if len(history) > 0:
+                    valid_sessions.append(s)
+                    continue
+            if s.messages and len(s.messages) > 0:
+                valid_sessions.append(s)
+        return valid_sessions
+
+    def delete_session(self, session_id: Union[str, uuid.UUID], current_user: User) -> None:
+        """Deletes a session after checking ownership."""
+        session_obj = self.get_session_with_ownership_check(session_id, current_user)
+        self.session_repo.delete(session_obj)

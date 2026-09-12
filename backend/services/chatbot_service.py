@@ -29,11 +29,13 @@ from backend.schemas.chat import (
     ChatMessageResponse,
     ChatTurnResult,
 )
+from backend.config import get_settings
 from backend.services.session_service import SessionService
 from chatbot.conversation_manager import ConversationManager
+from chatbot.llm.gemini_provider import GeminiProvider
+from chatbot.interfaces import PlaceholderLLMProvider
 
 logger = logging.getLogger(__name__)
-
 
 
 class ChatbotService:
@@ -42,9 +44,17 @@ class ChatbotService:
         self.session_service = SessionService(db)
         self.message_repo = ChatMessageRepository(db)
         
-        # Instantiate the ConversationManager (stateless aside from _sessions dict)
-        # Note: In production, engines might be singletons or injected.
-        self.manager = ConversationManager()
+        # Use Gemini when configured; fallback safely to PlaceholderLLMProvider
+        settings = get_settings()
+        llm_provider = (
+            GeminiProvider(
+                api_key=settings.GEMINI_API_KEY,
+                model_name=settings.GEMINI_MODEL,
+            )
+            if settings.GEMINI_API_KEY.strip()
+            else PlaceholderLLMProvider()
+        )
+        self.manager = ConversationManager(llm_provider=llm_provider)
 
     def process_message(
         self,
@@ -94,11 +104,26 @@ class ChatbotService:
                 detail="Conversation processing failed.",
             )
 
-
         # 5. Extract updated state and sync to snapshot
         updated_state_dict = sync_from_conversation_manager(self.manager, session_obj)
         session_obj.state_snapshot = updated_state_dict
         self.db.commit()
+
+        # 5b. Update unified prediction & Multimodal Fusion with conversational text
+        try:
+            from backend.services.prediction_service import update_text_prediction
+            case_id = session_obj.case_id
+            timepoint = session_obj.timepoint or 1
+            update_text_prediction(
+                self.db,
+                case_id=case_id,
+                timepoint=timepoint,
+                text_content=payload.message,
+                session_id=session_obj.id,
+                source="chatbot",
+            )
+        except Exception as pred_err:
+            logger.warning(f"Could not update text prediction for chat message: {pred_err}")
 
         # 6. Persist ASSISTANT message to database
         assistant_metadata = turn_result.metadata.copy() if turn_result.metadata else {}
