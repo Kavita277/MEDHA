@@ -1,4 +1,5 @@
-import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import {
   ImageBackground,
   Pressable,
@@ -7,8 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+
 import { COLORS } from '../constants/colors';
 
 const forestImage =
@@ -23,7 +23,6 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-
         {/* HEADER */}
 
         <View style={styles.header}>
@@ -40,7 +39,6 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-
         {/* HERO */}
 
         <View style={styles.hero}>
@@ -52,13 +50,10 @@ export default function HomeScreen() {
             <View style={styles.heroOverlay} />
 
             <View style={styles.heroContent}>
-              <Text style={styles.heroEyebrow}>
-                A QUIET MOMENT
-              </Text>
+              <Text style={styles.heroEyebrow}>A QUIET MOMENT</Text>
 
               <Text style={styles.heroTitle}>
-                Take a breath.{'\n'}
-                You're here.
+                {'Take a breath.\nYou’re here.'}
               </Text>
 
               <Text style={styles.heroText}>
@@ -68,19 +63,17 @@ export default function HomeScreen() {
           </ImageBackground>
         </View>
 
-
-        {/* CHECK-IN */}
+        {/* ARRIVE / CHECK-IN */}
 
         <View style={styles.section}>
-          <Text style={styles.sectionEyebrow}>
-            ARRIVE
-          </Text>
+          <Text style={styles.sectionEyebrow}>ARRIVE</Text>
 
           <Text style={styles.sectionTitle}>
             How would you like to arrive?
           </Text>
 
           <View style={styles.arrivalRow}>
+            {/* QUICK CHECK-IN */}
 
             <Pressable
               style={styles.arrival}
@@ -94,15 +87,14 @@ export default function HomeScreen() {
                 />
               </View>
 
-              <Text style={styles.arrivalTitle}>
-                Check in
-              </Text>
+              <Text style={styles.arrivalTitle}>Check in</Text>
 
               <Text style={styles.arrivalText}>
                 A few gentle questions
               </Text>
             </Pressable>
 
+            {/* VOICE CHECK-IN */}
 
             <Pressable
               style={styles.arrival}
@@ -116,27 +108,22 @@ export default function HomeScreen() {
                 />
               </View>
 
-              <Text style={styles.arrivalTitle}>
-                Speak
-              </Text>
+              <Text style={styles.arrivalTitle}>Speak</Text>
 
               <Text style={styles.arrivalText}>
-                Say what you're feeling
+                Say what you’re feeling
               </Text>
             </Pressable>
-
           </View>
         </View>
 
-
-        {/* CONTINUE EXPLORING */}
+        {/* YOUR SPACE */}
 
         <View style={styles.section}>
-          <Text style={styles.sectionEyebrow}>
-            YOUR SPACE
-          </Text>
+          <Text style={styles.sectionEyebrow}>YOUR SPACE</Text>
 
           <View style={styles.list}>
+            {/* TALK WITH MEDHA */}
 
             <Pressable
               style={styles.listItem}
@@ -156,7 +143,7 @@ export default function HomeScreen() {
                 </Text>
 
                 <Text style={styles.listText}>
-                  Start wherever your thoughts are.
+                  Type or talk about what’s on your mind.
                 </Text>
               </View>
 
@@ -167,6 +154,7 @@ export default function HomeScreen() {
               />
             </Pressable>
 
+            {/* FIND YOUR CENTRE */}
 
             <Pressable
               style={styles.listItem}
@@ -186,7 +174,7 @@ export default function HomeScreen() {
                 </Text>
 
                 <Text style={styles.listText}>
-                  A few minutes of guided grounding.
+                  A few quiet minutes to breathe and settle.
                 </Text>
               </View>
 
@@ -197,6 +185,7 @@ export default function HomeScreen() {
               />
             </Pressable>
 
+            {/* JOURNAL */}
 
             <Pressable
               style={styles.listItem}
@@ -212,7 +201,7 @@ export default function HomeScreen() {
 
               <View style={styles.listCopy}>
                 <Text style={styles.listTitle}>
-                  Write
+                  Write in your journal
                 </Text>
 
                 <Text style={styles.listText}>
@@ -227,44 +216,87 @@ export default function HomeScreen() {
               />
             </Pressable>
 
+            {/* SELF HELP */}
+
+            <Pressable
+              style={styles.listItem}
+              onPress={() => router.push('/self-help')}
+            >
+              <View style={styles.listIcon}>
+                <Ionicons
+                  name="heart-outline"
+                  size={20}
+                  color={COLORS.forest}
+                />
+              </View>
+
+              <View style={styles.listCopy}>
+                <Text style={styles.listTitle}>
+                  Self Help
+                </Text>
+
+                <Text style={styles.listText}>
+                  Small, gentle steps for difficult moments.
+                </Text>
+              </View>
+
+              <Ionicons
+                name="arrow-forward"
+                size={18}
+                color={COLORS.mutedText}
+              />
+            </Pressable>
           </View>
         </View>
 
-
-        {/* INSIGHT */}
+        {/* SELF HELP FEATURE CARD */}
 
         <Pressable
-          style={styles.insight}
-          onPress={() => router.push('/insights')}
+          style={styles.selfHelpCard}
+          onPress={() => router.push('/self-help')}
         >
-          <View>
-            <Text style={styles.insightEyebrow}>
-              YOUR PATTERNS
+          <View style={styles.selfHelpCopy}>
+            <Text style={styles.selfHelpEyebrow}>
+              A LITTLE SUPPORT
             </Text>
 
-            <Text style={styles.insightTitle}>
-              See how you've been feeling.
+            <Text style={styles.selfHelpTitle}>
+              Small steps.{'\n'}A calmer moment.
             </Text>
 
-            <Text style={styles.insightText}>
-              Gentle reflections from your recent moments.
+            <Text style={styles.selfHelpText}>
+              Explore gentle, evidence-informed guides for stress,
+              anxiety, low mood and everyday wellbeing.
             </Text>
+
+            <View style={styles.selfHelpButton}>
+              <Text style={styles.selfHelpButtonText}>
+                Explore Self Help
+              </Text>
+
+              <Ionicons
+                name="arrow-forward"
+                size={16}
+                color={COLORS.deepForest}
+              />
+            </View>
           </View>
 
-          <View style={styles.insightArrow}>
+          <View style={styles.selfHelpIllustration}>
+            <View style={styles.illustrationCircleLarge} />
+            <View style={styles.illustrationCircleSmall} />
+
             <Ionicons
-              name="arrow-forward"
-              size={18}
-              color={COLORS.white}
+              name="leaf-outline"
+              size={45}
+              color={COLORS.forest}
             />
           </View>
         </Pressable>
 
-
         {/* BOTTOM TOOLS */}
 
         <View style={styles.tools}>
-
           <Pressable
             onPress={() => router.push('/ambient')}
             style={styles.tool}
@@ -274,6 +306,7 @@ export default function HomeScreen() {
               size={19}
               color={COLORS.forest}
             />
+
             <Text style={styles.toolText}>Ambient</Text>
           </Pressable>
 
@@ -286,6 +319,7 @@ export default function HomeScreen() {
               size={19}
               color={COLORS.forest}
             />
+
             <Text style={styles.toolText}>Notifications</Text>
           </Pressable>
 
@@ -298,6 +332,7 @@ export default function HomeScreen() {
               size={19}
               color={COLORS.forest}
             />
+
             <Text style={styles.toolText}>Support</Text>
           </Pressable>
 
@@ -310,19 +345,16 @@ export default function HomeScreen() {
               size={19}
               color={COLORS.forest}
             />
+
             <Text style={styles.toolText}>Profile</Text>
           </Pressable>
-
         </View>
-
       </ScrollView>
     </View>
   );
 }
 
-
 const styles = StyleSheet.create({
-
   screen: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -333,6 +365,8 @@ const styles = StyleSheet.create({
     paddingTop: 55,
     paddingBottom: 50,
   },
+
+  /* HEADER */
 
   header: {
     flexDirection: 'row',
@@ -369,6 +403,8 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: COLORS.white,
   },
+
+  /* HERO */
 
   hero: {
     height: 360,
@@ -416,6 +452,8 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
 
+  /* SECTIONS */
+
   section: {
     marginTop: 38,
   },
@@ -433,6 +471,8 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: COLORS.deepForest,
   },
+
+  /* ARRIVAL */
 
   arrivalRow: {
     flexDirection: 'row',
@@ -473,6 +513,8 @@ const styles = StyleSheet.create({
     color: COLORS.mutedText,
     marginTop: 5,
   },
+
+  /* LIST */
 
   list: {
     marginTop: 14,
@@ -517,47 +559,92 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
 
-  insight: {
-    marginTop: 38,
-    padding: 23,
-    borderRadius: 25,
-    backgroundColor: COLORS.deepForest,
+  /* SELF HELP FEATURE */
+
+  selfHelpCard: {
+    marginTop: 34,
+    minHeight: 235,
+    borderRadius: 27,
+    backgroundColor: '#DDE8D2',
+    padding: 22,
+    overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
   },
 
-  insightEyebrow: {
+  selfHelpCopy: {
+    flex: 1,
+    zIndex: 2,
+    paddingRight: 6,
+  },
+
+  selfHelpEyebrow: {
     fontFamily: 'Inter-Medium',
     fontSize: 8,
     letterSpacing: 1.8,
-    color: COLORS.lichen,
+    color: COLORS.forest,
     marginBottom: 9,
   },
 
-  insightTitle: {
+  selfHelpTitle: {
     fontFamily: 'CormorantGaramond-Regular',
-    fontSize: 24,
-    color: COLORS.white,
+    fontSize: 29,
+    lineHeight: 31,
+    color: COLORS.deepForest,
   },
 
-  insightText: {
+  selfHelpText: {
     fontFamily: 'Inter-Regular',
     fontSize: 10,
-    color: COLORS.stone,
-    marginTop: 6,
-    maxWidth: 230,
     lineHeight: 15,
+    color: COLORS.mutedText,
+    marginTop: 9,
+    maxWidth: 190,
   },
 
-  insightArrow: {
-    marginLeft: 'auto',
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+  selfHelpButton: {
+    alignSelf: 'flex-start',
+    marginTop: 17,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: COLORS.surface,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+
+  selfHelpButtonText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 10,
+    color: COLORS.deepForest,
+  },
+
+  selfHelpIllustration: {
+    width: 105,
+    height: 190,
+    marginLeft: -5,
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  illustrationCircleLarge: {
+    position: 'absolute',
+    width: 125,
+    height: 125,
+    borderRadius: 63,
+    backgroundColor: 'rgba(255,255,255,0.42)',
+  },
+
+  illustrationCircleSmall: {
+    position: 'absolute',
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+  },
+
+  /* BOTTOM TOOLS */
 
   tools: {
     flexDirection: 'row',
@@ -578,5 +665,4 @@ const styles = StyleSheet.create({
     fontSize: 8,
     color: COLORS.mutedText,
   },
-
 });
