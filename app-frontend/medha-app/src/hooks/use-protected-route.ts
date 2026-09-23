@@ -28,13 +28,13 @@ export function usePatientRoute() {
 
     if (!isAuthenticated) {
       // Not logged in → patient login
-      router.replace('/login');
+      router.replace('/login' as any);
       return;
     }
 
     if (user?.role === 'THERAPIST') {
       // Therapist in a patient-only area → send to their dashboard
-      router.replace('/therapist');
+      router.replace('/therapist' as any);
     }
   }, [isLoading, isAuthenticated, user?.role]);
 }
@@ -51,13 +51,13 @@ export function useTherapistRoute() {
 
     if (!isAuthenticated) {
       // Not logged in → therapist login
-      router.replace('/therapist-login');
+      router.replace('/therapist-login' as any);
       return;
     }
 
     if (user?.role === 'USER') {
       // Patient trying to access therapist area → deny
-      router.replace('/home');
+      router.replace('/home' as any);
     }
   }, [isLoading, isAuthenticated, user?.role]);
 }
@@ -72,7 +72,7 @@ export function useAuthenticatedRoute() {
   useEffect(() => {
     if (isLoading) return;
     if (!isAuthenticated) {
-      router.replace('/login');
+      router.replace('/login' as any);
     }
   }, [isLoading, isAuthenticated]);
 }
