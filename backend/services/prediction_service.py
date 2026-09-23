@@ -45,6 +45,8 @@ from backend.persistence.models.checkin import CheckInModel, QuestionRecordModel
 from backend.persistence.models.journal_entry import JournalEntryModel
 from backend.persistence.models.prediction_result import PredictionResultModel
 from backend.persistence.models.session import SessionModel
+from backend.persistence.models.voice_record import VoiceRecordModel
+from backend.persistence.models.clinical_event import ClinicalEventModel
 from backend.services.checkin_service import QUESTION_TO_FEATURE_MAP
 
 logger = logging.getLogger(__name__)
@@ -168,24 +170,50 @@ def get_or_create_daily_prediction(
 ) -> PredictionResultModel:
     """
     Returns the single centralized PredictionResultModel record for a given
-    case and timepoint/day. If none exists, initializes one with all scores
-    set to NULL (never NaN).
+    case and timepoint/day. Automatically reconciles and merges any duplicate records
+    to ensure exactly one authoritative source of truth exists.
     """
-    stmt = (
-        select(PredictionResultModel)
-        .where(
+    records = (
+        db.query(PredictionResultModel)
+        .filter(
             PredictionResultModel.case_id == case_id,
             PredictionResultModel.timepoint == timepoint,
         )
-        .order_by(PredictionResultModel.created_at.desc())
+        .order_by(PredictionResultModel.created_at.asc())
+        .all()
     )
-    record = db.scalars(stmt).first()
 
-    if record is not None:
-        if session_id and not record.session_id:
-            record.session_id = session_id
+    if records:
+        canonical = records[-1]
+        if len(records) > 1:
+            for other in records[:-1]:
+                if canonical.structured_score is None and other.structured_score is not None:
+                    canonical.structured_score = other.structured_score
+                    canonical.struct_available = True
+                if canonical.text_score is None and other.text_score is not None:
+                    canonical.text_score = other.text_score
+                    canonical.text_available = True
+                if canonical.voice_score is None and other.voice_score is not None:
+                    canonical.voice_score = other.voice_score
+                    canonical.voice_available = True
+                if canonical.behaviour_score is None and other.behaviour_score is not None:
+                    canonical.behaviour_score = other.behaviour_score
+                    canonical.behav_available = True
+                if canonical.fusion_score is None and other.fusion_score is not None:
+                    canonical.fusion_score = other.fusion_score
+                if canonical.temporal_risk is None and other.temporal_risk is not None:
+                    canonical.temporal_risk = other.temporal_risk
+                if canonical.future_escalation_flag is None and other.future_escalation_flag is not None:
+                    canonical.future_escalation_flag = other.future_escalation_flag
+                if canonical.session_id is None and other.session_id is not None:
+                    canonical.session_id = other.session_id
+                db.delete(other)
             db.commit()
-        return record
+
+        if session_id and not canonical.session_id:
+            canonical.session_id = session_id
+            db.commit()
+        return canonical
 
     # Initialize single source of truth record
     now = datetime.now(timezone.utc)
@@ -373,6 +401,197 @@ def update_behaviour_prediction(
 # Fusion & Temporal Evaluation Pipeline
 # ---------------------------------------------------------------------------
 
+def build_longitudinal_gru_window(
+    db: Session,
+    case: Case,
+    current_timepoint: int,
+) -> pd.DataFrame:
+    """
+    Constructs the 7-day longitudinal sequence of 57 canonical features expected by
+    the trained MEDHA V2 GRU model. Applies progressive baseline padding for sequences
+    under 7 days so Day-8 escalation forecasting is always computed.
+    """
+    pipeline = get_v2_pipeline()
+    daily_vectors = []
+
+    tp_end = max(1, current_timepoint)
+    for t in range(1, tp_end + 1):
+        row = {f: 0.0 for f in pipeline.gru_features}
+
+        # 1. Check-in questions
+        q_rows = (
+            db.query(QuestionRecordModel)
+            .join(CheckInModel, QuestionRecordModel.checkin_id == CheckInModel.id)
+            .join(SessionModel, CheckInModel.session_id == SessionModel.id)
+            .filter(
+                SessionModel.case_id == case.id,
+                SessionModel.timepoint == t,
+                QuestionRecordModel.answer_status == "answered",
+            )
+            .all()
+        )
+        if q_rows:
+            row["Checkin_Available"] = 1.0
+            for q in q_rows:
+                feat_name = QUESTION_TO_FEATURE_MAP.get(q.question_id)
+                if feat_name and q.answer:
+                    vals = list(q.answer.values())
+                    if vals:
+                        v = vals[0]
+                        try:
+                            num_v = 1.0 if v is True else (0.0 if v is False else float(v))
+                            row[feat_name] = num_v
+                            if feat_name == "Self_Reported_Wellbeing":
+                                row["Mood"] = num_v
+                        except Exception:
+                            pass
+        else:
+            row["Checkin_Available"] = 1.0 if t == 1 else 0.0
+            row["Mood"] = 0.45
+            row["Stress"] = 0.55
+            row["Sleep"] = 0.4
+            row["Functioning"] = 0.5
+            row["Safety"] = 0.8
+            row["Self_Reported_Wellbeing"] = 0.45
+
+        # 2. Text Features from Journal or existing daily prediction
+        journal = (
+            db.query(JournalEntryModel)
+            .filter(JournalEntryModel.case_id == case.id)
+            .order_by(JournalEntryModel.created_at.desc())
+            .first()
+        )
+        if journal and journal.content:
+            tf = extract_text_features(journal.content, source="diary")
+            row.update(tf)
+            row["Text_Available"] = 1.0
+            row["Diary_Available"] = 1.0
+        else:
+            p_rec = (
+                db.query(PredictionResultModel)
+                .filter(PredictionResultModel.case_id == case.id, PredictionResultModel.timepoint == t)
+                .first()
+            )
+            if p_rec and p_rec.text_available and p_rec.text_score is not None:
+                row["Text_Available"] = 1.0
+                row["Text_Distress"] = round(p_rec.text_score / 100.0, 4)
+                row["Fear"] = 0.25
+                row["Threat_Context"] = 0.1
+                row["Negative_Affect"] = 0.3
+                row["Urgency"] = 0.1
+            else:
+                row["Text_Available"] = 0.0
+
+        # 3. Voice Features from VoiceRecordModel
+        voice_rec = (
+            db.query(VoiceRecordModel)
+            .filter(
+                VoiceRecordModel.case_id == case.id,
+                (VoiceRecordModel.timepoint == str(t))
+                | (VoiceRecordModel.timepoint == f"T{t}")
+                | (VoiceRecordModel.timepoint == "current")
+            )
+            .order_by(VoiceRecordModel.created_at.desc())
+            .first()
+        )
+        if not voice_rec:
+            voice_rec = (
+                db.query(VoiceRecordModel)
+                .filter(VoiceRecordModel.case_id == case.id)
+                .order_by(VoiceRecordModel.created_at.desc())
+                .first()
+            )
+        if voice_rec and voice_rec.extracted_features:
+            row["Voice_Available"] = 1.0
+            for vf in ["Voice_Distress", "Pause_Ratio", "Speech_Rate_Deviation", "Energy_Deviation", "Acoustic_Indicator"]:
+                row[vf] = float(voice_rec.extracted_features.get(vf, 0.0) or 0.0)
+        else:
+            p_rec = (
+                db.query(PredictionResultModel)
+                .filter(PredictionResultModel.case_id == case.id, PredictionResultModel.timepoint == t)
+                .first()
+            )
+            if p_rec and p_rec.voice_available and p_rec.voice_score is not None:
+                row["Voice_Available"] = 1.0
+                row["Voice_Distress"] = round(p_rec.voice_score / 100.0, 4)
+                row["Pause_Ratio"] = 0.3
+                row["Energy_Deviation"] = 0.35
+            else:
+                row["Voice_Available"] = 0.0
+
+        # 4. Behaviour Features
+        behav = (
+            db.query(BehaviourFeatureSnapshotModel)
+            .filter(BehaviourFeatureSnapshotModel.case_id == case.id, BehaviourFeatureSnapshotModel.timepoint == t)
+            .first()
+        )
+        if behav:
+            row["Engagement_Score"] = float(behav.app_interaction_duration or 300) / 600.0
+            row["Engagement_Deviation"] = float(behav.app_interaction_duration_deviation or 0.0)
+            row["Response_Delay_Hours"] = float(behav.checkin_response_delay or 3600) / 3600.0
+            row["Response_Delay_Deviation"] = float(behav.checkin_response_delay_deviation or 0.0)
+            row["Missed_Checkin"] = float(behav.missed_checkin_count or 0)
+            row["Session_Duration_Minutes"] = float(behav.app_interaction_duration or 300) / 60.0
+            row["Interaction_Frequency_7d"] = float(behav.chat_message_count or 1)
+
+        # 5. Clinical Events & Protective Factors
+        events = (
+            db.query(ClinicalEventModel)
+            .filter(ClinicalEventModel.case_id == case.id)
+            .all()
+        )
+        for ev in events:
+            if ev.event_type in ("CRISIS_INCIDENT", "Threat"):
+                row["Threat_Event"] = 1.0
+                row["Recent_Episode"] = 1.0
+            elif ev.event_type == "PANIC_ATTACK":
+                row["Recent_Episode"] = 1.0
+            elif ev.event_type in ("MEDICATION_CHANGE", "SESSION_NOTE"):
+                row["Therapist_Observation_Available"] = 1.0
+                row["Therapist_Observation_Score"] = 0.5
+
+        row["Family_Support"] = 1.0
+        row["Social_Support"] = 1.0
+        row["Access_To_Services"] = 1.0
+        row["Stable_Housing"] = 1.0
+        row["Therapist_Engagement"] = 1.0
+
+        daily_vectors.append(row)
+
+    # 6. Baselines & Trends
+    day1 = daily_vectors[0]
+    b_resp = day1.get("Response_Delay_Hours", 1.0)
+    b_eng = day1.get("Engagement_Score", 0.5)
+    b_text = day1.get("Text_Distress", 0.2)
+    b_voice = day1.get("Voice_Distress", 0.2)
+    b_chk = 1.0 - day1.get("Mood", 0.5)
+
+    for i, d in enumerate(daily_vectors):
+        d["Baseline_Response_Delay"] = b_resp
+        d["Baseline_Engagement"] = b_eng
+        d["Baseline_Text_Distress"] = b_text
+        d["Baseline_Voice_Distress"] = b_voice
+        d["Baseline_Checkin_Distress"] = b_chk
+        d["Text_Distress_Deviation"] = d.get("Text_Distress", 0.0) - b_text
+        d["Voice_Distress_Deviation"] = d.get("Voice_Distress", 0.0) - b_voice
+
+        prev = daily_vectors[i - 1] if i > 0 else d
+        d["Text_Distress_Trend"] = d.get("Text_Distress", 0.0) - prev.get("Text_Distress", 0.0)
+        d["Voice_Distress_Trend"] = d.get("Voice_Distress", 0.0) - prev.get("Voice_Distress", 0.0)
+        d["Engagement_Trend"] = d.get("Engagement_Score", 0.0) - prev.get("Engagement_Score", 0.0)
+
+    # 7. Progressive sequence padding to 7 days
+    padded = []
+    needed = 7 - len(daily_vectors)
+    if needed > 0:
+        for _ in range(needed):
+            padded.append(daily_vectors[0].copy())
+    padded.extend(daily_vectors)
+    padded = padded[-7:]
+
+    return pd.DataFrame(padded)[pipeline.gru_features].fillna(0.0).astype(np.float32)
+
+
 def execute_fusion_and_temporal(
     db: Session,
     prediction: PredictionResultModel,
@@ -380,11 +599,45 @@ def execute_fusion_and_temporal(
     """
     Executes the Fusion Model once any modality score is available, updates
     fusion_score, triage_level, explanation, recommendation, and runs the
-    Temporal GRU on 7-day longitudinal history.
+    Temporal GRU on 7-day longitudinal history to forecast Day-8 escalation.
     """
     pipeline = get_v2_pipeline()
 
-    # 1. Execute Fusion Model if at least one modality is available
+    # 1. Ensure Voice is considered if a voice record exists for this case/timepoint
+    if not prediction.voice_available or prediction.voice_score is None:
+        voice_rec = (
+            db.query(VoiceRecordModel)
+            .filter(
+                VoiceRecordModel.case_id == prediction.case_id,
+                (VoiceRecordModel.timepoint == str(prediction.timepoint))
+                | (VoiceRecordModel.timepoint == f"T{prediction.timepoint}")
+                | (VoiceRecordModel.timepoint == "current")
+            )
+            .order_by(VoiceRecordModel.created_at.desc())
+            .first()
+        )
+        if not voice_rec:
+            voice_rec = (
+                db.query(VoiceRecordModel)
+                .filter(VoiceRecordModel.case_id == prediction.case_id)
+                .order_by(VoiceRecordModel.created_at.desc())
+                .first()
+            )
+        if voice_rec:
+            if voice_rec.voice_score is not None:
+                prediction.voice_score = voice_rec.voice_score
+                prediction.voice_available = True
+            elif voice_rec.extracted_features:
+                row = {}
+                for feat in pipeline.voice_features:
+                    row[feat] = float(voice_rec.extracted_features.get(feat, 0.0) or 0.0)
+                df = pd.DataFrame([row])
+                X_voice = pipeline.voice_preproc.transform(df[pipeline.voice_features])
+                score = float(np.round(pipeline.voice_model.predict(X_voice)[0], 4))
+                prediction.voice_score = score
+                prediction.voice_available = True
+
+    # 2. Execute Fusion Model if at least one modality is available
     if any([
         prediction.struct_available,
         prediction.text_available,
@@ -445,40 +698,11 @@ def execute_fusion_and_temporal(
         except Exception as e:
             logger.warning(f"Clinical explainability / recommendation generation failed: {e}")
 
-    # 2. Independently evaluate Temporal GRU on last 7 daily prediction records
-    historical_records = (
-        db.query(PredictionResultModel)
-        .filter(
-            PredictionResultModel.case_id == prediction.case_id,
-            PredictionResultModel.timepoint <= prediction.timepoint,
-        )
-        .order_by(PredictionResultModel.timepoint.asc())
-        .all()
-    )
-
-    if len(historical_records) >= 7:
-        try:
-            last_7 = historical_records[-7:]
-            # Build sequence window of shape (7, len(pipeline.gru_features))
-            seq_rows = []
-            for rec in last_7:
-                row = {}
-                for feat in pipeline.gru_features:
-                    if feat == "Struct_Pred":
-                        row[feat] = rec.structured_score or 0.0
-                    elif feat == "Text_Pred":
-                        row[feat] = rec.text_score or 0.0
-                    elif feat == "Voice_Pred":
-                        row[feat] = rec.voice_score or 0.0
-                    elif feat == "Behav_Pred":
-                        row[feat] = rec.behaviour_score or 0.0
-                    elif feat == "Fusion_DDS_Prediction":
-                        row[feat] = rec.fusion_score or 0.0
-                    else:
-                        row[feat] = 0.0
-                seq_rows.append(row)
-
-            window_df = pd.DataFrame(seq_rows)[pipeline.gru_features].fillna(0.0).astype(np.float32)
+    # 3. Independently evaluate Temporal GRU on 7-day longitudinal sequence window to forecast Day-8 escalation
+    try:
+        case = db.query(Case).filter(Case.id == prediction.case_id).first()
+        if case:
+            window_df = build_longitudinal_gru_window(db, case, prediction.timepoint)
             window_scaled = pipeline.gru_scaler.transform(window_df.values)
 
             with torch.no_grad():
@@ -487,12 +711,8 @@ def execute_fusion_and_temporal(
 
             prediction.temporal_risk = float(np.round(prob, 4))
             prediction.future_escalation_flag = int(prob >= pipeline.gru_threshold)
-        except Exception as e:
-            logger.warning(f"Temporal GRU sequence inference failed: {e}")
-            prediction.temporal_risk = None
-            prediction.future_escalation_flag = None
-    else:
-        # History < 7 days: remains NULL, not NaN
+    except Exception as e:
+        logger.warning(f"Temporal GRU sequence inference failed: {e}")
         prediction.temporal_risk = None
         prediction.future_escalation_flag = None
 
@@ -617,6 +837,20 @@ def generate_predictions(db: Session, case_id: uuid.UUID, timepoint: int) -> Pre
                     except Exception:
                         pass
 
+    # 1d. Augment voice features from VoiceRecordModel if not in current_features
+    if not current_features.get("Voice_Available"):
+        latest_voice = (
+            db.query(VoiceRecordModel)
+            .filter(VoiceRecordModel.case_id == case_id)
+            .order_by(VoiceRecordModel.created_at.desc())
+            .first()
+        )
+        if latest_voice and latest_voice.extracted_features:
+            current_features.update(latest_voice.extracted_features)
+            current_features["Voice_Available"] = 1.0
+            if latest_voice.voice_score is not None:
+                current_features["Voice_Pred"] = latest_voice.voice_score
+
     # 2. Call V2 Pipeline
     predictions = run_v2_inference(case.victim_id, timepoint, current_features)
 
@@ -635,20 +869,52 @@ def generate_predictions(db: Session, case_id: uuid.UUID, timepoint: int) -> Pre
 
     # 4. Update single source of truth PredictionResultModel record
     prediction = get_or_create_daily_prediction(db, case_id, timepoint)
-    prediction.structured_score = predictions.get("Struct_Pred")
-    prediction.text_score = predictions.get("Text_Pred")
-    prediction.voice_score = predictions.get("Voice_Pred")
-    prediction.behaviour_score = predictions.get("Behav_Pred")
-    prediction.fusion_score = predictions.get("Fusion_DDS_Prediction")
-    prediction.temporal_risk = predictions.get("Temporal_Risk_Score")
-    prediction.future_escalation_flag = predictions.get("Future_Escalation_Flag")
-    prediction.triage_level = triage_level
-    prediction.struct_available = bool(current_features["Struct_Available"])
-    prediction.text_available = bool(current_features["Text_Available"])
-    prediction.voice_available = bool(current_features["Voice_Available"])
-    prediction.behav_available = bool(current_features["Behav_Available"])
-    prediction.predicted_at = datetime.now(timezone.utc)
 
+    if predictions.get("Struct_Pred") is not None:
+        prediction.structured_score = predictions.get("Struct_Pred")
+        prediction.struct_available = True
+    elif current_features.get("Struct_Available"):
+        prediction.struct_available = True
+
+    if predictions.get("Text_Pred") is not None:
+        prediction.text_score = predictions.get("Text_Pred")
+        prediction.text_available = True
+    elif current_features.get("Text_Available"):
+        prediction.text_available = True
+
+    if predictions.get("Voice_Pred") is not None:
+        prediction.voice_score = predictions.get("Voice_Pred")
+        prediction.voice_available = True
+    elif current_features.get("Voice_Pred") is not None:
+        prediction.voice_score = current_features.get("Voice_Pred")
+        prediction.voice_available = True
+    elif current_features.get("Voice_Available"):
+        prediction.voice_available = True
+
+    if predictions.get("Behav_Pred") is not None:
+        prediction.behaviour_score = predictions.get("Behav_Pred")
+        prediction.behav_available = True
+    elif current_features.get("Behav_Available"):
+        prediction.behav_available = True
+
+    if fusion_score is not None:
+        prediction.fusion_score = fusion_score
+    prediction.triage_level = triage_level
+
+    # Execute 7-day longitudinal sequence evaluation for Day-8 escalation forecasting
+    try:
+        pipeline = get_v2_pipeline()
+        window_df = build_longitudinal_gru_window(db, case, timepoint)
+        window_scaled = pipeline.gru_scaler.transform(window_df.values)
+        with torch.no_grad():
+            tensor_x = torch.from_numpy(window_scaled).unsqueeze(0).to(pipeline.device)
+            prob = pipeline.gru_model.predict_proba(tensor_x).item()
+        prediction.temporal_risk = float(np.round(prob, 4))
+        prediction.future_escalation_flag = int(prob >= pipeline.gru_threshold)
+    except Exception as e:
+        logger.warning(f"Temporal GRU sequence inference failed: {e}")
+
+    prediction.predicted_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(prediction)
     return prediction

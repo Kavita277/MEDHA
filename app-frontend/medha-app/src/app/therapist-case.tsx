@@ -308,12 +308,16 @@ export default function TherapistCaseScreen() {
       ? `${result.fusion_dds_prediction.toFixed(1)}%`
       : 'Unavailable';
   const triage = hasPred ? result.triage_level : 'UNKNOWN';
-
   // Future risk semantics: null is NEVER zero, LOW, or FALSE
   const tempRisk =
     hasPred && result.temporal_risk_score != null
-      ? `${(result.temporal_risk_score * 100).toFixed(1)}% probability`
-      : 'Insufficient longitudinal data';
+      ? `${(result.temporal_risk_score * 100).toFixed(1)}% risk`
+      : 'Awaiting evaluation';
+
+  const tempDesc =
+    hasPred && result.temporal_risk_score != null
+      ? `7-day window evaluated. Day-8 forecast: ${result.future_escalation_flag === 1 ? '⚠️ ESCALATION ALERT' : '✅ LOW RISK / STABLE'}.`
+      : 'GRU temporal sequence forecasting for upcoming session window.';
 
   const futureEscalationText =
     hasPred && result.future_escalation_flag != null

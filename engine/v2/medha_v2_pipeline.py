@@ -192,11 +192,17 @@ class MedhaV2Pipeline:
             
             for i, idx in enumerate(victim_data.index):
                 # We need sequence length exactly 7
-                # In Step 12, to predict target at i (end_idx), window is [i-7 : i]
-                if i < 7:
-                    continue # Not enough history before i
+                # Trailing 7 days with progressive baseline padding for early timepoints
+                if i >= 7:
+                    window = features[i - 7 : i]
+                else:
+                    earliest = features[0:1]
+                    n_pad = 7 - (i + 1)
+                    if n_pad > 0:
+                        window = np.vstack([np.repeat(earliest, n_pad, axis=0), features[0 : i + 1]])
+                    else:
+                        window = features[i + 1 - 7 : i + 1]
                 
-                window = features[i - 7 : i]
                 # Scale window
                 window_scaled = self.gru_scaler.transform(window)
                 
