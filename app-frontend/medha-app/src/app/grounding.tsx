@@ -55,11 +55,7 @@ export default function GroundingScreen() {
     return () => scale.stopAnimation();
   }, [running]);
 
-  useEffect(() => {
-    return () => {
-      player.pause();
-    };
-  }, [player]);
+
 
   return (
     <MedhaScreen
@@ -109,7 +105,7 @@ export default function GroundingScreen() {
         </Pressable>
       </View>
 
-      <Pressable onPress={() => router.push('/home')} style={styles.done}>
+      <Pressable onPress={() => router.push('/home' as any)} style={styles.done}>
         <Text style={styles.doneText}>I’m feeling ready</Text>
       </Pressable>
     </MedhaScreen>

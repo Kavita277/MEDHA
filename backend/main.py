@@ -68,6 +68,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application startup and graceful shutdown hooks."""
     settings = get_settings()
     setup_logging(settings)
+
+    # Fail fast on startup in production if critical configuration is invalid
+    if settings.is_production:
+        settings.validate_production_settings()
+
     logger.info(
         f"Starting {settings.PROJECT_NAME} v{settings.VERSION} "
         f"[env={settings.ENVIRONMENT}, debug={settings.DEBUG}]"
@@ -109,7 +114,7 @@ def create_application() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.CORS_ORIGINS,
-        allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+        allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

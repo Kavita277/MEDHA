@@ -24,6 +24,7 @@ class CaseBase(BaseModel):
     victim_id: str = Field(..., max_length=100, description="Unique longitudinal identifier for V2 pipeline")
     current_timepoint: int = Field(default=1, ge=1, le=10, description="Current check-in timepoint index")
     status: str = Field(default="active", max_length=32, description="Case lifecycle status")
+    case_type: Optional[str] = Field(default="general", max_length=64, description="Clinical or domain case category")
 
 
 class CaseCreate(BaseModel):
@@ -32,6 +33,8 @@ class CaseCreate(BaseModel):
     user_id: uuid.UUID = Field(..., description="Patient user account UUID")
     therapist_id: uuid.UUID = Field(..., description="Clinician profile UUID")
     current_timepoint: int = Field(default=1, ge=1, le=10)
+    case_type: Optional[str] = Field(default="general", max_length=64)
+    status: Optional[str] = Field(default="active", max_length=32)
 
 
 class CaseResponse(CaseBase):
@@ -53,6 +56,8 @@ class TherapistCreateUserRequest(BaseModel):
     password: str = Field(..., min_length=8, description="Initial temporary/permanent password")
     mobile: Optional[str] = Field(None, max_length=32, description="Contact mobile number")
     victim_id: Optional[str] = Field(None, max_length=100, description="Optional custom victim_id")
+    case_type: Optional[str] = Field(None, max_length=64, description="Optional case category/type")
+    status: Optional[str] = Field("active", max_length=32, description="Optional case status (active/closed)")
 
     @field_validator("email")
     @classmethod

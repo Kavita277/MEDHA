@@ -9,10 +9,11 @@ Provides Kubernetes/Docker/load-balancer compatible probes:
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 
 from backend.config import Settings
 from backend.dependencies import get_app_settings
+from backend.persistence.database import check_db_connection
 from backend.schemas.health import HealthResponse, ReadinessResponse
 
 router = APIRouter()
@@ -45,11 +46,14 @@ async def get_health(
     description="Returns 200 OK when the application and all required initial configurations are ready to serve requests.",
 )
 async def get_readiness(
+    response: Response,
     settings: Settings = Depends(get_app_settings),
 ) -> ReadinessResponse:
     """
-    Readiness probe verifying that core configurations and application
-    subsystems are initialized.
+    Readiness probe verifying that core configurations, database connectivity,
+    and storage subsystems are initialized and accepting traffic.
+    Returns HTTP 200 when ready, HTTP 503 when critical dependencies fail.
+    Never exposes internal secrets or connection credentials.
     """
     checks = {
         "api_router": "ok",
@@ -57,8 +61,29 @@ async def get_readiness(
         "environment": settings.ENVIRONMENT,
     }
 
+    # 1. Database connectivity check using existing check_db_connection seam
+    db_ok = check_db_connection()
+    checks["database"] = "connected" if db_ok else "unreachable"
+
+    # 2. Storage subsystem check
+    storage_ok = settings.check_storage_readiness()
+    checks["storage"] = "ready" if storage_ok else "unusable"
+
+    # 3. Production configuration validation check (if in production)
+    config_ok = True
+    if settings.is_production:
+        errors = settings.validate_production_settings(raise_on_error=False)
+        if errors:
+            config_ok = False
+            checks["configuration"] = "invalid"
+
+    is_ready = db_ok and storage_ok and config_ok
+
+    if not is_ready:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+
     return ReadinessResponse(
-        status="ready",
+        status="ready" if is_ready else "unhealthy",
         service=settings.PROJECT_NAME,
         version=settings.VERSION,
         environment=settings.ENVIRONMENT,

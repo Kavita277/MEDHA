@@ -13,7 +13,7 @@ from functools import lru_cache
 from typing import List
 
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 # Load .env file from repository root if present
 load_dotenv()
@@ -90,12 +90,15 @@ class Settings(BaseModel):
         default_factory=lambda: os.getenv("DB_ECHO", "false").lower() in ("true", "1", "yes")
     )
 
-    # Optional Gemini Key & Model
+    # Gemini LLM Configuration
     GEMINI_API_KEY: str = Field(
         default_factory=lambda: os.getenv("GEMINI_API_KEY", os.getenv("GOOGLE_API_KEY", ""))
     )
     GEMINI_MODEL: str = Field(
-        default_factory=lambda: os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+        default_factory=lambda: os.getenv("GEMINI_MODEL", os.getenv("MEDHA_LLM_MODEL", "gemini-2.5-flash"))
+    )
+    GEMINI_TIMEOUT_SECONDS: int = Field(
+        default_factory=lambda: int(os.getenv("GEMINI_TIMEOUT_SECONDS", "30"))
     )
 
     # --- Authentication & JWT Security ---
@@ -109,6 +112,17 @@ class Settings(BaseModel):
         default_factory=lambda: int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
     )
 
+    # --- Storage Configuration ---
+    STORAGE_BACKEND: str = Field(
+        default_factory=lambda: os.getenv("STORAGE_BACKEND", "local")
+    )
+    UPLOAD_DIR: str = Field(
+        default_factory=lambda: os.getenv("UPLOAD_DIR", "uploads")
+    )
+    MAX_AUDIO_SIZE_BYTES: int = Field(
+        default_factory=lambda: int(os.getenv("MAX_AUDIO_SIZE_BYTES", str(15 * 1024 * 1024)))
+    )
+
     # --- Behaviour Configuration ---
     BEHAVIOUR_LATE_NIGHT_START_HOUR: int = Field(
         default_factory=lambda: int(os.getenv("BEHAVIOUR_LATE_NIGHT_START_HOUR", "0"))
@@ -119,6 +133,11 @@ class Settings(BaseModel):
     BEHAVIOUR_LATE_NIGHT_TIMEZONE: str = Field(
         default_factory=lambda: os.getenv("BEHAVIOUR_LATE_NIGHT_TIMEZONE", "UTC")
     )
+
+    @field_validator("LOG_LEVEL", mode="after")
+    @classmethod
+    def normalize_log_level(cls, v: str) -> str:
+        return v.upper() if v else "INFO"
 
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
@@ -145,6 +164,74 @@ class Settings(BaseModel):
     @property
     def is_development(self) -> bool:
         return self.ENVIRONMENT == "development"
+
+    @property
+    def is_staging(self) -> bool:
+        return self.ENVIRONMENT == "staging"
+
+    def check_storage_readiness(self) -> bool:
+        """
+        Verifies that the configured local upload directory exists or can be created
+        and is writable using a safe temporary probe. Cleaned up immediately.
+        """
+        import uuid
+        from pathlib import Path
+        try:
+            upload_path = Path(self.UPLOAD_DIR).resolve()
+            upload_path.mkdir(parents=True, exist_ok=True)
+            probe = upload_path / f".probe_{uuid.uuid4().hex}"
+            probe.write_text("ok")
+            if probe.exists():
+                probe.unlink()
+            return True
+        except Exception:
+            return False
+
+    def validate_production_settings(self, raise_on_error: bool = True) -> List[str]:
+        """
+        Validates that critical security, database, and cloud service configurations
+        are safe for production deployment.
+
+        Fails safely when ENVIRONMENT=production and critical settings are invalid/missing.
+        Never exposes secret values or connection credentials in error messages.
+        """
+        errors: List[str] = []
+
+        DEFAULT_DEV_JWT = "medha-insecure-dev-jwt-secret-change-in-production-1234567890"
+
+        # 1. JWT Secret Validation
+        if not self.JWT_SECRET_KEY or not self.JWT_SECRET_KEY.strip():
+            errors.append("JWT: JWT_SECRET_KEY must not be empty in production.")
+        elif self.JWT_SECRET_KEY == DEFAULT_DEV_JWT:
+            errors.append("JWT: Insecure development JWT_SECRET_KEY cannot be used in production.")
+
+        # 2. Database Validation
+        db_uri = self.SQLALCHEMY_DATABASE_URI
+        if not db_uri or not db_uri.strip():
+            errors.append("DATABASE: Production requires a configured database URL.")
+        elif db_uri.startswith("sqlite"):
+            errors.append("DATABASE: SQLite database URL is prohibited in production.")
+
+        # 3. Gemini API Key Validation
+        if not self.GEMINI_API_KEY or not self.GEMINI_API_KEY.strip():
+            errors.append("GEMINI: GEMINI_API_KEY must be configured in production.")
+
+        # 4. CORS Validation
+        if "*" in self.CORS_ORIGINS:
+            errors.append("CORS: Wildcard '*' origin is prohibited in production.")
+
+        if errors and raise_on_error:
+            raise ConfigurationError(
+                f"Production configuration validation failed ({len(errors)} error(s)): "
+                + "; ".join(errors)
+            )
+
+        return errors
+
+
+class ConfigurationError(ValueError):
+    """Raised when application configuration fails validation."""
+    pass
 
 
 @lru_cache()

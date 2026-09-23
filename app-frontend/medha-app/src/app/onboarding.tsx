@@ -47,7 +47,7 @@ export default function OnboardingScreen() {
     if (current < slides.length - 1) {
       setCurrent(current + 1);
     } else {
-      router.replace('/signup');
+      router.replace('/login');
     }
   }
 
@@ -72,7 +72,7 @@ export default function OnboardingScreen() {
           <Text style={styles.logo}>MEDHA</Text>
 
           <Pressable
-            onPress={() => router.replace('/signup')}
+            onPress={() => router.replace('/login')}
             hitSlop={15}
           >
             <Text style={styles.skip}>Skip</Text>

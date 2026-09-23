@@ -5,6 +5,19 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { COLORS } from '../constants/colors';
 import { therapistService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import type { CaseSummary } from '../types/therapist';
+
+const CASE_TYPE_OPTIONS = [
+  { label: 'General', value: 'general' },
+  { label: 'Domestic Violence', value: 'domestic_violence' },
+  { label: 'Harassment', value: 'harassment' },
+  { label: 'Stalking', value: 'stalking' },
+  { label: 'Sexual Violence', value: 'sexual_violence' },
+  { label: 'Caste Violence', value: 'caste_based_violence' },
+  { label: 'Witness Intimidation', value: 'witness_intimidation' },
+  { label: 'Other', value: 'other' },
+];
 
 function Stat({ value, label }: { value: string | number; label: string }) {
   return (
@@ -16,9 +29,11 @@ function Stat({ value, label }: { value: string | number; label: string }) {
 }
 
 export default function TherapistDashboardScreen() {
-  const [cases, setCases] = useState<any[]>([]);
+  const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
+  const [cases, setCases] = useState<CaseSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Enrollment state
   const [showEnrollModal, setShowEnrollModal] = useState(false);
@@ -26,26 +41,56 @@ export default function TherapistDashboardScreen() {
   const [enrollEmail, setEnrollEmail] = useState('');
   const [enrollPassword, setEnrollPassword] = useState('Patient2026!');
   const [enrollMobile, setEnrollMobile] = useState('');
+  const [enrollCaseType, setEnrollCaseType] = useState('general');
+  const [customCaseType, setCustomCaseType] = useState('');
+  const [enrollCaseStatus, setEnrollCaseStatus] = useState('active');
   const [enrollSubmitting, setEnrollSubmitting] = useState(false);
   const [enrollError, setEnrollError] = useState<string | null>(null);
   const [enrollSuccess, setEnrollSuccess] = useState<any | null>(null);
 
+  // Role guard: prevent patients (USER) and unauthenticated actors
+  useEffect(() => {
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        router.replace('/therapist-login' as any);
+      } else {
+        const role = (user?.role || '').toUpperCase();
+        if (role !== 'THERAPIST' && role !== 'ADMIN') {
+          router.replace('/home' as any);
+        }
+      }
+    }
+  }, [authLoading, isAuthenticated, user]);
+
   const loadCases = () => {
     setLoading(true);
+    setError(null);
     therapistService.getCases()
       .then((data) => {
         setCases(data || []);
         setLoading(false);
       })
       .catch((err) => {
-        setError(err?.message || "Failed to load clinical cases");
+        if (err?.statusCode === 401) {
+          logout();
+          router.replace('/therapist-login' as any);
+        } else {
+          setError(err?.message || "Failed to load clinical cases");
+        }
         setLoading(false);
       });
   };
 
   useEffect(() => {
-    loadCases();
-  }, []);
+    if (isAuthenticated) {
+      loadCases();
+    }
+  }, [isAuthenticated]);
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/therapist-login' as any);
+  };
 
   const handleEnrollPatient = async () => {
     if (!enrollName.trim() || !enrollEmail.trim() || !enrollPassword.trim()) {
@@ -55,21 +100,33 @@ export default function TherapistDashboardScreen() {
     setEnrollSubmitting(true);
     setEnrollError(null);
     try {
+      const finalCaseType =
+        enrollCaseType === 'other' && customCaseType.trim()
+          ? customCaseType.trim().toLowerCase()
+          : enrollCaseType;
+
       const res = await therapistService.createPatient({
         name: enrollName.trim(),
         email: enrollEmail.trim(),
         password: enrollPassword.trim(),
         mobile: enrollMobile.trim() || undefined,
+        case_type: finalCaseType,
+        status: enrollCaseStatus,
       });
       setEnrollSuccess({
         name: enrollName.trim(),
         email: enrollEmail.trim(),
         password: enrollPassword.trim(),
         victim_id: res.victim_id,
+        case_type: finalCaseType,
+        status: enrollCaseStatus,
       });
       setEnrollName('');
       setEnrollEmail('');
       setEnrollMobile('');
+      setCustomCaseType('');
+      setEnrollCaseType('general');
+      setEnrollCaseStatus('active');
       loadCases();
     } catch (err: any) {
       setEnrollError(err?.message || 'Failed to enroll patient');
@@ -79,6 +136,16 @@ export default function TherapistDashboardScreen() {
   };
 
   const activeCases = cases.filter(c => c.status === 'active').length;
+  const filteredCases = cases.filter(c => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      (c.patient_name && c.patient_name.toLowerCase().includes(q)) ||
+      (c.victim_id && c.victim_id.toLowerCase().includes(q)) ||
+      (c.patient_email && c.patient_email.toLowerCase().includes(q)) ||
+      (c.case_type && c.case_type.toLowerCase().includes(q))
+    );
+  });
 
   return (
     <View style={styles.screen}>
@@ -91,12 +158,21 @@ export default function TherapistDashboardScreen() {
             <Text style={styles.eyebrow}>MEDHA · CLINICAL VIEW</Text>
             <Text style={styles.title}>Therapist Dashboard</Text>
             <Text style={styles.subtitle}>
-              Support tomorrow’s conversations.
+              {user ? `Clinician: ${user.name}` : 'Support tomorrow’s conversations.'}
             </Text>
           </View>
-          <Pressable style={styles.profile} onPress={() => router.push('/profile')}>
-            <Ionicons name="person-outline" size={18} color={COLORS.deepForest} />
-          </Pressable>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Pressable
+              style={[styles.profile, { backgroundColor: '#ffebee', borderColor: '#ffcdd2' }]}
+              onPress={handleLogout}
+              accessibilityLabel="Sign out"
+            >
+              <Ionicons name="log-out-outline" size={17} color="#c62828" />
+            </Pressable>
+            <Pressable style={styles.profile} onPress={() => router.push('/profile')}>
+              <Ionicons name="person-outline" size={18} color={COLORS.deepForest} />
+            </Pressable>
+          </View>
         </View>
 
         <View style={styles.stats}>
@@ -266,6 +342,132 @@ export default function TherapistDashboardScreen() {
                   />
                 </View>
 
+                {/* CASE TYPE SELECTION (OPTIONAL) */}
+                <View>
+                  <Text style={{ fontSize: 9, fontFamily: 'Inter-Medium', color: COLORS.mutedText, marginBottom: 5 }}>
+                    CASE TYPE (OPTIONAL)
+                  </Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                    {CASE_TYPE_OPTIONS.map((opt) => {
+                      const isSelected = enrollCaseType === opt.value;
+                      return (
+                        <Pressable
+                          key={opt.value}
+                          onPress={() => setEnrollCaseType(opt.value)}
+                          style={{
+                            paddingHorizontal: 10,
+                            paddingVertical: 5,
+                            borderRadius: 8,
+                            backgroundColor: isSelected ? COLORS.forest : COLORS.background,
+                            borderWidth: 1,
+                            borderColor: isSelected ? COLORS.forest : COLORS.border,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 10,
+                              fontFamily: isSelected ? 'Inter-Medium' : 'Inter-Regular',
+                              color: isSelected ? COLORS.white : COLORS.deepForest,
+                            }}
+                          >
+                            {opt.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                  {enrollCaseType === 'other' && (
+                    <TextInput
+                      value={customCaseType}
+                      onChangeText={setCustomCaseType}
+                      placeholder="Specify custom case category"
+                      placeholderTextColor={COLORS.mutedText}
+                      style={{
+                        height: 36,
+                        borderWidth: 1,
+                        borderColor: COLORS.border,
+                        borderRadius: 8,
+                        paddingHorizontal: 10,
+                        fontSize: 11,
+                        fontFamily: 'Inter-Regular',
+                        color: COLORS.deepForest,
+                        backgroundColor: COLORS.background,
+                        marginTop: 6,
+                      }}
+                    />
+                  )}
+                </View>
+
+                {/* CASE STATUS (OPTIONAL) */}
+                <View>
+                  <Text style={{ fontSize: 9, fontFamily: 'Inter-Medium', color: COLORS.mutedText, marginBottom: 5 }}>
+                    CASE STATUS (OPTIONAL)
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <Pressable
+                      onPress={() => setEnrollCaseStatus('active')}
+                      style={{
+                        flex: 1,
+                        paddingVertical: 7,
+                        borderRadius: 8,
+                        backgroundColor: enrollCaseStatus === 'active' ? '#e8f5e9' : COLORS.background,
+                        borderWidth: 1.5,
+                        borderColor: enrollCaseStatus === 'active' ? '#2e7d32' : COLORS.border,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexDirection: 'row',
+                        gap: 5,
+                      }}
+                    >
+                      <Ionicons
+                        name={enrollCaseStatus === 'active' ? 'checkmark-circle' : 'ellipse-outline'}
+                        size={14}
+                        color={enrollCaseStatus === 'active' ? '#2e7d32' : COLORS.mutedText}
+                      />
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontFamily: 'Inter-Medium',
+                          color: enrollCaseStatus === 'active' ? '#2e7d32' : COLORS.deepForest,
+                        }}
+                      >
+                        Active / Open
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      onPress={() => setEnrollCaseStatus('closed')}
+                      style={{
+                        flex: 1,
+                        paddingVertical: 7,
+                        borderRadius: 8,
+                        backgroundColor: enrollCaseStatus === 'closed' ? '#eceff1' : COLORS.background,
+                        borderWidth: 1.5,
+                        borderColor: enrollCaseStatus === 'closed' ? '#546e7a' : COLORS.border,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexDirection: 'row',
+                        gap: 5,
+                      }}
+                    >
+                      <Ionicons
+                        name={enrollCaseStatus === 'closed' ? 'checkmark-circle' : 'ellipse-outline'}
+                        size={14}
+                        color={enrollCaseStatus === 'closed' ? '#546e7a' : COLORS.mutedText}
+                      />
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontFamily: 'Inter-Medium',
+                          color: enrollCaseStatus === 'closed' ? '#546e7a' : COLORS.deepForest,
+                        }}
+                      >
+                        Closed
+                      </Text>
+                    </Pressable>
+                  </View>
+                </View>
+
                 <Pressable
                   disabled={enrollSubmitting}
                   onPress={handleEnrollPatient}
@@ -296,10 +498,47 @@ export default function TherapistDashboardScreen() {
           </View>
         )}
 
+        {error && (
+          <View style={{
+            backgroundColor: '#ffebee',
+            borderRadius: 16,
+            padding: 16,
+            marginVertical: 12,
+            borderWidth: 1,
+            borderColor: '#ffcdd2',
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <Ionicons name="alert-circle" size={18} color="#c62828" />
+              <Text style={{ fontSize: 12, fontFamily: 'Inter-Medium', color: '#c62828' }}>
+                Error Loading Cases
+              </Text>
+            </View>
+            <Text style={{ fontSize: 11, fontFamily: 'Inter-Regular', color: '#b71c1c', marginBottom: 10 }}>
+              {error}
+            </Text>
+            <Pressable
+              onPress={loadCases}
+              style={{
+                alignSelf: 'flex-start',
+                backgroundColor: '#c62828',
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 8,
+              }}
+            >
+              <Text style={{ color: COLORS.white, fontSize: 10, fontFamily: 'Inter-Medium' }}>
+                Retry Loading
+              </Text>
+            </Pressable>
+          </View>
+        )}
+
         <View style={styles.sectionHeader}>
           <View>
             <Text style={styles.sectionEyebrow}>CASE QUEUE</Text>
-            <Text style={styles.sectionTitle}>Assigned cases ({cases.length})</Text>
+            <Text style={styles.sectionTitle}>
+              Assigned cases ({cases.length})
+            </Text>
           </View>
           <Pressable
             onPress={() => { setShowEnrollModal(!showEnrollModal); setEnrollSuccess(null); }}
@@ -320,8 +559,44 @@ export default function TherapistDashboardScreen() {
           </Pressable>
         </View>
 
+        {cases.length > 0 && (
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: COLORS.surface,
+            borderRadius: 12,
+            paddingHorizontal: 12,
+            marginTop: 8,
+            marginBottom: 10,
+            borderWidth: 1,
+            borderColor: COLORS.border,
+            height: 38,
+          }}>
+            <Ionicons name="search-outline" size={15} color={COLORS.mutedText} />
+            <TextInput
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search cases by patient, ID, or type..."
+              placeholderTextColor={COLORS.mutedText}
+              style={{
+                flex: 1,
+                marginLeft: 8,
+                fontSize: 11,
+                fontFamily: 'Inter-Regular',
+                color: COLORS.deepForest,
+              }}
+            />
+            {searchQuery.length > 0 && (
+              <Pressable onPress={() => setSearchQuery('')}>
+                <Ionicons name="close-circle" size={15} color={COLORS.mutedText} />
+              </Pressable>
+            )}
+          </View>
+        )}
+
         {loading ? (
           <View style={[styles.emptyCard, { padding: 30 }]}>
+            <ActivityIndicator color={COLORS.forest} size="small" style={{ marginBottom: 10 }} />
             <Text style={styles.emptyTitle}>Loading clinical cases...</Text>
           </View>
         ) : cases.length === 0 ? (
@@ -334,9 +609,19 @@ export default function TherapistDashboardScreen() {
               You currently have no active cases assigned in your clinical queue.
             </Text>
           </View>
+        ) : filteredCases.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <View style={styles.emptyIcon}>
+              <Ionicons name="search-outline" size={22} color={COLORS.forest} />
+            </View>
+            <Text style={styles.emptyTitle}>No matching cases</Text>
+            <Text style={styles.emptyText}>
+              No cases match "{searchQuery}". Clear the search to view all assigned cases.
+            </Text>
+          </View>
         ) : (
           <View style={{ gap: 10, marginVertical: 6 }}>
-            {cases.map((c) => (
+            {filteredCases.map((c) => (
               <Pressable
                 key={c.case_id}
                 onPress={() =>
@@ -376,6 +661,23 @@ export default function TherapistDashboardScreen() {
                         {c.status}
                       </Text>
                     </View>
+                    {c.case_type && (
+                      <View style={{
+                        backgroundColor: 'rgba(82, 107, 91, 0.1)',
+                        paddingHorizontal: 7,
+                        paddingVertical: 2,
+                        borderRadius: 6,
+                      }}>
+                        <Text style={{
+                          fontSize: 8,
+                          fontFamily: 'Inter-Medium',
+                          color: COLORS.forest,
+                          textTransform: 'uppercase',
+                        }}>
+                          {String(c.case_type).replace(/_/g, ' ')}
+                        </Text>
+                      </View>
+                    )}
                   </View>
                   <Text style={{ fontSize: 10, color: COLORS.mutedText, fontFamily: 'Inter-Regular' }}>
                     ID: {c.victim_id} · Timepoint T{c.current_timepoint}

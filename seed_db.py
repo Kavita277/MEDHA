@@ -47,7 +47,20 @@ def seed():
                 status=UserStatus.ACTIVE,
             )
             db.add(patient_user)
+            db.flush()
             print("Created Patient: patient@medha.org / PatientPass123!")
+            
+            # Create a Case for the patient!
+            from backend.persistence.models.case import Case, CaseStatus
+            case = Case(
+                id=uuid.uuid4(),
+                victim_id=f"V-{uuid.uuid4().hex[:6].upper()}",
+                user_id=patient_user.id,
+                therapist_id=therapist_profile.id,
+                status=CaseStatus.ACTIVE,
+            )
+            db.add(case)
+            print("Created Case for patient@medha.org")
         else:
             print("Patient already exists")
 

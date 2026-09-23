@@ -1,160 +1,302 @@
 /**
- * MEDHA Mobile API Client Service
- * ================================
- * Provides access to the MEDHA enterprise backend endpoints for mobile app.
+ * MEDHA API Service
+ * =================
+ *
+ * Centralised fetch wrapper for all backend calls.
+ *
+ * Base URL is read from EXPO_PUBLIC_API_URL (set in .env.local).
+ * All authenticated calls supply an Authorization: Bearer <token> header.
+ *
+ * Environment note:
+ *   - Web / iOS Simulator: http://localhost:8000
+ *   - Android Emulator:    http://10.0.2.2:8000
+ *   - Physical device:     http://<LAN-IP>:8000
  */
 
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import type {
+  CaseSummary,
+  SessionSummary,
+  CaseResultResponse,
+  CheckinSummaryResponse,
+  AlertSummaryResponse,
+  AlertHandleRequest,
+  AlertHandleResponse,
+  CaseInsightsResponse,
+  CaseRecommendationsResponse,
+  SafetyProtocolResponse,
+} from '../types/therapist';
 
-// Machine LAN IP for physical device / Expo Go access over Wi-Fi
-export const API_BASE_URL = 'http://192.168.0.2:8000/api/v1';
-
-let authToken: string | null = null;
-
-export const setAuthToken = (token: string | null) => {
-  authToken = token;
-};
-
-export const ensureAuthenticated = async () => {
-  if (!authToken) {
+export const getStoredToken = async (): Promise<string | null> => {
+  if (Platform.OS === 'web') {
     try {
-      const data = await authService.login('ananya.sharma@medha.org', 'PatientPass123!');
-      if (data.access_token) {
-        setAuthToken(data.access_token);
-      }
-    } catch (e) {
-      console.warn('Auto-authentication fallback failed', e);
+      const val = (await AsyncStorage.getItem('medha_access_token')) || (await AsyncStorage.getItem('MEDHA_JWT'));
+      if (val) return val;
+    } catch {
+      // ignore
     }
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage.getItem('medha_access_token') || window.localStorage.getItem('MEDHA_JWT');
+    }
+    return null;
   }
-  return authToken;
+  try {
+    return (await SecureStore.getItemAsync('medha_access_token')) || (await SecureStore.getItemAsync('MEDHA_JWT'));
+  } catch {
+    return null;
+  }
 };
 
-const request = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string> || {}),
-  };
+// ---------------------------------------------------------------------------
+// Configuration
+// ---------------------------------------------------------------------------
 
+function resolveBaseUrl(): string {
+  const debuggerHost =
+    Constants.expoConfig?.hostUri ||
+    (Constants as any).manifest2?.extra?.expoGo?.debuggerHost ||
+    (Constants as any).manifest?.debuggerHost;
+
+  const detectedHost = debuggerHost
+    ? debuggerHost.split(':')[0]
+    : Platform.OS === 'android'
+    ? '10.0.2.2'
+    : 'localhost';
+
+  let raw = process.env.EXPO_PUBLIC_API_URL || `http://${detectedHost}:8000`;
+
+  // On Android, 'localhost' refers to the Android device itself.
+  // Rewrite localhost / 127.0.0.1 to the dev machine's actual LAN IP or emulator loopback
+  if (Platform.OS === 'android') {
+    raw = raw.replace(/\b(localhost|127\.0\.0\.1)\b/, detectedHost);
+  }
+
+  return raw.replace(/\/+$/, '');
+}
+
+export const API_BASE_URL = resolveBaseUrl();
+export const API_PREFIX = '/api/v1';
+
+// ---------------------------------------------------------------------------
+// Error types
+// ---------------------------------------------------------------------------
+
+export class ApiError extends Error {
+  constructor(
+    public readonly statusCode: number,
+    public readonly detail: string,
+    public readonly raw?: unknown,
+  ) {
+    super(detail);
+    this.name = 'ApiError';
+  }
+}
+
+export class NetworkError extends Error {
+  constructor(message = 'Network unavailable') {
+    super(message);
+    this.name = 'NetworkError';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
+
+interface RequestOptions {
+  token?: string | null;
+  body?: unknown;
+  isMultipart?: boolean;
+  signal?: AbortSignal;
+}
+
+/**
+ * Parse a response, always returning a consistent structure.
+ * Non-2xx responses are thrown as ApiError.
+ */
+async function parseResponse<T>(response: Response): Promise<T> {
+  // Try JSON parse regardless of status so we can read error detail
+  let json: unknown;
+  try {
+    json = await response.json();
+  } catch {
+    json = null;
+  }
+
+  if (!response.ok) {
+    const detail =
+      typeof json === 'object' && json !== null && 'detail' in json
+        ? String((json as { detail: unknown }).detail)
+        : `HTTP ${response.status}`;
+    throw new ApiError(response.status, detail, json);
+  }
+
+  return json as T;
+}
+
+async function request<T>(
+  method: HttpMethod,
+  path: string,
+  { token, body, isMultipart = false, signal }: RequestOptions = {},
+): Promise<T> {
+  const url = `${API_BASE_URL}${API_PREFIX}${path}`;
+
+  const headers: Record<string, string> = {};
+
+  const authToken = token !== undefined ? token : await getStoredToken();
   if (authToken) {
     headers['Authorization'] = `Bearer ${authToken}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
-
-  if (!response.ok) {
-    let errorDetail = 'API request failed';
-    try {
-      const errJson = await response.json();
-      errorDetail = errJson.detail || errorDetail;
-    } catch {
-      // not json
-    }
-    throw new Error(errorDetail);
+  // For JSON requests set Content-Type; for multipart let the runtime
+  // set the boundary automatically (never set it manually for FormData).
+  if (!isMultipart && body !== undefined) {
+    headers['Content-Type'] = 'application/json';
   }
 
-  return response.json();
-};
+  let fetchBody: BodyInit | undefined;
+  if (body instanceof FormData) {
+    fetchBody = body;
+  } else if (body !== undefined) {
+    fetchBody = JSON.stringify(body);
+  }
 
-export const authService = {
-  login: async (email: string, password: string) => {
-    const data = await request<{ access_token: string; token_type: string; user: any }>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
+  console.log(`[MEDHA API] ${method} -> ${url}`);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
+  const combinedSignal = signal || controller.signal;
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method,
+      headers,
+      body: fetchBody,
+      signal: combinedSignal,
     });
-    if (data.access_token) {
-      setAuthToken(data.access_token);
+  } catch (err: any) {
+    if (err?.name === 'AbortError') {
+      throw new NetworkError(`Connection to ${url} timed out. Ensure backend is running with --host 0.0.0.0.`);
     }
-    return data;
-  },
-  logout: () => {
-    setAuthToken(null);
-  },
-  getMe: async () => {
-    return request<any>('/auth/me');
+    throw new NetworkError(
+      err instanceof Error ? err.message : 'Network request failed',
+    );
+  } finally {
+    clearTimeout(timer);
   }
+
+  return parseResponse<T>(response);
+}
+
+// ---------------------------------------------------------------------------
+// Public API client
+// ---------------------------------------------------------------------------
+
+export const api = {
+  get<T>(path: string, options?: Omit<RequestOptions, 'body'>): Promise<T> {
+    return request<T>('GET', path, options);
+  },
+
+  post<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T> {
+    return request<T>('POST', path, { ...options, body });
+  },
+
+  patch<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T> {
+    return request<T>('PATCH', path, { ...options, body });
+  },
+
+  put<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T> {
+    return request<T>('PUT', path, { ...options, body });
+  },
+
+  delete<T>(path: string, options?: Omit<RequestOptions, 'body'>): Promise<T> {
+    return request<T>('DELETE', path, options);
+  },
+
+  /** Multipart upload — caller builds the FormData. */
+  upload<T>(path: string, form: FormData, options?: Omit<RequestOptions, 'body' | 'isMultipart'>): Promise<T> {
+    return request<T>('POST', path, { ...options, body: form, isMultipart: true });
+  },
 };
 
-export const sessionService = {
-  createSession: async () => {
-    await ensureAuthenticated();
-    return request<{ id: string; session_identifier: string; timepoint: number; status: string }>('/sessions', {
-      method: 'POST',
-    });
-  },
-  getSession: async (sessionId: string) => {
-    await ensureAuthenticated();
-    return request<any>(`/sessions/${sessionId}`);
-  }
-};
+// ---------------------------------------------------------------------------
+// Legacy mock service adapters for unmigrated screens
+// ---------------------------------------------------------------------------
+// DO NOT use these in new code. They are here only to keep unmigrated screens from crashing.
+
+export const getLegacyToken = getStoredToken;
+
+import { checkinService } from './checkin';
+import { journalService } from './journal';
+export { checkinService, journalService };
 
 export const chatService = {
   sendMessage: async (sessionId: string, message: string, language?: string) => {
-    await ensureAuthenticated();
-    return request<{
+    const t = await getLegacyToken();
+    return api.post<{
       session_id: string;
       turn_index: number;
       user_message: string;
       assistant_response: string;
       safety_triggered: boolean;
-    }>(`/chat/sessions/${sessionId}/message`, {
-      method: 'POST',
-      body: JSON.stringify({ message, language: language || null }),
-    });
+    }>(`/chat/sessions/${sessionId}/message`, { message, language: language || null }, { token: t });
   },
-  getChatHistory: async (sessionId: string) => {
-    await ensureAuthenticated();
-    return request<{ session_id: string; messages: Array<{ role: string; content: string }> }>(
-      `/chat/sessions/${sessionId}/history`
-    );
+};
+
+export const sessionService = {
+  createSession: async () => {
+    const t = await getLegacyToken();
+    return api.post<{ id: string; session_identifier: string; timepoint: number; status: string }>('/sessions', undefined, { token: t });
   }
 };
 
-export const checkinService = {
-  startCheckin: async (sessionId?: string) => {
-    await ensureAuthenticated();
-    let sid = sessionId;
-    if (!sid) {
-      const sess = await sessionService.createSession();
-      sid = sess.id;
-    }
-    return request<any>(`/checkins/sessions/${sid}`, { method: 'POST' });
-  },
-  getCheckin: async (checkinId: string) => {
-    await ensureAuthenticated();
-    return request<any>(`/checkins/${checkinId}`);
-  },
-  submitAnswer: async (checkinId: string, answer: Record<string, any>) => {
-    await ensureAuthenticated();
-    return request<any>(`/checkins/${checkinId}/answer`, {
-      method: 'POST',
-      body: JSON.stringify({ answer }),
-    });
-  },
-  completeCheckin: async (checkinId: string) => {
-    await ensureAuthenticated();
-    return request<any>(`/checkins/${checkinId}/complete`, { method: 'POST' });
-  },
-  getTodayStatus: async () => {
-    await ensureAuthenticated();
-    return request<{ completed_today: boolean; active_checkin_id: string | null; status: string }>('/checkins/status/today');
-  },
+export const authService = {
+  login: async (email?: string, password?: string) => ({ access_token: 'mock', token_type: 'bearer', user: { role: 'PATIENT' } }),
+  logout: () => { },
+  getMe: async () => ({}),
 };
 
-export const journalService = {
-  createEntry: async (content: string) => {
-    await ensureAuthenticated();
-    return request<any>('/journal', {
-      method: 'POST',
-      body: JSON.stringify({ content }),
-    });
+export const therapistService = {
+  getCases: async () => api.get<CaseSummary[]>('/therapist/cases'),
+  createPatient: async (data: {
+    name: string;
+    email: string;
+    password: string;
+    mobile?: string;
+    victim_id?: string;
+    case_type?: string;
+    status?: string;
+  }) => api.post<any>('/therapist/users', data),
+  getCaseResults: async (caseId: string) => api.get<CaseResultResponse>(`/therapist/cases/${caseId}/results`),
+  getCaseSessions: async (caseId: string) => api.get<SessionSummary[]>(`/therapist/cases/${caseId}/sessions`),
+  getCaseCheckins: async (caseId: string) => api.get<CheckinSummaryResponse[]>(`/therapist/cases/${caseId}/checkins`),
+  getCaseVoiceRecords: async (caseId: string) => api.get<any[]>(`/therapist/cases/${caseId}/voice-records`),
+  getCaseAlerts: async (caseId: string) => api.get<AlertSummaryResponse[]>(`/therapist/cases/${caseId}/alerts`),
+  handleCaseAlert: async (caseId: string, alertId: string, data: AlertHandleRequest) =>
+    api.patch<AlertHandleResponse>(`/therapist/cases/${caseId}/alerts/${alertId}`, data),
+  getCaseInsights: async (caseId: string) => api.get<CaseInsightsResponse>(`/therapist/cases/${caseId}/insights`),
+  getCaseRecommendations: async (caseId: string) =>
+    api.get<CaseRecommendationsResponse>(`/therapist/cases/${caseId}/recommendations`),
+  getCaseSafetyProtocol: async (caseId: string) =>
+    api.get<SafetyProtocolResponse>(`/therapist/cases/${caseId}/safety-protocol`),
+  acknowledgeAlert: async (caseId: string, alertId: string) =>
+    api.patch<AlertHandleResponse>(`/therapist/cases/${caseId}/alerts/${alertId}`, { action: 'ACKNOWLEDGE' }),
+  resolveAlert: async (caseId: string, alertId: string, data?: { action_taken?: string }) =>
+    api.patch<AlertHandleResponse>(`/therapist/cases/${caseId}/alerts/${alertId}`, { action: 'RESOLVE', ...data }),
+  getCaseHistory: async (caseId: string) => api.get<any>(`/therapist/cases/${caseId}/history`),
+  updateCaseHistory: async (caseId: string, data: any) => api.put<any>(`/therapist/cases/${caseId}/history`, data),
+  getCaseEvents: async (caseId: string, eventType?: string) => {
+    const query = eventType ? `?event_type=${encodeURIComponent(eventType)}` : '';
+    return api.get<any[]>(`/therapist/cases/${caseId}/events${query}`);
   },
-  listEntries: async () => {
-    await ensureAuthenticated();
-    return request<{ entries: any[] }>('/journal');
-  },
+  addCaseEvent: async (caseId: string, data: any) => api.post<any>(`/therapist/cases/${caseId}/events`, data),
+  deleteCaseEvent: async (caseId: string, eventId: string) =>
+    api.delete<any>(`/therapist/cases/${caseId}/events/${eventId}`),
 };
 
 export const voiceService = {
@@ -164,7 +306,7 @@ export const voiceService = {
     sessionId?: string,
     customFilename?: string
   ) => {
-    await ensureAuthenticated();
+    const token = await getLegacyToken();
     const formData = new FormData();
     formData.append('timepoint', timepoint);
     if (sessionId) formData.append('session_id', sessionId);
@@ -198,26 +340,7 @@ export const voiceService = {
 
     formData.append('audio_file', blob, fileName);
 
-    const headers: Record<string, string> = {};
-    if (authToken) {
-      headers['Authorization'] = `Bearer ${authToken}`;
-    }
-
-    const response = await fetch(`${API_BASE_URL}/voice/checkin`, {
-      method: 'POST',
-      headers,
-      body: formData,
-    });
-
-    if (!response.ok) {
-      let err = 'Voice upload failed';
-      try {
-        const j = await response.json();
-        err = j.detail || err;
-      } catch {}
-      throw new Error(err);
-    }
-    return response.json();
+    return api.upload<any>('/voice/checkin', formData, { token });
   },
 };
 
@@ -226,7 +349,7 @@ function createSilenceWav(): Blob {
   const numSamples = 8000; // 1 second
   const buffer = new ArrayBuffer(44 + numSamples * 2);
   const view = new DataView(buffer);
-  
+
   // RIFF identifier
   view.setUint32(0, 0x52494646, false);
   view.setUint32(4, 36 + numSamples * 2, true);
@@ -241,69 +364,9 @@ function createSilenceWav(): Blob {
   view.setUint16(34, 16, true);
   view.setUint32(36, 0x64617461, false); // data
   view.setUint32(40, numSamples * 2, true);
-  
+
   return new Blob([buffer], { type: 'audio/wav' });
 }
-
-export const therapistService = {
-  getCases: async () => {
-    return request<any[]>('/therapist/cases');
-  },
-  createPatient: async (data: { name: string; email: string; password: string; mobile?: string; victim_id?: string }) => {
-    return request<any>('/therapist/users', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-  getCaseResults: async (caseId: string) => {
-    return request<any>(`/therapist/cases/${caseId}/results`);
-  },
-  getCaseSessions: async (caseId: string) => {
-    return request<any[]>(`/therapist/cases/${caseId}/sessions`);
-  },
-  getCaseCheckins: async (caseId: string) => {
-    return request<any[]>(`/therapist/cases/${caseId}/checkins`);
-  },
-  getCaseVoiceRecords: async (caseId: string) => {
-    return request<any[]>(`/therapist/cases/${caseId}/voice-records`);
-  },
-  getCaseAlerts: async (caseId: string) => {
-    return request<any[]>(`/therapist/cases/${caseId}/alerts`);
-  },
-  getCaseInsights: async (caseId: string) => {
-    return request<any>(`/therapist/cases/${caseId}/insights`);
-  },
-  getCaseRecommendations: async (caseId: string) => {
-    return request<any>(`/therapist/cases/${caseId}/recommendations`);
-  },
-  getCaseSafetyProtocol: async (caseId: string) => {
-    return request<any>(`/therapist/cases/${caseId}/safety-protocol`);
-  },
-  getCaseHistory: async (caseId: string) => {
-    return request<any>(`/therapist/cases/${caseId}/history`);
-  },
-  updateCaseHistory: async (caseId: string, data: any) => {
-    return request<any>(`/therapist/cases/${caseId}/history`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  },
-  getCaseEvents: async (caseId: string, eventType?: string) => {
-    const query = eventType ? `?event_type=${encodeURIComponent(eventType)}` : '';
-    return request<any[]>(`/therapist/cases/${caseId}/events${query}`);
-  },
-  addCaseEvent: async (caseId: string, data: any) => {
-    return request<any>(`/therapist/cases/${caseId}/events`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-  deleteCaseEvent: async (caseId: string, eventId: string) => {
-    return request<any>(`/therapist/cases/${caseId}/events/${eventId}`, {
-      method: 'DELETE',
-    });
-  },
-};
 
 export const apiService = {
   auth: authService,

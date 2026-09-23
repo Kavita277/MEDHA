@@ -20,6 +20,8 @@ interface MedhaScreenProps {
   scroll?: boolean;
   rightIcon?: keyof typeof Ionicons.glyphMap;
   onRightPress?: () => void;
+  rightIcon2?: keyof typeof Ionicons.glyphMap;
+  onRightPress2?: () => void;
 }
 
 export function MedhaScreen({
@@ -32,10 +34,12 @@ export function MedhaScreen({
   scroll = true,
   rightIcon,
   onRightPress,
+  rightIcon2,
+  onRightPress2,
 }: MedhaScreenProps) {
   const content = (
     <View style={styles.inner}>
-      {(back || rightIcon) && (
+      {(back || rightIcon || rightIcon2) && (
         <View style={styles.topBar}>
           {back ? (
             <Pressable
@@ -53,19 +57,34 @@ export function MedhaScreen({
             <View />
           )}
 
-          {rightIcon && (
-            <Pressable
-              onPress={onRightPress}
-              style={styles.iconButton}
-              hitSlop={12}
-            >
-              <Ionicons
-                name={rightIcon}
-                size={19}
-                color={COLORS.deepForest}
-              />
-            </Pressable>
-          )}
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {rightIcon2 && (
+              <Pressable
+                onPress={onRightPress2}
+                style={styles.iconButton}
+                hitSlop={12}
+              >
+                <Ionicons
+                  name={rightIcon2}
+                  size={19}
+                  color={COLORS.deepForest}
+                />
+              </Pressable>
+            )}
+            {rightIcon && (
+              <Pressable
+                onPress={onRightPress}
+                style={styles.iconButton}
+                hitSlop={12}
+              >
+                <Ionicons
+                  name={rightIcon}
+                  size={19}
+                  color={COLORS.deepForest}
+                />
+              </Pressable>
+            )}
+          </View>
         </View>
       )}
 

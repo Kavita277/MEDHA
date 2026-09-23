@@ -4,11 +4,11 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { MedhaScreen } from '../components/medha-screen';
 import { COLORS } from '../constants/colors';
-
-import { authService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function TherapistLoginScreen() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,8 +27,8 @@ export default function TherapistLoginScreen() {
     setError(null);
 
     try {
-      const data = await authService.login(targetEmail, targetPass);
-      const role = (data.user?.role || '').toUpperCase();
+      const user = await login({ email: targetEmail, password: targetPass });
+      const role = (user?.role || '').toUpperCase();
       if (role !== 'THERAPIST' && role !== 'ADMIN') {
         setError('Access restricted: Authorized clinician role required.');
         setLoading(false);
@@ -43,7 +43,7 @@ export default function TherapistLoginScreen() {
   };
 
   const handleDemo = () => {
-    handleLogin('demo.therapist@medha.org', 'TherapistDemo123!');
+    handleLogin('therapist@medha.org', 'TherapistPass123!');
   };
 
   return (
@@ -96,7 +96,7 @@ export default function TherapistLoginScreen() {
           Authenticate using verified clinical seed credentials to review assigned active cases.
         </Text>
         <Pressable onPress={handleDemo} style={styles.demoButton} disabled={loading}>
-          <Text style={styles.demoButtonText}>Sign in as Demo Clinician (demo.therapist@medha.org)</Text>
+          <Text style={styles.demoButtonText}>Sign in as Clinician (therapist@medha.org)</Text>
         </Pressable>
       </View>
     </MedhaScreen>

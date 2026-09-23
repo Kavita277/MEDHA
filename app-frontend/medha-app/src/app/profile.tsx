@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { MedhaScreen } from '../components/medha-screen';
 import { COLORS } from '../constants/colors';
-import { authService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const languages = [
   { code: 'en', label: 'English' },
@@ -13,29 +13,28 @@ const languages = [
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { user, logout } = useAuth();
   const [language, setLanguage] = useState(languages[0]);
   const [languageModal, setLanguageModal] = useState(false);
-  const [user, setUser] = useState<any>(null);
-
-  React.useEffect(() => {
-    let active = true;
-    authService.getMe()
-      .then((data) => {
-        if (active && data) setUser(data);
-      })
-      .catch(() => {});
-    return () => { active = false; };
-  }, []);
-
-  const handleLogout = () => {
-    authService.logout();
-    router.replace('/' as any);
-  };
 
   const displayName = user?.name || 'Patient';
   const displayEmail = user?.email || 'Authenticated User';
   const initial = displayName.charAt(0).toUpperCase() || 'P';
   const roleTag = user?.role === 'THERAPIST' ? 'Clinician' : 'Patient';
+
+  const handleLogout = () => {
+    Alert.alert('Sign out', 'Are you sure you want to sign out of MEDHA?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign out',
+        style: 'destructive',
+        onPress: async () => {
+          await logout();
+          router.replace('/');
+        },
+      },
+    ]);
+  };
 
   return (
     <>

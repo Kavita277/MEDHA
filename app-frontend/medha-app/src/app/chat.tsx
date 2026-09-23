@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -13,16 +14,20 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { MedhaScreen } from '../components/medha-screen';
 import { COLORS } from '../constants/colors';
-
-import { chatService, sessionService } from '../services/api';
+import { getChatHistory, sendMessage } from '../services/chat';
+import { useAuth } from '../context/AuthContext';
+import { useSession } from '../context/SessionContext';
 
 type Message = { id: string; from: 'medha' | 'you'; text: string };
 
 export default function ChatScreen() {
   const router = useRouter();
+  const { token } = useAuth();
+  const { sessionId, startNewSession } = useSession();
+  
   const [text, setText] = useState('');
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(true);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
@@ -31,13 +36,51 @@ export default function ChatScreen() {
     },
   ]);
 
-  React.useEffect(() => {
-    sessionService.createSession().then((sess) => {
-      setSessionId(sess.id);
-    }).catch(err => {
-      console.warn("Session init error:", err);
-    });
-  }, []);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadHistory() {
+      if (!sessionId || !token) {
+        setLoadingHistory(false);
+        return;
+      }
+
+      setLoadingHistory(true);
+      try {
+        const history = await getChatHistory(sessionId, token);
+        if (cancelled) return;
+
+        const restoredMessages: Message[] = history.messages
+          .filter((message) => message.role.toLowerCase() !== 'system')
+          .map((message) => ({
+            id: message.id,
+            from: message.role.toLowerCase() === 'user' ? 'you' : 'medha',
+            text: message.content,
+          }));
+
+        setMessages(
+          restoredMessages.length > 0
+            ? restoredMessages
+            : [{
+                id: 'welcome',
+                from: 'medha',
+                text: 'Hi. I’m here with you. You can tell me what’s on your mind, in your own words.',
+              }],
+        );
+      } catch (error) {
+        if (!cancelled) {
+          console.warn('Could not load chat history:', error);
+        }
+      } finally {
+        if (!cancelled) setLoadingHistory(false);
+      }
+    }
+
+    loadHistory();
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId, token]);
 
   const send = async () => {
     const value = text.trim();
@@ -52,13 +95,13 @@ export default function ChatScreen() {
     setSending(true);
 
     try {
-      let activeSid = sessionId;
-      if (!activeSid) {
-        const newSess = await sessionService.createSession();
-        activeSid = newSess.id;
-        setSessionId(activeSid);
+      if (!sessionId) {
+        throw new Error("No active session");
       }
-      const res = await chatService.sendMessage(activeSid, value);
+      if (!token) {
+        throw new Error('You are not signed in');
+      }
+      const res = await sendMessage(sessionId, value, token);
       setMessages((current) => [
         ...current,
         {
@@ -68,12 +111,13 @@ export default function ChatScreen() {
         },
       ]);
     } catch (e: any) {
+      console.warn("Chat error:", e);
       setMessages((current) => [
         ...current,
         {
           id: `${Date.now()}-reply`,
           from: 'medha',
-          text: 'I hear you. Take your time — I am listening and supporting you.',
+          text: `I couldn’t send that message. ${e instanceof Error ? e.message : 'Please check your connection and try again.'}`,
         },
       ]);
     } finally {
@@ -88,6 +132,16 @@ export default function ChatScreen() {
       subtitle="Type what you’re feeling, or switch to voice when speaking feels easier."
       onBack={() => router.back()}
       scroll={false}
+      rightIcon="time-outline"
+      onRightPress={() => router.push('/chat-history' as any)}
+      rightIcon2="add"
+      onRightPress2={() => {
+        startNewSession().then(() => setMessages([{
+          id: 'welcome',
+          from: 'medha',
+          text: 'Hi. I’m here with you. You can tell me what’s on your mind, in your own words.',
+        }]));
+      }}
     >
       <KeyboardAvoidingView
         style={styles.keyboard}
@@ -99,7 +153,9 @@ export default function ChatScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {messages.map((message) => (
+          {loadingHistory ? (
+            <ActivityIndicator color={COLORS.forest} style={styles.historyLoading} />
+          ) : messages.map((message) => (
             <View
               key={message.id}
               style={[
@@ -195,6 +251,7 @@ const styles = StyleSheet.create({
   keyboard: { flex: 1 },
   messages: { flex: 1 },
   messageContent: { paddingVertical: 10, gap: 10 },
+  historyLoading: { marginTop: 40 },
   bubble: {
     maxWidth: '88%',
     paddingHorizontal: 16,

@@ -1,0 +1,325 @@
+{
+  "therapist_login": "PASS",
+  "case_creation": "PASS",
+  "patient_login": "PASS",
+  "session_creation": {
+    "session_id": "cf4d2d7c-47af-458e-a5f5-0a8ae69e4cb9"
+  },
+  "start_checkin": {
+    "id": "70f83c0a-3069-4958-bef7-dfd107586b96",
+    "session_id": "cf4d2d7c-47af-458e-a5f5-0a8ae69e4cb9",
+    "status": "IN_PROGRESS",
+    "started_at": "2026-09-11T12:59:12.174882",
+    "completed_at": null,
+    "current_question_id": "SA-01",
+    "questions": [
+      {
+        "id": "84b1cff6-b097-44d6-a7b3-0664fcdfc82c",
+        "question_id": "SA-01",
+        "question_text": "Do you currently feel physically safe where you are staying?",
+        "question_order": 1,
+        "answered_at": null,
+        "answer_status": "pending"
+      }
+    ]
+  },
+  "answer_checkin": {
+    "status": "IN_PROGRESS",
+    "checkin": {
+      "id": "70f83c0a-3069-4958-bef7-dfd107586b96",
+      "session_id": "cf4d2d7c-47af-458e-a5f5-0a8ae69e4cb9",
+      "status": "IN_PROGRESS",
+      "started_at": "2026-09-11T12:59:12.174882",
+      "completed_at": null,
+      "current_question_id": "ES-01",
+      "questions": [
+        {
+          "id": "84b1cff6-b097-44d6-a7b3-0664fcdfc82c",
+          "question_id": "SA-01",
+          "question_text": "Do you currently feel physically safe where you are staying?",
+          "question_order": 1,
+          "answered_at": "2026-09-11T12:59:12.194225",
+          "answer_status": "answered"
+        },
+        {
+          "id": "0a4f5abd-cc49-4b55-a252-58ecb1da694d",
+          "question_id": "ES-01",
+          "question_text": "Are certain places, sounds, or situations currently making you feel distressed or on edge?",
+          "question_order": 2,
+          "answered_at": null,
+          "answer_status": "pending"
+        }
+      ]
+    },
+    "next_question": {
+      "id": "0a4f5abd-cc49-4b55-a252-58ecb1da694d",
+      "question_id": "ES-01",
+      "question_text": "Are certain places, sounds, or situations currently making you feel distressed or on edge?",
+      "question_order": 2,
+      "answered_at": null,
+      "answer_status": "pending"
+    }
+  },
+  "complete_checkin": {
+    "id": "70f83c0a-3069-4958-bef7-dfd107586b96",
+    "session_id": "cf4d2d7c-47af-458e-a5f5-0a8ae69e4cb9",
+    "status": "COMPLETED",
+    "started_at": "2026-09-11T12:59:12.174882",
+    "completed_at": "2026-09-11T12:59:12.208224",
+    "current_question_id": null,
+    "questions": [
+      {
+        "id": "84b1cff6-b097-44d6-a7b3-0664fcdfc82c",
+        "question_id": "SA-01",
+        "question_text": "Do you currently feel physically safe where you are staying?",
+        "question_order": 1,
+        "answered_at": "2026-09-11T12:59:12.194225",
+        "answer_status": "answered"
+      },
+      {
+        "id": "0a4f5abd-cc49-4b55-a252-58ecb1da694d",
+        "question_id": "ES-01",
+        "question_text": "Are certain places, sounds, or situations currently making you feel distressed or on edge?",
+        "question_order": 2,
+        "answered_at": null,
+        "answer_status": "pending"
+      }
+    ]
+  },
+  "chat_message": {
+    "session_id": "cf4d2d7c-47af-458e-a5f5-0a8ae69e4cb9",
+    "turn_index": 1,
+    "user_message": "I feel anxious and overwhelmed by everything happening right now.",
+    "assistant_response": "I understand. If you feel comfortable answering: We noticed [case-related event] may be coming up. How are you coping with this?",
+    "timestamp": "2026-09-11T12:59:19.549997",
+    "safety_triggered": false
+  },
+  "voice_checkin": {
+    "id": "3c4a68fb-ed14-438d-b75a-7546f633802f",
+    "case_id": "93f05c5c-2eab-4fbf-938c-1aafe4e2e40e",
+    "session_id": "cf4d2d7c-47af-458e-a5f5-0a8ae69e4cb9",
+    "timepoint": "Day 1",
+    "available": 1.0,
+    "message": "Voice check-in processed securely."
+  },
+  "prediction": {
+    "fusion_dds_prediction": 36.191200256347656,
+    "temporal_risk_score": null,
+    "triage_level": "LOW",
+    "future_escalation_flag": null,
+    "components": {
+      "struct_pred": 35.39820098876953,
+      "text_pred": 30.1422,
+      "voice_pred": 42.5286,
+      "behav_pred": null
+    }
+  },
+  "therapist_results": {
+    "case_id": "93f05c5c-2eab-4fbf-938c-1aafe4e2e40e",
+    "victim_id": "V-DEMO-f46a5c",
+    "user_id": "41f6a5e7-c307-4fde-a9be-9640b4034a32",
+    "session_id": "cf4d2d7c-47af-458e-a5f5-0a8ae69e4cb9",
+    "timepoint": 1,
+    "results_available": true,
+    "fusion_dds_prediction": 36.191200256347656,
+    "temporal_risk_score": null,
+    "future_escalation_flag": null,
+    "triage_level": "LOW",
+    "specialists": {
+      "struct_pred": 35.39820098876953,
+      "text_pred": 30.1422,
+      "voice_pred": 42.5286,
+      "behav_pred": null,
+      "struct_available": true,
+      "text_available": true,
+      "voice_available": true,
+      "behav_available": false,
+      "behav_blocked": true,
+      "behav_block_reason": "Frozen V2 Behaviour Specialist integration is blocked: Engagement_Score original data generator was not recovered (Step 9C). The ML team must provide the generator script or retrain with Step 9A event metrics."
+    },
+    "predicted_at": "2026-09-11T12:59:21.777853",
+    "result_record_created_at": "2026-09-11T12:59:21.777858",
+    "patient_context": {
+      "conversation_summary": {
+        "important_facts": [],
+        "current_concerns": [],
+        "recent_events": [],
+        "support_context": [],
+        "preferences": [],
+        "ongoing_topics": [],
+        "unresolved_topics": [],
+        "important_observations": [],
+        "updated_at": "2026-09-11T12:59:12.142830Z"
+      },
+      "checkin_responses": [
+        {
+          "question_id": "SA-01",
+          "question_text": "Do you currently feel physically safe where you are staying?",
+          "response_text": "{\"value\": 8.0}",
+          "intent": "safety_support",
+          "timestamp": "2026-09-11T12:59:12.180583Z"
+        },
+        {
+          "question_id": "ES-01",
+          "question_text": "Are certain places, sounds, or situations currently making you feel distressed or on edge?",
+          "response_text": null,
+          "intent": "event_related_stress",
+          "timestamp": "2026-09-11T12:59:12.196197Z"
+        },
+        {
+          "question_id": "ES-02",
+          "question_text": "We noticed [case-related event] may be coming up. How are you coping with this?",
+          "response_text": null,
+          "intent": "event_related_stress",
+          "timestamp": "2026-09-11T12:59:19.541022Z"
+        }
+      ]
+    }
+  },
+  "state_snapshot": {
+    "victim_id": "V-DEMO-f46a5c",
+    "session_id": "sess_d009115a",
+    "timepoint": 1,
+    "created_at": "2026-09-11T12:59:12.142818+00:00",
+    "updated_at": "2026-09-11T12:59:21.286432+00:00",
+    "conversation_history": [
+      {
+        "role": "user",
+        "content": "I feel anxious and overwhelmed by everything happening right now.",
+        "timestamp": "2026-09-11T12:59:12.230620+00:00",
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "I understand. If you feel comfortable answering: We noticed [case-related event] may be coming up. How are you coping with this?",
+        "timestamp": "2026-09-11T12:59:19.541131+00:00",
+        "metadata": {
+          "provider": "placeholder"
+        }
+      }
+    ],
+    "current_user_message": "I feel anxious and overwhelmed by everything happening right now.",
+    "latest_assistant_response": "I understand. If you feel comfortable answering: We noticed [case-related event] may be coming up. How are you coping with this?",
+    "question_history": [
+      {
+        "question_id": "SA-01",
+        "question_text": "Do you currently feel physically safe where you are staying?",
+        "intent": "safety_support",
+        "asked_at": "2026-09-11T12:59:12.180583+00:00",
+        "answered": true,
+        "response_text": "{\"value\": 8.0}",
+        "cooldown_until": "2026-09-12T12:59:12.174852+00:00",
+        "metadata": {}
+      },
+      {
+        "question_id": "ES-01",
+        "question_text": "Are certain places, sounds, or situations currently making you feel distressed or on edge?",
+        "intent": "event_related_stress",
+        "asked_at": "2026-09-11T12:59:12.196197+00:00",
+        "answered": false,
+        "response_text": null,
+        "cooldown_until": "2026-09-25T12:59:12.194357+00:00",
+        "metadata": {}
+      },
+      {
+        "question_id": "ES-02",
+        "question_text": "We noticed [case-related event] may be coming up. How are you coping with this?",
+        "intent": "event_related_stress",
+        "asked_at": "2026-09-11T12:59:19.541022+00:00",
+        "answered": false,
+        "response_text": null,
+        "cooldown_until": "2026-09-25T12:59:19.540961+00:00",
+        "metadata": {}
+      }
+    ],
+    "conversation_summary": {
+      "important_facts": [],
+      "current_concerns": [],
+      "recent_events": [],
+      "support_context": [],
+      "preferences": [],
+      "ongoing_topics": [],
+      "unresolved_topics": [],
+      "important_observations": [],
+      "updated_at": "2026-09-11T12:59:12.142830+00:00"
+    },
+    "structured_features": {
+      "Case_Type": null,
+      "Case_Stage": null,
+      "Episode_Severity": null,
+      "Checkin_Available": null,
+      "Mood": null,
+      "Stress": null,
+      "Sleep": null,
+      "Functioning": null,
+      "Safety": 8.0,
+      "Social_Support_Checkin": null,
+      "Self_Reported_Wellbeing": null,
+      "Threat_Event": null,
+      "Upcoming_Hearing": null,
+      "Hearing_Completed": null,
+      "Investigation_Delay": null,
+      "Compensation_Delay": null,
+      "Relocation_Stress": null,
+      "Rehabilitation_Issue": null,
+      "Protection_Event": null,
+      "Family_Support": null,
+      "Social_Support": null,
+      "Therapist_Engagement": null,
+      "Access_To_Services": null,
+      "Stable_Housing": null,
+      "Other_Protective_Factors": null,
+      "Recent_Episode": null,
+      "Family_Reported_Episode": null,
+      "Missed_Checkin": null,
+      "Interaction_Frequency_7d": null,
+      "Session_Duration_Minutes": null,
+      "Engagement_Score": null,
+      "Engagement_Deviation": null,
+      "Response_Delay_Hours": null,
+      "Response_Delay_Deviation": null,
+      "Baseline_Response_Delay": null,
+      "Baseline_Engagement": null,
+      "Baseline_Checkin_Distress": null,
+      "Behaviour_Trend": null,
+      "Engagement_Trend": null,
+      "Diary_Available": null,
+      "Therapist_Observation_Available": null,
+      "Therapist_Observation_Score": null
+    },
+    "text_features": {
+      "Text_Distress": 0.111752,
+      "Fear": 0.999572,
+      "Threat_Context": 0.338285,
+      "Negative_Affect": 0.306247,
+      "Urgency": 0.038029
+    },
+    "voice_features": {
+      "Voice_Distress": 0.59,
+      "Pause_Ratio": 0.0,
+      "Speech_Rate_Deviation": 1.0,
+      "Energy_Deviation": 0.0,
+      "Acoustic_Indicator": 0.0025
+    },
+    "behaviour_features": {
+      "Engagement_Score": null,
+      "Engagement_Deviation": null,
+      "Response_Delay_Hours": null,
+      "Response_Delay_Deviation": null,
+      "Missed_Checkin": null,
+      "Interaction_Frequency_7d": null,
+      "Session_Duration_Minutes": null,
+      "Baseline_Response_Delay": null,
+      "Baseline_Engagement": null,
+      "Behaviour_Trend": null
+    },
+    "text_available": 1.0,
+    "voice_available": 1.0,
+    "struct_available": 1.0,
+    "behav_available": 1.0,
+    "candidate_observations": [],
+    "recent_events": [],
+    "previous_predictions": [],
+    "metadata": {}
+  }
+}

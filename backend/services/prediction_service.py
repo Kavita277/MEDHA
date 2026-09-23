@@ -506,11 +506,15 @@ def execute_fusion_and_temporal(
 # Backward-Compatible Full State Aggregator
 # ---------------------------------------------------------------------------
 
-def get_latest_session_state(db: Session, case_id: uuid.UUID, timepoint: int) -> Dict[str, Any]:
-    session_model = db.query(SessionModel).filter(
+def get_latest_session(db: Session, case_id: uuid.UUID, timepoint: int) -> Optional[SessionModel]:
+    return db.query(SessionModel).filter(
         SessionModel.case_id == case_id,
         SessionModel.timepoint == timepoint
     ).order_by(desc(SessionModel.updated_at)).first()
+
+
+def get_latest_session_state(db: Session, case_id: uuid.UUID, timepoint: int) -> Dict[str, Any]:
+    session_model = get_latest_session(db, case_id, timepoint)
 
     if session_model and session_model.state_snapshot:
         return session_model.state_snapshot
@@ -550,7 +554,8 @@ def generate_predictions(db: Session, case_id: uuid.UUID, timepoint: int) -> Pre
     if not case:
         raise ValueError(f"Case {case_id} not found")
 
-    state_snapshot = get_latest_session_state(db, case_id, timepoint)
+    latest_session = get_latest_session(db, case_id, timepoint)
+    state_snapshot = latest_session.state_snapshot if latest_session and latest_session.state_snapshot else {}
     behav_snapshot = get_behaviour_snapshot(db, case_id, timepoint)
 
     # 1. Aggregate Features

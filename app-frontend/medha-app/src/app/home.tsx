@@ -13,14 +13,18 @@ import {
   View,
 } from 'react-native';
 
+import { useSession } from '../context/SessionContext';
+import { checkinService } from '../services/checkin';
 import { COLORS } from '../constants/colors';
-import { checkinService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const forestImage =
   'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1200&q=85';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { sessionId } = useSession();
+  const { user, token } = useAuth();
 
   // Check-in Pop-up Modal State
   const [showCheckinModal, setShowCheckinModal] = useState(false);
@@ -33,11 +37,20 @@ export default function HomeScreen() {
   const [submittingAnswer, setSubmittingAnswer] = useState(false);
   const [totalQuestions, setTotalQuestions] = useState(12);
   const [answeredCount, setAnsweredCount] = useState(0);
+  const [checkinError, setCheckinError] = useState<string | null>(null);
+
+  // Guard: if authenticated as clinician, redirect to therapist workspace
+  useEffect(() => {
+    if (user?.role?.toUpperCase() === 'THERAPIST' || user?.role?.toUpperCase() === 'ADMIN') {
+      router.replace('/therapist');
+    }
+  }, [user?.role]);
 
   // Auto-pop check-in on first open if not completed today
   useEffect(() => {
+    if (!token) return;
     let mounted = true;
-    checkinService.getTodayStatus()
+    checkinService.getTodayStatus(token)
       .then((status) => {
         if (mounted && status && !status.completed_today) {
           setShowCheckinModal(true);
@@ -52,13 +65,18 @@ export default function HomeScreen() {
         }
       });
     return () => { mounted = false; };
-  }, []);
+  }, [token]);
 
   const handleStartCheckin = async () => {
     setLoadingCheckin(true);
+    setCheckinError(null);
     setCheckinStep('questionnaire');
     try {
-      const chk = await checkinService.startCheckin();
+      if (!sessionId || !token) {
+        setCheckinError('Cannot start checkin: No active session or token');
+        return;
+      }
+      const chk = await checkinService.startCheckin(sessionId, token);
       if (chk) {
         setCheckinData(chk);
         const qList = chk.questions || [];
@@ -74,10 +92,15 @@ export default function HomeScreen() {
         } else if (qList.length > 0) {
           setCurrentQuestion(qList[0]);
           setAnsweredCount(0);
+        } else {
+          setCheckinError('No questions available for this check-in.');
         }
+      } else {
+        setCheckinError('Failed to load check-in data.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Failed to start checkin:', err);
+      setCheckinError(err.message || 'An error occurred while starting the check-in.');
     } finally {
       setLoadingCheckin(false);
     }
@@ -85,14 +108,14 @@ export default function HomeScreen() {
 
   const handleAnswerSubmit = async (val?: string) => {
     const valueToSubmit = val || selectedOption || customText.trim();
-    if (!valueToSubmit || submittingAnswer || !checkinData || !currentQuestion) return;
+    if (!valueToSubmit || submittingAnswer || !checkinData || !currentQuestion || !token) return;
     setSubmittingAnswer(true);
 
     try {
       const res = await checkinService.submitAnswer(checkinData.id, {
         value: valueToSubmit,
         question_id: currentQuestion.question_id,
-      });
+      }, token);
 
       setAnsweredCount((prev) => prev + 1);
       setSelectedOption(null);
@@ -505,7 +528,18 @@ export default function HomeScreen() {
 
             {checkinStep === 'questionnaire' && (
               <View style={styles.questionnaireContent}>
-                {loadingCheckin || !currentQuestion ? (
+                {checkinError ? (
+                  <View style={styles.loadingContainer}>
+                    <Ionicons name="alert-circle-outline" size={48} color={COLORS.support} />
+                    <Text style={[styles.loadingText, { color: COLORS.support, marginTop: 16 }]}>{checkinError}</Text>
+                    <Pressable
+                      style={[styles.primaryButton, { marginTop: 24 }]}
+                      onPress={() => setShowCheckinModal(false)}
+                    >
+                      <Text style={styles.primaryButtonText}>Close</Text>
+                    </Pressable>
+                  </View>
+                ) : loadingCheckin || !currentQuestion ? (
                   <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={COLORS.forest} />
                     <Text style={styles.loadingText}>Preparing your daily questions...</Text>

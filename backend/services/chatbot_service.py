@@ -31,6 +31,7 @@ from backend.schemas.chat import (
 )
 from backend.config import get_settings
 from backend.services.session_service import SessionService
+from backend.config import get_settings
 from chatbot.conversation_manager import ConversationManager
 from chatbot.llm.gemini_provider import GeminiProvider
 from chatbot.interfaces import PlaceholderLLMProvider
@@ -45,6 +46,7 @@ class ChatbotService:
         self.message_repo = ChatMessageRepository(db)
         
         # Use Gemini when configured; fallback safely to PlaceholderLLMProvider
+        # to keep local/test environments usable without credentials.
         settings = get_settings()
         llm_provider = (
             GeminiProvider(
