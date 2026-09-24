@@ -1,8 +1,14 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Image, StyleSheet, Text, View } from 'react-native';
+import {
+  Animated,
+  Image,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { router } from 'expo-router';
-
-import { COLORS } from '../constants/colors';
+import { StatusBar } from 'expo-status-bar';
 
 const MEDHA_LOGO = require('../../assets/images/medha-logo.png');
 
@@ -57,7 +63,7 @@ export default function LoadingScreen() {
 
   const ringScale = ring.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.9, 1.15],
+    outputRange: [0.92, 1.14],
   });
 
   const ringOpacity = ring.interpolate({
@@ -67,6 +73,7 @@ export default function LoadingScreen() {
 
   return (
     <View style={styles.container}>
+      <StatusBar style="dark" />
       <Animated.View
         style={[
           styles.ring,
@@ -105,7 +112,7 @@ export default function LoadingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#FAF9F6',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -113,49 +120,49 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: 170,
-    height: 170,
-    borderRadius: 24,
+    width: 160,
+    height: 160,
   },
   message: {
-    marginTop: 22,
-    fontFamily: 'Inter-Regular',
-    fontSize: 12,
-    color: COLORS.mutedText,
+    marginTop: 20,
+    fontFamily: 'Nunito-SemiBold',
+    fontSize: 14,
+    color: '#5B6478',
   },
   loader: {
-    marginTop: 24,
+    marginTop: 18,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 7,
   },
   loaderDot: {
-    width: 5,
-    height: 5,
+    width: 6,
+    height: 6,
     borderRadius: 3,
-    backgroundColor: COLORS.lichen,
+    backgroundColor: 'rgba(24, 30, 44, 0.18)',
   },
   loaderDotMiddle: {
-    width: 7,
-    height: 7,
+    width: 8,
+    height: 8,
     borderRadius: 4,
-    backgroundColor: COLORS.forest,
+    backgroundColor: '#FF735C',
   },
   ring: {
     position: 'absolute',
-    width: 245,
-    height: 245,
-    borderRadius: 123,
-    borderWidth: 1,
-    borderColor: COLORS.lichen,
+    width: 230,
+    height: 230,
+    borderRadius: 115,
+    borderWidth: 1.5,
+    borderColor: '#FF735C',
   },
   bottom: {
     position: 'absolute',
-    bottom: 45,
+    bottom: Platform.OS === 'android' ? 32 : 45,
   },
   bottomText: {
-    fontFamily: 'CormorantGaramond-Regular',
-    fontSize: 16,
-    color: COLORS.moss,
+    fontFamily: 'Nunito-Medium',
+    fontSize: 13,
+    color: '#8E97A8',
+    letterSpacing: 0.2,
   },
 });

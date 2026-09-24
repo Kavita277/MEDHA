@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import {
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
+  SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -9,8 +13,6 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import { MedhaScreen } from '../components/medha-screen';
-import { MedhaButton } from '../components/medha-button';
 import { COLORS } from '../constants/colors';
 import { RADIUS, SHADOW } from '../constants/theme';
 
@@ -27,6 +29,7 @@ export default function JournalScreen() {
   const router = useRouter();
   const [text, setText] = useState('');
   const [mood, setMood] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
 
   // Dynamic formatted date
   const today = new Date();
@@ -37,161 +40,269 @@ export default function JournalScreen() {
     year: 'numeric',
   });
 
+  const handleSave = () => {
+    setSaved(true);
+    setTimeout(() => {
+      router.push('/home');
+    }, 600);
+  };
+
   return (
-    <MedhaScreen
-      eyebrow="Today’s Journal"
-      title="A space just for you."
-      subtitle="Write without needing to make sense of everything."
-      onBack={() => router.back()}
-      withBackground={true}
-    >
-      {/* CALENDAR / DATE PILL */}
-      <View style={styles.datePill}>
-        <View style={styles.calendarIconWrap}>
-          <Ionicons name="calendar-outline" size={14} color={COLORS.coralDark} />
-        </View>
-        <Text style={styles.dateText}>{dateString || 'Today'}</Text>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={styles.keyboard}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* TOP BAR */}
+          <View style={styles.topBar}>
+            <Pressable
+              onPress={() => router.back()}
+              style={({ pressed }) => [
+                styles.iconButton,
+                pressed && styles.pressed,
+              ]}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+            >
+              <Ionicons name="arrow-back" size={20} color={COLORS.navy} />
+            </Pressable>
 
-      {/* PAPER WRITING CARD (Pink-soft themed per HTML benchmark) */}
-      <View style={styles.paperCard}>
-        <View style={styles.paperHeader}>
-          <Text style={styles.paperPrompt}>What’s on your mind today?</Text>
-          <Ionicons name="pencil-outline" size={15} color={COLORS.pinkDark} />
-        </View>
+            <Pressable
+              onPress={() => router.push('/mood-calendar')}
+              style={({ pressed }) => [
+                styles.dateBadge,
+                pressed && styles.pressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="View Mood Calendar"
+            >
+              <Ionicons name="calendar-outline" size={13} color={COLORS.coralDark} />
+              <Text style={styles.dateText}>{dateString}</Text>
+            </Pressable>
+          </View>
 
-        <TextInput
-          value={text}
-          onChangeText={setText}
-          multiline
-          placeholder="Start writing freely... You can say as little or as much as you like."
-          placeholderTextColor={COLORS.subtleText}
-          style={styles.input}
-          textAlignVertical="top"
-        />
+          {/* SCREEN HEADER */}
+          <View style={styles.header}>
+            <Text style={styles.title}>A space for your thoughts</Text>
+            <Text style={styles.subtitle}>
+              Write freely. This journal is private to you.
+            </Text>
+          </View>
 
-        <View style={styles.paperFooter}>
-          <Ionicons name="lock-closed-outline" size={12} color={COLORS.navyMuted} />
-          <Text style={styles.privateText}>Private to you</Text>
-        </View>
-      </View>
+          {/* WRITING CARD CONTAINER */}
+          <View style={styles.paperCard}>
+            {/* PROMPT BUBBLE */}
+            <View style={styles.promptRow}>
+              <View style={styles.sparkleCircle}>
+                <Ionicons name="sparkles" size={14} color={COLORS.coralDark} />
+              </View>
+              <Text style={styles.promptText}>What’s on your mind today?</Text>
+            </View>
 
-      {/* MOOD SELECTION */}
-      <View style={styles.moodSection}>
-        <Text style={styles.moodHeading}>HOW ARE YOU FEELING RIGHT NOW?</Text>
+            {/* TEXT INPUT AREA */}
+            <TextInput
+              value={text}
+              onChangeText={setText}
+              multiline
+              placeholder="I felt a bit overwhelmed but I'm proud that I reached out for support..."
+              placeholderTextColor={COLORS.subtleText}
+              style={styles.input}
+              textAlignVertical="top"
+              accessibilityLabel="Journal entry text input"
+            />
 
-        <View style={styles.moodGrid}>
-          {moods.map((item) => {
-            const active = mood === item.label;
+            {/* FOOTER BAR WITH PRIVACY STATUS */}
+            <View style={styles.paperFooter}>
+              <View style={styles.privateTag}>
+                <Ionicons name="shield-checkmark-outline" size={12} color={COLORS.sage} />
+                <Text style={styles.privateText}>End-to-end encrypted & local</Text>
+              </View>
+              {text.trim().length > 0 && (
+                <Text style={styles.charCount}>{text.trim().split(/\s+/).length} words</Text>
+              )}
+            </View>
+          </View>
 
-            return (
-              <Pressable
-                key={item.label}
-                onPress={() => setMood(active ? null : item.label)}
-                style={({ pressed }) => [
-                  styles.moodChip,
-                  { backgroundColor: item.color, borderColor: item.border },
-                  active && styles.moodChipActive,
-                  pressed && styles.pressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={`Feeling ${item.label}`}
-                accessibilityState={{ selected: active }}
-              >
-                <Text style={styles.moodEmoji}>{item.emoji}</Text>
-                <Text
-                  style={[
-                    styles.moodText,
-                    active && styles.moodTextActive,
-                  ]}
-                >
-                  {item.label}
-                </Text>
-                {active && (
-                  <View style={styles.activeCheck}>
-                    <Ionicons name="checkmark" size={12} color={COLORS.white} />
-                  </View>
-                )}
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
+          {/* MOOD SELECTION SECTION */}
+          <View style={styles.moodSection}>
+            <Text style={styles.sectionHeading}>HOW ARE YOU FEELING RIGHT NOW?</Text>
 
-      {/* SAVE ACTION */}
-      <View style={styles.saveWrapper}>
-        <MedhaButton
-          title="Save Entry"
-          variant="coral"
-          size="lg"
-          icon="checkmark-circle"
-          iconPosition="right"
-          onPress={() => router.push('/home')}
-        />
-      </View>
+            <View style={styles.moodGrid}>
+              {moods.map((item) => {
+                const active = mood === item.label;
 
-      <Text style={styles.reassuranceText}>
-        Entries are stored locally on your device for your own reflection.
-      </Text>
-    </MedhaScreen>
+                return (
+                  <Pressable
+                    key={item.label}
+                    onPress={() => setMood(active ? null : item.label)}
+                    style={({ pressed }) => [
+                      styles.moodChip,
+                      { backgroundColor: item.color, borderColor: item.border },
+                      active && styles.moodChipActive,
+                      pressed && styles.pressed,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Select mood ${item.label}`}
+                    accessibilityState={{ selected: active }}
+                  >
+                    <Text style={styles.moodEmoji}>{item.emoji}</Text>
+                    <Text
+                      style={[
+                        styles.moodLabel,
+                        active && styles.moodLabelActive,
+                      ]}
+                    >
+                      {item.label}
+                    </Text>
+                    {active && (
+                      <View style={styles.activeDot}>
+                        <Ionicons name="checkmark" size={11} color={COLORS.white} />
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* SAVE BUTTON */}
+          <View style={styles.saveWrapper}>
+            <Pressable
+              onPress={handleSave}
+              disabled={saved}
+              style={({ pressed }) => [
+                styles.saveButton,
+                saved && styles.saveButtonSuccess,
+                pressed && styles.pressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Save entry"
+            >
+              <Text style={styles.saveButtonText}>
+                {saved ? 'Saved to Your Space' : 'Save Entry'}
+              </Text>
+              <Ionicons
+                name={saved ? 'checkmark-circle' : 'arrow-forward'}
+                size={18}
+                color={COLORS.white}
+              />
+            </Pressable>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  datePill: {
-    alignSelf: 'flex-start',
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.porcelain,
+  },
+  keyboard: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 40,
+  },
+
+  /* TOP BAR */
+  topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: RADIUS.pill,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.95)',
-    marginBottom: 16,
-    ...SHADOW.card,
+    justifyContent: 'space-between',
+    paddingVertical: 8,
   },
-  calendarIconWrap: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: COLORS.creamSecondary,
+  iconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
     alignItems: 'center',
     justifyContent: 'center',
+    ...SHADOW.subtle,
+  },
+  dateBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+    ...SHADOW.subtle,
   },
   dateText: {
-    fontFamily: 'Fredoka-Medium',
+    fontFamily: 'Nunito-SemiBold',
     fontSize: 12,
     color: COLORS.navy,
   },
 
-  /* PAPER WRITING CARD */
+  /* HEADER */
+  header: {
+    marginTop: 14,
+    marginBottom: 18,
+  },
+  title: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 26,
+    lineHeight: 32,
+    color: COLORS.navy,
+  },
+  subtitle: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 13,
+    lineHeight: 18,
+    color: COLORS.navyMuted,
+    marginTop: 4,
+  },
+
+  /* WRITING PAPER CARD */
   paperCard: {
     minHeight: 250,
-    backgroundColor: COLORS.pinkSoft,
-    borderRadius: RADIUS.card + 4,
-    borderWidth: 1.5,
-    borderColor: COLORS.pink,
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.card,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
     padding: 18,
-    ...SHADOW.soft,
+    ...SHADOW.subtle,
   },
-  paperHeader: {
+  promptRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
+    gap: 8,
+    paddingBottom: 12,
+    marginBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(232, 98, 142, 0.2)',
-    paddingBottom: 8,
+    borderBottomColor: 'rgba(0, 0, 0, 0.04)',
   },
-  paperPrompt: {
+  sparkleCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: COLORS.creamSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  promptText: {
     fontFamily: 'Fredoka-Medium',
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.navy,
   },
   input: {
-    flex: 1,
     minHeight: 160,
     fontFamily: 'Nunito-Regular',
     fontSize: 15,
@@ -202,24 +313,36 @@ const styles = StyleSheet.create({
   paperFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    alignSelf: 'flex-end',
+    justifyContent: 'space-between',
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 0, 0, 0.04)',
     marginTop: 8,
+  },
+  privateTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
   privateText: {
     fontFamily: 'Nunito-SemiBold',
-    fontSize: 10,
+    fontSize: 11,
     color: COLORS.navyMuted,
   },
-
-  /* MOOD SELECTION */
-  moodSection: {
-    marginTop: 24,
+  charCount: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 11,
+    color: COLORS.subtleText,
   },
-  moodHeading: {
+
+  /* MOOD SECTION */
+  moodSection: {
+    marginTop: 22,
+  },
+  sectionHeading: {
     fontFamily: 'Nunito-Bold',
     fontSize: 10,
-    letterSpacing: 1.4,
+    letterSpacing: 1.2,
     color: COLORS.coralDark,
     marginBottom: 12,
   },
@@ -234,47 +357,58 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: RADIUS.pill,
-    borderWidth: 1.5,
+    borderWidth: 1,
     gap: 7,
-    ...SHADOW.card,
+    ...SHADOW.subtle,
   },
   moodChipActive: {
-    backgroundColor: COLORS.charcoal,
-    borderColor: COLORS.charcoal,
+    backgroundColor: COLORS.navy,
+    borderColor: COLORS.navy,
   },
   moodEmoji: {
     fontSize: 14,
   },
-  moodText: {
+  moodLabel: {
     fontFamily: 'Nunito-Bold',
     fontSize: 12,
     color: COLORS.navy,
   },
-  moodTextActive: {
+  moodLabelActive: {
     color: COLORS.white,
     fontFamily: 'Fredoka-Medium',
   },
-  activeCheck: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+  activeDot: {
+    width: 15,
+    height: 15,
+    borderRadius: 7.5,
     backgroundColor: COLORS.coral,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 2,
   },
 
-  /* SAVE */
+  /* SAVE BUTTON */
   saveWrapper: {
     marginTop: 26,
   },
-  reassuranceText: {
-    fontFamily: 'Nunito-Regular',
-    fontSize: 11,
-    color: COLORS.navyMuted,
-    textAlign: 'center',
-    marginTop: 14,
-    marginBottom: 10,
+  saveButton: {
+    height: 52,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.navy,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    ...SHADOW.dock,
+  },
+  saveButtonSuccess: {
+    backgroundColor: '#3E9257',
+  },
+  saveButtonText: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 15,
+    color: COLORS.white,
+    letterSpacing: 0.3,
   },
 
   pressed: {

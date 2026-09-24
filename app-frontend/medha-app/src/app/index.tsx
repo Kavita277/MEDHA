@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
   Image,
+  Platform,
   StyleSheet,
   Text,
   View,
@@ -14,7 +15,7 @@ const MEDHA_LOGO = require('../../assets/images/medha-logo.png');
 
 export default function Index() {
   const logoOpacity = useRef(new Animated.Value(0)).current;
-  const logoScale = useRef(new Animated.Value(0.84)).current;
+  const logoScale = useRef(new Animated.Value(0.86)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
   const loaderOpacity = useRef(new Animated.Value(0)).current;
   const rotation = useRef(new Animated.Value(0)).current;
@@ -55,7 +56,7 @@ export default function Index() {
       Animated.loop(
         Animated.timing(rotation, {
           toValue: 1,
-          duration: 1250,
+          duration: 1200,
           easing: Easing.linear,
           useNativeDriver: true,
         }),
@@ -119,7 +120,10 @@ export default function Index() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3EFE4' },
+  container: {
+    flex: 1,
+    backgroundColor: '#FAF9F6',
+  },
   content: {
     flex: 1,
     alignItems: 'center',
@@ -127,60 +131,71 @@ const styles = StyleSheet.create({
     paddingHorizontal: 36,
   },
   logoWrap: {
-    width: 235,
-    height: 235,
+    width: 220,
+    height: 220,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logo: { width: 225, height: 225 },
-  copy: { alignItems: 'center', marginTop: 2 },
+  logo: {
+    width: 210,
+    height: 210,
+  },
+  copy: {
+    alignItems: 'center',
+    marginTop: 8,
+  },
   brand: {
-    fontFamily: 'CormorantGaramond-Regular',
-    fontSize: 28,
-    letterSpacing: 7,
-    color: '#24372C',
-    marginLeft: 7,
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 32,
+    letterSpacing: 4,
+    color: '#181E2C',
   },
   subtitle: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 12,
-    color: '#5F6F63',
-    marginTop: 9,
+    fontFamily: 'Nunito-Bold',
+    fontSize: 14,
+    letterSpacing: 0.5,
+    color: '#FF735C',
+    marginTop: 6,
   },
   tagline: {
-    fontFamily: 'CormorantGaramond-Regular',
-    fontSize: 19,
-    fontStyle: 'italic',
-    color: '#53665A',
-    marginTop: 2,
+    fontFamily: 'Nunito-Regular',
+    fontSize: 15,
+    color: '#5B6478',
+    marginTop: 4,
   },
-  loader: { alignItems: 'center', marginTop: 38 },
+  loader: {
+    alignItems: 'center',
+    marginTop: 36,
+  },
   ring: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    borderWidth: 2,
-    borderColor: '#D8DED2',
-    borderTopColor: '#526B5B',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 2.5,
+    borderColor: 'rgba(24, 30, 44, 0.08)',
+    borderTopColor: '#FF735C',
   },
   loadingText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 11,
-    color: '#7B857D',
-    marginTop: 13,
+    fontFamily: 'Nunito-Medium',
+    fontSize: 12,
+    color: '#8E97A8',
+    marginTop: 12,
   },
-  bottom: { alignItems: 'center', paddingBottom: 28 },
+  bottom: {
+    alignItems: 'center',
+    paddingBottom: Platform.OS === 'android' ? 24 : 32,
+  },
   bottomText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 8,
-    letterSpacing: 1.3,
-    color: '#7C877E',
+    fontFamily: 'Nunito-Bold',
+    fontSize: 10,
+    letterSpacing: 2,
+    color: '#8E97A8',
   },
   indicator: {
-    width: 78,
+    width: 60,
     height: 3,
-    borderRadius: 3,
-    backgroundColor: '#536B5B',
-    marginTop: 18,
+    borderRadius: 1.5,
+    backgroundColor: '#FF735C',
+    marginTop: 14,
   },
 });

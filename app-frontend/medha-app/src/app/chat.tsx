@@ -1,8 +1,9 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,10 +12,16 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { MedhaScreen } from '../components/medha-screen';
-import { MedhaCard } from '../components/medha-card';
+
 import { COLORS } from '../constants/colors';
 import { RADIUS, SHADOW } from '../constants/theme';
+import {
+  ApiError,
+  createSession,
+  getAccessToken,
+  getHistory,
+  sendMessage,
+} from '../services/api';
 
 type Message = {
   id: string;
@@ -23,20 +30,32 @@ type Message = {
   timestamp?: string;
 };
 
+const formatTimestamp = (isoOrText?: string): string => {
+  if (!isoOrText) return 'Just now';
+  if (isoOrText === 'Just now') return 'Just now';
+  try {
+    const d = new Date(isoOrText);
+    if (isNaN(d.getTime())) return isoOrText;
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return isoOrText;
+  }
+};
+
 const INITIAL_MESSAGES: Message[] = [
   {
     id: 'welcome',
     from: 'medha',
-    text: 'Hi. I’m here with you. You can tell me what’s on your mind, in your own words.',
+    text: "Hi! I'm Medha. I'm here to listen and support you. How are you feeling right now?",
     timestamp: 'Just now',
   },
 ];
 
 const QUICK_SUGGESTIONS = [
-  'I’m feeling anxious.',
-  'Help me sleep better.',
-  'I just want to talk.',
-  'Today felt overwhelming.',
+  'I feel anxious',
+  'I need motivation',
+  'Can you give me a coping tip?',
+  'Today felt overwhelming',
 ];
 
 export default function ChatScreen() {
@@ -45,10 +64,57 @@ export default function ChatScreen() {
   const [text, setText] = useState('');
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [isTyping, setIsTyping] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [errorState, setErrorState] = useState<{ message: string; retryText?: string } | null>(null);
+  const [safetyTriggered, setSafetyTriggered] = useState(false);
 
-  const send = (overrideText?: string) => {
+  useEffect(() => {
+    let isMounted = true;
+
+    const init = async () => {
+      const token = getAccessToken();
+      if (!token) {
+        // Unauthenticated: preserve initial welcome UI
+        return;
+      }
+
+      try {
+        const session = await createSession();
+        if (!isMounted) return;
+        setSessionId(session.id);
+
+        try {
+          const history = await getHistory(session.id);
+          if (!isMounted) return;
+          if (history.messages && history.messages.length > 0) {
+            const mapped: Message[] = history.messages.map((m) => ({
+              id: m.id,
+              from: m.role === 'user' ? 'you' : 'medha',
+              text: m.content,
+              timestamp: formatTimestamp(m.timestamp),
+            }));
+            setMessages(mapped);
+          }
+        } catch {
+          // If history fetch fails on fresh session, preserve initial greeting
+        }
+      } catch (err: unknown) {
+        if (!isMounted) return;
+        // Session initialization failure handled on demand when user sends
+      }
+    };
+
+    init();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const send = async (overrideText?: string) => {
     const value = (overrideText || text).trim();
     if (!value) return;
+
+    setErrorState(null);
 
     const userMsg: Message = {
       id: `${Date.now()}-you`,
@@ -61,62 +127,137 @@ export default function ChatScreen() {
     setText('');
     setIsTyping(true);
 
-    // Scroll to bottom after user message
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
 
-    // Simulated supportive response
-    setTimeout(() => {
+    const token = getAccessToken();
+    if (!token) {
       setIsTyping(false);
-      setMessages((current) => [
-        ...current,
-        {
-          id: `${Date.now()}-medha`,
-          from: 'medha',
-          text: 'I’m listening. Take your time — you don’t have to explain everything at once. What feels heaviest right now?',
-          timestamp: 'Just now',
-        },
-      ]);
+      setErrorState({
+        message: 'Sign in is required to connect to MEDHA chat.',
+        retryText: value,
+      });
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
-    }, 1200);
+      return;
+    }
+
+    try {
+      let activeSessionId = sessionId;
+      if (!activeSessionId) {
+        const newSession = await createSession();
+        activeSessionId = newSession.id;
+        setSessionId(newSession.id);
+      }
+
+      const result = await sendMessage(activeSessionId, value, {
+        language: 'en',
+        behaviour_data: null,
+        metadata: null,
+      });
+
+      setIsTyping(false);
+
+      const botMsg: Message = {
+        id: `${Date.now()}-medha`,
+        from: 'medha',
+        text: result.assistant_response,
+        timestamp: formatTimestamp(result.timestamp),
+      };
+
+      setMessages((current) => [...current, botMsg]);
+
+      if (result.safety_triggered) {
+        setSafetyTriggered(true);
+      }
+
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    } catch (err: unknown) {
+      setIsTyping(false);
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : 'Unable to reach MEDHA care services. Please check your connection and try again.';
+      setErrorState({
+        message,
+        retryText: value,
+      });
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
   };
 
   return (
-    <MedhaScreen
-      eyebrow="Talk with MEDHA"
-      title="You can start anywhere."
-      subtitle="Type what you’re feeling, or switch to voice when speaking feels easier."
-      onBack={() => router.back()}
-      rightIcon="mic-outline"
-      onRightPress={() => router.push('/voice-assistant')}
-      scroll={false}
-      withBackground={true}
-    >
+    <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
         style={styles.keyboard}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* Messages Stream */}
+        {/* TOP BAR WITH MEDHA IDENTITY */}
+        <View style={styles.topBar}>
+          <Pressable
+            onPress={() => router.back()}
+            style={({ pressed }) => [
+              styles.iconButton,
+              pressed && styles.pressed,
+            ]}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
+            <Ionicons name="arrow-back" size={20} color={COLORS.navy} />
+          </Pressable>
+
+          {/* Center Medha Header */}
+          <View style={styles.headerTitleWrap}>
+            <View style={styles.avatarWrap}>
+              <Ionicons name="sparkles" size={14} color={COLORS.coralDark} />
+            </View>
+            <View style={styles.headerTextGroup}>
+              <Text style={styles.headerName}>Chat with Medha</Text>
+              <Text style={styles.headerSub}>Always here to listen</Text>
+            </View>
+          </View>
+
+          {/* Voice Assistant Shortcut */}
+          <Pressable
+            onPress={() => router.push('/voice-assistant')}
+            style={({ pressed }) => [
+              styles.iconButton,
+              pressed && styles.pressed,
+            ]}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Switch to Voice Assistant"
+          >
+            <Ionicons name="mic-outline" size={20} color={COLORS.navy} />
+          </Pressable>
+        </View>
+
+        {/* MESSAGE STREAM */}
         <ScrollView
           ref={scrollViewRef}
-          style={styles.messages}
+          style={styles.messageList}
           contentContainerStyle={styles.messageContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           {/* Subtle Private Badge */}
           <View style={styles.privatePill}>
-            <Ionicons name="shield-checkmark" size={13} color={COLORS.sage} />
+            <Ionicons name="shield-checkmark-outline" size={12} color={COLORS.sage} />
             <Text style={styles.privateText}>
-              Private & confidential • Human support always available
+              Private & confidential • Support always within reach
             </Text>
           </View>
 
           {messages.map((message) => {
             const isUser = message.from === 'you';
+
             return (
               <View
                 key={message.id}
@@ -126,11 +267,11 @@ export default function ChatScreen() {
                 ]}
               >
                 {!isUser && (
-                  <View style={styles.botHeader}>
-                    <View style={styles.botAvatar}>
-                      <Ionicons name="sparkles" size={12} color={COLORS.coral} />
+                  <View style={styles.botSenderRow}>
+                    <View style={styles.miniAvatar}>
+                      <Ionicons name="sparkles" size={10} color={COLORS.coralDark} />
                     </View>
-                    <Text style={styles.sender}>MEDHA</Text>
+                    <Text style={styles.senderLabel}>MEDHA</Text>
                   </View>
                 )}
 
@@ -153,7 +294,7 @@ export default function ChatScreen() {
                 {message.timestamp && (
                   <Text
                     style={[
-                      styles.timestamp,
+                      styles.timestampText,
                       isUser ? styles.userTimestamp : styles.botTimestamp,
                     ]}
                   >
@@ -164,14 +305,14 @@ export default function ChatScreen() {
             );
           })}
 
-          {/* Typing Indicator */}
+          {/* TYPING INDICATOR */}
           {isTyping && (
             <View style={[styles.bubbleContainer, styles.botContainer]}>
-              <View style={styles.botHeader}>
-                <View style={styles.botAvatar}>
-                  <Ionicons name="sparkles" size={12} color={COLORS.coral} />
+              <View style={styles.botSenderRow}>
+                <View style={styles.miniAvatar}>
+                  <Ionicons name="sparkles" size={10} color={COLORS.coralDark} />
                 </View>
-                <Text style={styles.sender}>MEDHA is listening...</Text>
+                <Text style={styles.senderLabel}>MEDHA is listening...</Text>
               </View>
               <View style={[styles.bubble, styles.medhaBubble, styles.typingBubble]}>
                 <View style={styles.typingDot} />
@@ -181,113 +322,209 @@ export default function ChatScreen() {
             </View>
           )}
 
-          {/* Quick suggestions */}
-          <View style={styles.quickSection}>
-            <Text style={styles.quickSectionTitle}>Not sure where to begin?</Text>
-            <View style={styles.quickRow}>
+          {/* CALM INLINE ERROR / RETRY STATE */}
+          {errorState && (
+            <View style={styles.errorCard}>
+              <View style={styles.errorHeaderRow}>
+                <Ionicons name="information-circle-outline" size={16} color="#B8564D" />
+                <Text style={styles.errorText}>{errorState.message}</Text>
+              </View>
+              {errorState.retryText && (
+                <Pressable
+                  onPress={() => send(errorState.retryText)}
+                  style={({ pressed }) => [
+                    styles.retryButton,
+                    pressed && styles.pressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Retry sending message"
+                >
+                  <Ionicons name="refresh-outline" size={13} color={COLORS.navy} />
+                  <Text style={styles.retryButtonText}>Retry</Text>
+                </Pressable>
+              )}
+            </View>
+          )}
+
+          {/* SAFETY PATHWAY BANNER (SURFACED WHEN safety_triggered === true) */}
+          {safetyTriggered && (
+            <View style={styles.safetyCard}>
+              <View style={styles.safetyHeaderRow}>
+                <View style={styles.safetyIconBadge}>
+                  <Ionicons name="heart" size={14} color={COLORS.coralDark} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.safetyTitle}>We care about your safety</Text>
+                  <Text style={styles.safetySub}>
+                    Support and someone to talk to are available right now. Free, confidential, and 24/7.
+                  </Text>
+                </View>
+              </View>
+              <Pressable
+                onPress={() => router.push('/support')}
+                style={({ pressed }) => [
+                  styles.safetyActionBtn,
+                  pressed && styles.pressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Open Support Services"
+              >
+                <Text style={styles.safetyActionText}>View Free Support Helplines</Text>
+                <Ionicons name="arrow-forward" size={14} color={COLORS.white} />
+              </Pressable>
+            </View>
+          )}
+
+          {/* QUICK SUGGESTIONS SECTION MATCHING REFERENCE SCREEN 19 */}
+          <View style={styles.suggestionsContainer}>
+            <Text style={styles.suggestionsHeading}>Not sure what to say?</Text>
+            <View style={styles.suggestionsRow}>
               {QUICK_SUGGESTIONS.map((item) => (
                 <Pressable
                   key={item}
                   onPress={() => send(item)}
                   style={({ pressed }) => [
-                    styles.quickChip,
-                    pressed && styles.quickChipPressed,
+                    styles.suggestionChip,
+                    pressed && styles.pressed,
                   ]}
                   accessibilityRole="button"
+                  accessibilityLabel={item}
                 >
-                  <Text style={styles.quickText}>{item}</Text>
+                  <Text style={styles.suggestionText}>{item}</Text>
                 </Pressable>
               ))}
             </View>
           </View>
-
-          {/* Voice Switch Card */}
-          <MedhaCard
-            variant="peach"
-            style={styles.voiceCard}
-            onPress={() => router.push('/voice-assistant')}
-            accessibilityLabel="Switch to Voice Assistant"
-          >
-            <View style={styles.voiceRow}>
-              <View style={styles.voiceIconWrap}>
-                <Ionicons name="mic" size={20} color={COLORS.coralDark} />
-              </View>
-              <View style={styles.voiceTextWrap}>
-                <Text style={styles.voiceTitle}>Prefer to speak?</Text>
-                <Text style={styles.voiceSubtitle}>
-                  Have a natural voice conversation with MEDHA.
-                </Text>
-              </View>
-              <View style={styles.voiceArrow}>
-                <Ionicons name="arrow-forward" size={16} color={COLORS.white} />
-              </View>
-            </View>
-          </MedhaCard>
         </ScrollView>
 
-        {/* Clean Composer Bar (No mic inside input) */}
+        {/* CLEAN COMPOSER DOCK (No mic inside input) */}
         <View style={styles.composerWrapper}>
           <View style={styles.composer}>
             <TextInput
               value={text}
               onChangeText={setText}
-              placeholder="Type what’s on your mind..."
+              placeholder="Type a message..."
               placeholderTextColor={COLORS.navyMuted}
               multiline
-              style={styles.input}
-              textAlignVertical="center"
+              style={styles.textInput}
               accessibilityLabel="Type your message"
             />
+
             <Pressable
               onPress={() => send()}
+              disabled={!text.trim()}
               style={({ pressed }) => [
                 styles.sendButton,
-                !text.trim() && styles.sendDisabled,
-                pressed && text.trim() && styles.sendPressed,
+                !text.trim() && styles.sendButtonDisabled,
+                pressed && text.trim() && styles.pressed,
               ]}
-              disabled={!text.trim()}
               accessibilityRole="button"
               accessibilityLabel="Send message"
             >
-              <Ionicons name="arrow-up" size={20} color={COLORS.white} />
+              <Ionicons
+                name="arrow-up"
+                size={19}
+                color={COLORS.white}
+              />
             </Pressable>
           </View>
         </View>
       </KeyboardAvoidingView>
-    </MedhaScreen>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.porcelain,
+  },
   keyboard: {
     flex: 1,
   },
-  messages: {
+
+  /* TOP BAR */
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.04)',
+    backgroundColor: COLORS.porcelain,
+  },
+  iconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOW.subtle,
+  },
+  headerTitleWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  avatarWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.pinkSoft,
+    borderWidth: 1,
+    borderColor: COLORS.pink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTextGroup: {
+    alignItems: 'flex-start',
+  },
+  headerName: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 16,
+    color: COLORS.navy,
+  },
+  headerSub: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 11,
+    color: COLORS.navyMuted,
+  },
+
+  /* MESSAGES */
+  messageList: {
     flex: 1,
   },
   messageContent: {
-    paddingVertical: 12,
-    gap: 14,
+    paddingHorizontal: 20,
+    paddingTop: 12,
     paddingBottom: 16,
+    gap: 14,
   },
   privatePill: {
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    backgroundColor: COLORS.white,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: RADIUS.pill,
     borderWidth: 1,
-    borderColor: 'rgba(127, 168, 138, 0.3)',
+    borderColor: 'rgba(0, 0, 0, 0.04)',
     marginBottom: 4,
+    ...SHADOW.subtle,
   },
   privateText: {
     fontFamily: 'Nunito-SemiBold',
     fontSize: 11,
     color: COLORS.navyMuted,
   },
+
+  /* BUBBLES */
   bubbleContainer: {
     maxWidth: '85%',
   },
@@ -297,49 +534,46 @@ const styles = StyleSheet.create({
   userContainer: {
     alignSelf: 'flex-end',
   },
-  botHeader: {
+  botSenderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     marginBottom: 4,
     marginLeft: 4,
   },
-  botAvatar: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: COLORS.pinkSoft,
+  miniAvatar: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: COLORS.creamSecondary,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.pink,
   },
-  sender: {
+  senderLabel: {
     fontFamily: 'Nunito-Bold',
-    fontSize: 11,
-    letterSpacing: 0.6,
+    fontSize: 10,
+    letterSpacing: 0.8,
     color: COLORS.coralDark,
   },
   bubble: {
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 22,
-    ...SHADOW.card,
+    paddingVertical: 13,
+    borderRadius: 20,
+    ...SHADOW.subtle,
   },
   medhaBubble: {
-    backgroundColor: 'rgba(255, 255, 255, 0.90)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
     borderTopLeftRadius: 6,
   },
   userBubble: {
-    backgroundColor: COLORS.coral,
+    backgroundColor: COLORS.navy,
     borderTopRightRadius: 6,
-    ...SHADOW.soft,
   },
   bubbleText: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 14,
+    lineHeight: 21,
   },
   medhaText: {
     fontFamily: 'Nunito-Regular',
@@ -349,24 +583,26 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito-SemiBold',
     color: COLORS.white,
   },
-  timestamp: {
+  timestampText: {
     fontFamily: 'Nunito-Regular',
     fontSize: 10,
     marginTop: 4,
-    marginHorizontal: 6,
+    marginHorizontal: 4,
   },
   botTimestamp: {
     color: COLORS.navyMuted,
     alignSelf: 'flex-start',
   },
   userTimestamp: {
-    color: COLORS.navyMuted,
+    color: COLORS.subtleText,
     alignSelf: 'flex-end',
   },
+
+  /* TYPING */
   typingBubble: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
     paddingVertical: 12,
     paddingHorizontal: 16,
   },
@@ -383,121 +619,177 @@ const styles = StyleSheet.create({
   typingDotDelay2: {
     opacity: 1,
   },
-  quickSection: {
+
+  /* QUICK SUGGESTIONS */
+  suggestionsContainer: {
     marginTop: 10,
-    marginBottom: 4,
   },
-  quickSectionTitle: {
+  suggestionsHeading: {
     fontFamily: 'Nunito-Bold',
-    fontSize: 12,
-    color: COLORS.navyMuted,
+    fontSize: 11,
+    letterSpacing: 0.8,
+    color: COLORS.coralDark,
     marginBottom: 8,
     marginLeft: 4,
   },
-  quickRow: {
+  suggestionsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
-  quickChip: {
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    borderRadius: RADIUS.pill,
+  suggestionChip: {
+    backgroundColor: COLORS.white,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 201, 172, 0.5)',
-    ...SHADOW.card,
-  },
-  quickChipPressed: {
-    backgroundColor: COLORS.creamSecondary,
-    transform: [{ scale: 0.97 }],
-  },
-  quickText: {
-    fontFamily: 'Nunito-SemiBold',
-    fontSize: 13,
-    color: COLORS.navy,
-  },
-  voiceCard: {
-    marginTop: 12,
-    padding: 14,
-  },
-  voiceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  voiceIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.pinkSoft,
+    borderRadius: RADIUS.pill,
     borderWidth: 1,
-    borderColor: COLORS.pink,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+    ...SHADOW.subtle,
   },
-  voiceTextWrap: {
-    flex: 1,
-  },
-  voiceTitle: {
-    fontFamily: 'Fredoka-Medium',
-    fontSize: 15,
+  suggestionText: {
+    fontFamily: 'Nunito-SemiBold',
+    fontSize: 12,
     color: COLORS.navy,
   },
-  voiceSubtitle: {
-    fontFamily: 'Nunito-Regular',
-    fontSize: 12,
-    color: COLORS.navyMuted,
-    marginTop: 2,
-  },
-  voiceArrow: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: COLORS.coral,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+
+  /* COMPOSER */
   composerWrapper: {
-    paddingVertical: 8,
-    backgroundColor: 'transparent',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: COLORS.porcelain,
   },
   composer: {
-    minHeight: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 201, 172, 0.65)',
+    minHeight: 52,
+    maxHeight: 120,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.06)',
     flexDirection: 'row',
     alignItems: 'center',
     paddingLeft: 18,
     paddingRight: 6,
     paddingVertical: 4,
-    ...SHADOW.card,
+    ...SHADOW.subtle,
   },
-  input: {
+  textInput: {
     flex: 1,
-    maxHeight: 100,
     fontFamily: 'Nunito-Regular',
-    fontSize: 15,
+    fontSize: 14,
     color: COLORS.navy,
-    paddingVertical: 8,
+    paddingVertical: 6,
     paddingRight: 8,
   },
   sendButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: COLORS.coral,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.navy,
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOW.glow,
   },
-  sendDisabled: {
-    backgroundColor: '#F0D5C9',
-    opacity: 0.6,
+  sendButtonDisabled: {
+    backgroundColor: '#D3D8E2',
+    opacity: 0.7,
   },
-  sendPressed: {
-    transform: [{ scale: 0.92 }],
+
+  pressed: {
+    transform: [{ scale: 0.96 }],
+    opacity: 0.88,
+  },
+
+  /* CALM ERROR CARD */
+  errorCard: {
+    backgroundColor: '#FFF5F4',
+    borderRadius: RADIUS.card,
+    borderWidth: 1,
+    borderColor: '#F6D2CF',
+    padding: 14,
+    alignSelf: 'center',
+    width: '100%',
+    ...SHADOW.subtle,
+  },
+  errorHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  errorText: {
+    flex: 1,
+    fontFamily: 'Nunito-Regular',
+    fontSize: 12,
+    color: '#8B3832',
+    lineHeight: 17,
+  },
+  retryButton: {
+    marginTop: 10,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+  },
+  retryButtonText: {
+    fontFamily: 'Nunito-SemiBold',
+    fontSize: 12,
+    color: COLORS.navy,
+  },
+
+  /* SAFETY CARD */
+  safetyCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.card,
+    borderWidth: 1,
+    borderColor: 'rgba(235, 114, 88, 0.25)',
+    padding: 16,
+    width: '100%',
+    ...SHADOW.subtle,
+  },
+  safetyHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  safetyIconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFEFEB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  safetyTitle: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 15,
+    color: COLORS.navy,
+  },
+  safetySub: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 12,
+    color: COLORS.navyMuted,
+    lineHeight: 17,
+    marginTop: 4,
+  },
+  safetyActionBtn: {
+    marginTop: 12,
+    height: 40,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.navy,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+  },
+  safetyActionText: {
+    fontFamily: 'Fredoka-Medium',
+    fontSize: 13,
+    color: COLORS.white,
   },
 });

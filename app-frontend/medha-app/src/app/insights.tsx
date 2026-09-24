@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import {
+  Platform,
   Pressable,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { MedhaScreen } from '../components/medha-screen';
-import { COLORS } from '../constants/colors';
+import { RADIUS, SHADOW } from '../constants/theme';
 
 type TrendStatus = 'Improving' | 'Stable' | 'Needs Attention';
 
@@ -20,18 +23,9 @@ interface TrendData {
   explanation: string;
 }
 
-/*
- * MOCK BACKEND RESPONSE
- *
- * Later this entire object will come from the backend
- * explainability / insights module.
- *
- * The frontend does NOT calculate the trend.
- */
 const mockTrend: TrendData = {
   status: 'Improving',
-  message:
-    'Your recent moments show a little more steadiness.',
+  message: 'Your recent moments show a little more steadiness.',
   period: 'Compared with your recent activity',
   contributors: [
     'You checked in more consistently.',
@@ -44,542 +38,527 @@ const mockTrend: TrendData = {
 
 export default function InsightsScreen() {
   const router = useRouter();
-
-  const [showContributors, setShowContributors] =
-    useState(false);
-
-  const [showWhy, setShowWhy] =
-    useState(false);
+  const [showWhy, setShowWhy] = useState(false);
 
   const trend = mockTrend;
 
-  const getTrendIcon = () => {
-    if (trend.status === 'Improving') {
-      return 'leaf-outline';
-    }
-
-    if (trend.status === 'Needs Attention') {
-      return 'alert-circle-outline';
-    }
-
-    return 'remove-outline';
-  };
-
   return (
-    <MedhaScreen
-      eyebrow="Your patterns"
-      title="A little more awareness."
-      subtitle="Gentle reflections from your recent moments — not labels or diagnoses."
-      onBack={() => router.back()}
-    >
-
-      {/* TREND CARD */}
-
-      <View style={styles.trendCard}>
-
-        <View style={styles.trendTop}>
-
-          <View style={styles.trendIcon}>
-            <Ionicons
-              name={getTrendIcon()}
-              size={23}
-              color={COLORS.forest}
-            />
-          </View>
-
-          <View style={styles.trendLabelContainer}>
-            <Text style={styles.trendEyebrow}>
-              YOUR WELL-BEING TREND
-            </Text>
-
-            <Text style={styles.trendStatus}>
-              {trend.status}
-            </Text>
-          </View>
-
+    <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FAF9F6" />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* TOP BAR: BACK BUTTON */}
+        <View style={styles.topBar}>
+          <Pressable
+            onPress={() => router.back()}
+            style={({ pressed }) => [
+              styles.iconButton,
+              pressed && styles.pressed,
+            ]}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
+            <Ionicons name="arrow-back" size={20} color="#181E2C" />
+          </Pressable>
         </View>
 
-        <Text style={styles.trendMessage}>
-          {trend.message}
-        </Text>
-
-        <Text style={styles.trendPeriod}>
-          {trend.period}
-        </Text>
-
-        {/* VIEW CONTRIBUTION */}
-
-        <Pressable
-          onPress={() =>
-            setShowContributors(!showContributors)
-          }
-          style={styles.contributorButton}
-        >
-          <Text style={styles.contributorText}>
-            View what contributed to this trend
+        {/* HEADER */}
+        <View style={styles.header}>
+          <Text style={styles.eyebrow}>YOUR PATTERNS</Text>
+          <Text style={styles.title}>A gentle overview</Text>
+          <Text style={styles.subtitle}>
+            Gentle reflections from your recent moments — not labels or diagnoses.
           </Text>
+        </View>
 
-          <Ionicons
-            name={
-              showContributors
-                ? 'chevron-up'
-                : 'arrow-forward'
-            }
-            size={16}
-            color={COLORS.forest}
-          />
-        </Pressable>
+        {/* HERO TREND CARD */}
+        <View style={styles.heroCard}>
+          <View style={styles.heroHeader}>
+            <View style={styles.trendBadge}>
+              <Ionicons name="leaf-outline" size={16} color="#2D8A4E" />
+              <Text style={styles.trendBadgeText}>{trend.status}</Text>
+            </View>
+            <Text style={styles.periodText}>{trend.period}</Text>
+          </View>
 
-        {showContributors && (
-          <View style={styles.contributors}>
+          <Text style={styles.heroMessage}>{trend.message}</Text>
+        </View>
 
-            {trend.contributors.map(
-              (contributor, index) => (
-                <View
-                  key={index}
-                  style={styles.contributorRow}
-                >
-                  <View style={styles.contributorDot} />
+        {/* INSIGHT SUMMARY (COMPACT ROWS IN CLEAN WHITE CARD) */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>OBSERVATIONS</Text>
+        </View>
 
-                  <Text style={styles.contributorBody}>
-                    {contributor}
-                  </Text>
+        <View style={styles.summaryCard}>
+          {/* Category 1: Mood & Balance */}
+          <View style={styles.summaryRow}>
+            <View style={[styles.categoryIconBadge, { backgroundColor: '#E2F5E8' }]}>
+              <Ionicons name="leaf-outline" size={18} color="#2D8A4E" />
+            </View>
+            <View style={styles.categoryInfo}>
+              <Text style={styles.categoryTitle}>Mood & Balance</Text>
+              <Text style={styles.categoryDesc}>Steadier over recent days</Text>
+            </View>
+            <View style={[styles.pillBadge, { backgroundColor: '#E2F5E8' }]}>
+              <Text style={[styles.pillBadgeText, { color: '#2D8A4E' }]}>Steadier</Text>
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          {/* Category 2: Daily Check-ins */}
+          <View style={styles.summaryRow}>
+            <View style={[styles.categoryIconBadge, { backgroundColor: '#E1F2FE' }]}>
+              <Ionicons name="checkmark-circle-outline" size={18} color="#0284C7" />
+            </View>
+            <View style={styles.categoryInfo}>
+              <Text style={styles.categoryTitle}>Check-in Rhythm</Text>
+              <Text style={styles.categoryDesc}>More consistent daily check-ins</Text>
+            </View>
+            <View style={[styles.pillBadge, { backgroundColor: '#E1F2FE' }]}>
+              <Text style={[styles.pillBadgeText, { color: '#0284C7' }]}>Active</Text>
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          {/* Category 3: Reflection & Journaling */}
+          <View style={styles.summaryRow}>
+            <View style={[styles.categoryIconBadge, { backgroundColor: '#EEE9FA' }]}>
+              <Ionicons name="book-outline" size={18} color="#6C5CE7" />
+            </View>
+            <View style={styles.categoryInfo}>
+              <Text style={styles.categoryTitle}>Writing Thoughts</Text>
+              <Text style={styles.categoryDesc}>Taking time to write down moments</Text>
+            </View>
+            <View style={[styles.pillBadge, { backgroundColor: '#EEE9FA' }]}>
+              <Text style={[styles.pillBadgeText, { color: '#6C5CE7' }]}>Regular</Text>
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          {/* Category 4: Conversations */}
+          <View style={styles.summaryRow}>
+            <View style={[styles.categoryIconBadge, { backgroundColor: '#FFEADB' }]}>
+              <Ionicons name="chatbubble-outline" size={18} color="#E8663F" />
+            </View>
+            <View style={styles.categoryInfo}>
+              <Text style={styles.categoryTitle}>Conversations</Text>
+              <Text style={styles.categoryDesc}>More regular talks with MEDHA</Text>
+            </View>
+            <View style={[styles.pillBadge, { backgroundColor: '#FFEADB' }]}>
+              <Text style={[styles.pillBadgeText, { color: '#E8663F' }]}>Supportive</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* WEEKLY VISUAL (PRESERVED BAR CHART IN CLEAN WHITE CARD) */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>THE WEEK IN GENTLE SHAPES</Text>
+        </View>
+
+        <View style={styles.weekCard}>
+          <View style={styles.week}>
+            {[
+              ['M', 0.35],
+              ['T', 0.55],
+              ['W', 0.72],
+              ['T', 0.48],
+              ['F', 0.82],
+              ['S', 0.62],
+              ['S', 0.42],
+            ].map(([day, height], index) => (
+              <View key={`${day}-${index}`} style={styles.day}>
+                <View style={styles.barTrack}>
+                  <View
+                    style={[
+                      styles.bar,
+                      {
+                        height: `${Number(height) * 100}%`,
+                      },
+                    ]}
+                  />
                 </View>
-              )
-            )}
+                <Text style={styles.dayText}>{day}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
 
+        {/* SUPPORTIVE SUMMARY (PASTEL LAVENDER CARD) */}
+        <View style={styles.supportiveCard}>
+          <View style={styles.supportiveIconBadge}>
+            <Ionicons name="sparkles" size={18} color="#FF735C" />
+          </View>
+          <View style={styles.supportiveContent}>
+            <Text style={styles.supportiveTitle}>Something worth noticing</Text>
+            <Text style={styles.supportiveBody}>
+              Your check-ins seem to happen more often when your days feel full.
+            </Text>
+          </View>
+        </View>
+
+        {/* VIEW DETAILS ACTION */}
+        <View style={styles.actionContainer}>
+          <Pressable
+            onPress={() => setShowWhy(!showWhy)}
+            style={({ pressed }) => [
+              styles.viewDetailsButton,
+              pressed && styles.pressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={showWhy ? 'Hide details' : 'View details'}
+          >
+            <Text style={styles.viewDetailsText}>
+              {showWhy ? 'Hide details' : 'View details'}
+            </Text>
+            <Ionicons
+              name={showWhy ? 'chevron-up' : 'arrow-forward'}
+              size={16}
+              color="#181E2C"
+            />
+          </Pressable>
+        </View>
+
+        {/* EXPANDABLE DETAILS */}
+        {showWhy && (
+          <View style={styles.detailsCard}>
+            <Text style={styles.detailsTitle}>What influenced this?</Text>
+            <Text style={styles.detailsBody}>{trend.explanation}</Text>
+
+            <View style={styles.contributorsList}>
+              {trend.contributors.map((contributor, idx) => (
+                <View key={idx} style={styles.contributorRow}>
+                  <View style={styles.contributorDot} />
+                  <Text style={styles.contributorText}>{contributor}</Text>
+                </View>
+              ))}
+            </View>
           </View>
         )}
-
-      </View>
-
-
-      {/* WHY THIS INSIGHT */}
-
-      <Pressable
-        onPress={() => setShowWhy(!showWhy)}
-        style={styles.whyCard}
-      >
-
-        <View style={styles.whyIcon}>
-          <Ionicons
-            name="help-circle-outline"
-            size={19}
-            color={COLORS.forest}
-          />
-        </View>
-
-        <View style={styles.whyCopy}>
-          <Text style={styles.whyTitle}>
-            Why this insight?
-          </Text>
-
-          {!showWhy && (
-            <Text style={styles.whyHint}>
-              Understand what influenced this reflection
-            </Text>
-          )}
-        </View>
-
-        <Ionicons
-          name={
-            showWhy
-              ? 'chevron-up'
-              : 'chevron-down'
-          }
-          size={17}
-          color={COLORS.mutedText}
-        />
-
-      </Pressable>
-
-      {showWhy && (
-        <View style={styles.explanation}>
-
-          <Text style={styles.explanationTitle}>
-            What influenced this?
-          </Text>
-
-          <Text style={styles.explanationBody}>
-            {trend.explanation}
-          </Text>
-
-          <View style={styles.activityList}>
-
-            <View style={styles.activity}>
-              <Ionicons
-                name="checkmark-circle-outline"
-                size={17}
-                color={COLORS.forest}
-              />
-
-              <Text style={styles.activityText}>
-                Recent check-ins
-              </Text>
-            </View>
-
-            <View style={styles.activity}>
-              <Ionicons
-                name="book-outline"
-                size={17}
-                color={COLORS.forest}
-              />
-
-              <Text style={styles.activityText}>
-                Journal activity
-              </Text>
-            </View>
-
-            <View style={styles.activity}>
-              <Ionicons
-                name="chatbubble-outline"
-                size={17}
-                color={COLORS.forest}
-              />
-
-              <Text style={styles.activityText}>
-                Voice and text conversations
-              </Text>
-            </View>
-
-          </View>
-
-        </View>
-      )}
-
-
-      {/* WEEKLY VISUAL */}
-
-      <Text style={styles.section}>
-        THE WEEK IN GENTLE SHAPES
-      </Text>
-
-      <View style={styles.week}>
-
-        {[
-          ['M', 0.35],
-          ['T', 0.55],
-          ['W', 0.72],
-          ['T', 0.48],
-          ['F', 0.82],
-          ['S', 0.62],
-          ['S', 0.42],
-        ].map(([day, height], index) => (
-
-          <View
-            key={`${day}-${index}`}
-            style={styles.day}
-          >
-
-            <View style={styles.barTrack}>
-
-              <View
-                style={[
-                  styles.bar,
-                  {
-                    height: `${Number(height) * 100}%`,
-                  },
-                ]}
-              />
-
-            </View>
-
-            <Text style={styles.dayText}>
-              {day}
-            </Text>
-
-          </View>
-
-        ))}
-
-      </View>
-
-
-      {/* REFLECTION */}
-
-      <View style={styles.reflection}>
-
-        <View style={styles.reflectionIcon}>
-          <Ionicons
-            name="sparkles-outline"
-            size={18}
-            color={COLORS.forest}
-          />
-        </View>
-
-        <View style={styles.reflectionCopy}>
-
-          <Text style={styles.reflectionTitle}>
-            Something worth noticing
-          </Text>
-
-          <Text style={styles.reflectionBody}>
-            Your check-ins seem to happen more often
-            when your days feel full.
-          </Text>
-
-        </View>
-
-      </View>
-
-    </MedhaScreen>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
-
 const styles = StyleSheet.create({
-
-  trendCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 28,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+  safe: {
+    flex: 1,
+    backgroundColor: '#FAF9F6',
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) + 10 : 12,
+    paddingBottom: 40,
   },
 
-  trendTop: {
+  /* TOP BAR */
+  topBar: {
+    height: 48,
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 12,
   },
-
-  trendIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: COLORS.mist,
+  iconButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
     alignItems: 'center',
     justifyContent: 'center',
+    ...SHADOW.subtle,
   },
 
-  trendLabelContainer: {
-    marginLeft: 14,
+  /* HEADER */
+  header: {
+    marginBottom: 20,
   },
-
-  trendEyebrow: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 8,
-    letterSpacing: 1.6,
-    color: COLORS.moss,
-  },
-
-  trendStatus: {
-    fontFamily: 'CormorantGaramond-Regular',
-    fontSize: 27,
-    color: COLORS.deepForest,
-    marginTop: 1,
-  },
-
-  trendMessage: {
-    fontFamily: 'CormorantGaramond-Regular',
-    fontSize: 23,
-    lineHeight: 28,
-    color: COLORS.deepForest,
-    marginTop: 20,
-  },
-
-  trendPeriod: {
-    fontFamily: 'Inter-Regular',
+  eyebrow: {
+    fontFamily: 'Nunito-Bold',
     fontSize: 10,
-    color: COLORS.mutedText,
-    marginTop: 7,
+    letterSpacing: 1.5,
+    color: '#E8663F',
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  title: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 26,
+    lineHeight: 32,
+    color: '#181E2C',
+  },
+  subtitle: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#5B6478',
+    marginTop: 6,
   },
 
-  contributorButton: {
-    marginTop: 20,
-    paddingTop: 17,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+  /* HERO CARD */
+  heroCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+    marginBottom: 22,
+    ...SHADOW.subtle,
+  },
+  heroHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  trendBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#E2F5E8',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: RADIUS.pill,
+  },
+  trendBadgeText: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 12,
+    color: '#2D8A4E',
+  },
+  periodText: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 12,
+    color: '#8E97A8',
+  },
+  heroMessage: {
+    fontFamily: 'Fredoka-Medium',
+    fontSize: 18,
+    lineHeight: 25,
+    color: '#181E2C',
   },
 
-  contributorText: {
-    flex: 1,
-    fontFamily: 'Inter-Medium',
+  /* SECTION */
+  sectionHeader: {
+    marginBottom: 10,
+    marginTop: 4,
+  },
+  sectionTitle: {
+    fontFamily: 'Nunito-Bold',
     fontSize: 11,
-    color: COLORS.forest,
+    letterSpacing: 1.5,
+    color: '#8E97A8',
+    textTransform: 'uppercase',
   },
 
-  contributors: {
-    marginTop: 15,
-    gap: 12,
+  /* SUMMARY CARD */
+  summaryCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+    marginBottom: 22,
+    ...SHADOW.subtle,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  categoryIconBadge: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  categoryInfo: {
+    flex: 1,
+  },
+  categoryTitle: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 14,
+    color: '#181E2C',
+  },
+  categoryDesc: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 12,
+    color: '#5B6478',
+    marginTop: 2,
+  },
+  pillBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: RADIUS.pill,
+  },
+  pillBadgeText: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 11,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+    marginVertical: 4,
   },
 
+  /* WEEK VISUAL */
+  weekCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+    marginBottom: 22,
+    ...SHADOW.subtle,
+  },
+  week: {
+    height: 120,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    paddingHorizontal: 6,
+  },
+  day: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  barTrack: {
+    height: 85,
+    width: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(24, 30, 44, 0.06)',
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
+  },
+  bar: {
+    width: '100%',
+    backgroundColor: '#FF735C',
+    borderRadius: 10,
+  },
+  dayText: {
+    fontFamily: 'Nunito-SemiBold',
+    fontSize: 11,
+    color: '#8E97A8',
+  },
+
+  /* SUPPORTIVE CARD */
+  supportiveCard: {
+    backgroundColor: '#EEE9FA',
+    borderRadius: 22,
+    padding: 18,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 14,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(108, 92, 231, 0.12)',
+  },
+  supportiveIconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+    ...SHADOW.subtle,
+  },
+  supportiveContent: {
+    flex: 1,
+  },
+  supportiveTitle: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 16,
+    color: '#181E2C',
+  },
+  supportiveBody: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#3A4454',
+    marginTop: 4,
+  },
+
+  /* ACTION */
+  actionContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  viewDetailsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 22,
+    paddingVertical: 14,
+    borderRadius: RADIUS.pill,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    ...SHADOW.subtle,
+  },
+  viewDetailsText: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 14,
+    color: '#181E2C',
+  },
+
+  /* DETAILS CARD */
+  detailsCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+    marginBottom: 20,
+    ...SHADOW.subtle,
+  },
+  detailsTitle: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 16,
+    color: '#181E2C',
+    marginBottom: 6,
+  },
+  detailsBody: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#5B6478',
+    marginBottom: 14,
+  },
+  contributorsList: {
+    gap: 10,
+  },
   contributorRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
   },
-
   contributorDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: COLORS.moss,
+    backgroundColor: '#FF735C',
     marginTop: 6,
   },
-
-  contributorBody: {
+  contributorText: {
     flex: 1,
-    fontFamily: 'Inter-Regular',
-    fontSize: 11,
-    lineHeight: 17,
-    color: COLORS.mutedText,
-  },
-
-  whyCard: {
-    marginTop: 14,
-    minHeight: 65,
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    backgroundColor: COLORS.surfaceWarm,
-    borderRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  whyIcon: {
-    width: 37,
-    height: 37,
-    borderRadius: 19,
-    backgroundColor: COLORS.mist,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  whyCopy: {
-    flex: 1,
-    marginLeft: 12,
-  },
-
-  whyTitle: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 12,
-    color: COLORS.deepForest,
-  },
-
-  whyHint: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 9,
-    color: COLORS.mutedText,
-    marginTop: 3,
-  },
-
-  explanation: {
-    marginTop: 8,
-    padding: 19,
-    borderRadius: 20,
-    backgroundColor: COLORS.mist,
-  },
-
-  explanationTitle: {
-    fontFamily: 'CormorantGaramond-Regular',
-    fontSize: 22,
-    color: COLORS.deepForest,
-  },
-
-  explanationBody: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 11,
+    fontFamily: 'Nunito-Regular',
+    fontSize: 12.5,
     lineHeight: 18,
-    color: COLORS.mutedText,
-    marginTop: 6,
+    color: '#181E2C',
   },
 
-  activityList: {
-    marginTop: 14,
-    gap: 10,
+  pressed: {
+    transform: [{ scale: 0.98 }],
+    opacity: 0.88,
   },
-
-  activity: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
-  },
-
-  activityText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 10,
-    color: COLORS.text,
-  },
-
-  section: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 9,
-    letterSpacing: 1.8,
-    color: COLORS.forest,
-    marginTop: 32,
-    marginBottom: 16,
-  },
-
-  week: {
-    height: 150,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    paddingHorizontal: 8,
-  },
-
-  day: {
-    alignItems: 'center',
-    gap: 8,
-  },
-
-  barTrack: {
-    height: 115,
-    width: 24,
-    borderRadius: 12,
-    backgroundColor: COLORS.stone,
-    justifyContent: 'flex-end',
-    overflow: 'hidden',
-  },
-
-  bar: {
-    width: '100%',
-    backgroundColor: COLORS.forest,
-    borderRadius: 12,
-  },
-
-  dayText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 9,
-    color: COLORS.mutedText,
-  },
-
-  reflection: {
-    marginTop: 30,
-    padding: 20,
-    backgroundColor: COLORS.surfaceWarm,
-    borderRadius: 22,
-    flexDirection: 'row',
-    gap: 13,
-  },
-
-  reflectionIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: COLORS.mist,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  reflectionCopy: {
-    flex: 1,
-  },
-
-  reflectionTitle: {
-    fontFamily: 'CormorantGaramond-Regular',
-    fontSize: 21,
-    color: COLORS.deepForest,
-  },
-
-  reflectionBody: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 11,
-    lineHeight: 17,
-    color: COLORS.mutedText,
-    marginTop: 5,
-  },
-
 });

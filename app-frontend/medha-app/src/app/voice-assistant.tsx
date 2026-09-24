@@ -1,186 +1,458 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
-import { router } from 'expo-router';
+import {
+  Animated,
+  Easing,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
-import { MedhaScreen } from '../components/medha-screen';
-import { COLORS } from '../constants/colors';
-
-const suggestions = [
-  'How can you help me today?',
-  'I’m feeling anxious.',
-  'Help me sleep better.',
-  'Just listening...',
-];
+import { RADIUS, SHADOW } from '../constants/theme';
 
 export default function VoiceAssistantScreen() {
+  const router = useRouter();
+
   const [listening, setListening] = useState(false);
-  const wave = useRef(new Animated.Value(0)).current;
+  const [seconds, setSeconds] = useState(0);
 
+  // 5 Staggered smooth breathing animated scale values
+  const pulse1 = useRef(new Animated.Value(1)).current;
+  const pulse2 = useRef(new Animated.Value(1)).current;
+  const pulse3 = useRef(new Animated.Value(1)).current;
+  const pulse4 = useRef(new Animated.Value(1)).current;
+  const pulse5 = useRef(new Animated.Value(1)).current;
+
+  // Continuous organic breathing wave across all 5 concentric layers
   useEffect(() => {
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(wave, {
-          toValue: 1,
-          duration: 1100,
-          useNativeDriver: true,
-        }),
-        Animated.timing(wave, {
-          toValue: 0,
-          duration: 1100,
-          useNativeDriver: true,
-        }),
-      ])
-    );
+    const timeoutIds: ReturnType<typeof setTimeout>[] = [];
+    const loops: Animated.CompositeAnimation[] = [];
 
-    animation.start();
-    return () => animation.stop();
-  }, [wave]);
+    const createBreath = (
+      val: Animated.Value,
+      toScale: number,
+      halfDuration: number,
+    ) => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.timing(val, {
+            toValue: toScale,
+            duration: halfDuration,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
+          Animated.timing(val, {
+            toValue: 1,
+            duration: halfDuration,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+    };
 
-  const scale = wave.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.96, 1.04],
-  });
+    if (listening) {
+      // 5 staggered breathing layers creating an organic outward ripple wave
+      const configs = [
+        { anim: pulse1, toScale: 1.05, halfDuration: 1100, delay: 0 },   // ~2200ms
+        { anim: pulse2, toScale: 1.07, halfDuration: 1250, delay: 180 }, // ~2500ms
+        { anim: pulse3, toScale: 1.09, halfDuration: 1400, delay: 360 }, // ~2800ms
+        { anim: pulse4, toScale: 1.11, halfDuration: 1550, delay: 540 }, // ~3100ms
+        { anim: pulse5, toScale: 1.13, halfDuration: 1700, delay: 720 }, // ~3400ms
+      ];
+
+      configs.forEach(({ anim, toScale, halfDuration, delay }) => {
+        const loop = createBreath(anim, toScale, halfDuration);
+        loops.push(loop);
+        if (delay === 0) {
+          loop.start();
+        } else {
+          const id = setTimeout(() => {
+            loop.start();
+          }, delay);
+          timeoutIds.push(id);
+        }
+      });
+    } else {
+      // Gracefully ease back to resting scale when not listening
+      Animated.parallel([
+        Animated.timing(pulse1, { toValue: 1, duration: 600, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse2, { toValue: 1, duration: 600, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse3, { toValue: 1, duration: 600, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse4, { toValue: 1, duration: 600, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse5, { toValue: 1, duration: 600, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+      ]).start();
+    }
+
+    return () => {
+      timeoutIds.forEach(clearTimeout);
+      loops.forEach((l) => l.stop());
+    };
+  }, [listening, pulse1, pulse2, pulse3, pulse4, pulse5]);
+
+  // Continuous live recording timer (MM:SS / 02:00)
+  useEffect(() => {
+    if (!listening) {
+      setSeconds(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setSeconds((prev) => {
+        if (prev >= 120) {
+          return 120;
+        }
+        return prev + 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [listening]);
+
+  const formatTimer = (totalSeconds: number) => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')} / 02:00`;
+  };
 
   return (
-    <MedhaScreen
-      eyebrow="Voice assistant"
-      title="Speak with MEDHA"
-      subtitle="Natural conversation. Meaningful support."
-      onBack={() => router.back()}
-    >
-      <View style={styles.center}>
-        <Animated.View style={[styles.waveOrb, { transform: [{ scale }] }]}>
-          <View style={styles.waveLine} />
-          <View style={[styles.waveLine, styles.waveLineLarge]} />
-          <View style={styles.waveLine} />
-          <View style={styles.micCircle}>
-            <Ionicons
-              name={listening ? 'mic' : 'mic-outline'}
-              size={28}
-              color={COLORS.white}
-            />
+    <View style={styles.container}>
+      {/* ATMOSPHERIC DEEP TWILIGHT GRADIENT */}
+      <LinearGradient
+        colors={['#080C14', '#101625', '#1A2135', '#0A0E18']}
+        locations={[0, 0.35, 0.75, 1]}
+        style={StyleSheet.absoluteFill}
+      />
+
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.content}>
+          {/* TOP BAR: BACK CONTROL */}
+          <View style={styles.topBar}>
+            <Pressable
+              onPress={() => router.back()}
+              style={({ pressed }) => [
+                styles.iconButton,
+                pressed && styles.pressed,
+              ]}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+            >
+              <Ionicons
+                name="arrow-back"
+                size={20}
+                color="rgba(255, 255, 255, 0.9)"
+              />
+            </Pressable>
           </View>
-        </Animated.View>
 
-        <Text style={styles.status}>
-          {listening ? 'I’m listening.' : 'Whenever you’re ready.'}
-        </Text>
-        <Text style={styles.hint}>
-          You can speak naturally. There’s no right way to begin.
-        </Text>
-      </View>
+          {/* HEADER */}
+          <View style={styles.header}>
+            <Text style={styles.eyebrow}>VOICE ASSISTANT</Text>
+            <Text style={styles.title}>Speak with MEDHA</Text>
+            <Text style={styles.subtitle}>
+              Natural conversation. Meaningful support.
+            </Text>
+          </View>
 
-      <View style={styles.suggestions}>
-        {suggestions.map((suggestion) => (
-          <Pressable key={suggestion} style={styles.suggestion}>
-            <Text style={styles.suggestionText}>{suggestion}</Text>
-            <Ionicons name="chevron-forward" size={16} color={COLORS.mutedText} />
-          </Pressable>
-        ))}
-      </View>
+          {/* CENTER ATMOSPHERIC FOCAL ORB (5 CONTINUOUS BREATHING TRANSLUCENT PORCELAIN LAYERS - NO OUTLINES) */}
+          <View style={styles.centerSection}>
+            <View style={styles.orbWrapper}>
+              {/* Layer 5: Largest / Outermost / Faintest (~0.045) */}
+              <Animated.View
+                style={[
+                  styles.layer5,
+                  listening && styles.layer5Active,
+                  { transform: [{ scale: pulse5 }] },
+                ]}
+              />
 
-      <Pressable
-        onPress={() => setListening((value) => !value)}
-        style={[styles.button, listening && styles.buttonListening]}
-      >
-        <Ionicons
-          name={listening ? 'stop' : 'mic'}
-          size={20}
-          color={COLORS.white}
-        />
-        <Text style={styles.buttonText}>
-          {listening ? 'Stop listening' : 'Start talking'}
-        </Text>
-      </Pressable>
-    </MedhaScreen>
+              {/* Layer 4: Large / Soft (~0.075) */}
+              <Animated.View
+                style={[
+                  styles.layer4,
+                  listening && styles.layer4Active,
+                  { transform: [{ scale: pulse4 }] },
+                ]}
+              />
+
+              {/* Layer 3: Medium (~0.11) */}
+              <Animated.View
+                style={[
+                  styles.layer3,
+                  listening && styles.layer3Active,
+                  { transform: [{ scale: pulse3 }] },
+                ]}
+              />
+
+              {/* Layer 2: Smaller (~0.14) */}
+              <Animated.View
+                style={[
+                  styles.layer2,
+                  listening && styles.layer2Active,
+                  { transform: [{ scale: pulse2 }] },
+                ]}
+              />
+
+              {/* Layer 1: Core closest to microphone (~0.18 porcelain over twilight capsule) */}
+              <Animated.View
+                style={[
+                  styles.layer1,
+                  listening && styles.layer1Active,
+                  { transform: [{ scale: pulse1 }] },
+                ]}
+              >
+                <Ionicons
+                  name={listening ? 'mic' : 'mic-outline'}
+                  size={38}
+                  color={listening ? '#FAF9F6' : 'rgba(255, 255, 255, 0.92)'}
+                />
+              </Animated.View>
+            </View>
+
+            {/* LIVE CONTINUOUS TIMER & GENTLE STATUS */}
+            <Text style={styles.timer}>
+              {formatTimer(seconds)}
+            </Text>
+
+            <Text style={styles.status}>
+              {listening ? 'I’m listening.' : 'Whenever you’re ready.'}
+            </Text>
+
+            <Text style={styles.hint}>
+              You can speak naturally. There’s no right way to begin.
+            </Text>
+          </View>
+
+          {/* BOTTOM ACTIONS: ONE PRIMARY VOICE CONTROL */}
+          <View style={styles.bottomSection}>
+            <Pressable
+              onPress={() => setListening((value) => !value)}
+              style={({ pressed }) => [
+                styles.primaryButton,
+                listening && styles.primaryButtonActive,
+                pressed && styles.pressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={listening ? 'Stop listening' : 'Start talking'}
+            >
+              <Ionicons
+                name={listening ? 'stop' : 'mic'}
+                size={20}
+                color={listening ? '#181E2C' : '#FFFFFF'}
+              />
+              <Text
+                style={[
+                  styles.primaryButtonText,
+                  listening && styles.primaryButtonTextActive,
+                ]}
+              >
+                {listening ? 'Stop listening' : 'Start talking'}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  center: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 300,
+  container: {
+    flex: 1,
+    backgroundColor: '#080C14',
   },
-  waveOrb: {
-    width: 230,
-    height: 230,
-    borderRadius: 115,
-    backgroundColor: COLORS.mist,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
+  safe: {
+    flex: 1,
   },
-  waveLine: {
-    position: 'absolute',
-    width: 155,
-    height: 1,
-    backgroundColor: COLORS.water,
-    transform: [{ rotate: '-10deg' }],
-  },
-  waveLineLarge: {
-    width: 205,
-    backgroundColor: COLORS.lichen,
-  },
-  micCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: COLORS.forest,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  status: {
-    marginTop: 25,
-    fontFamily: 'CormorantGaramond-Regular',
-    fontSize: 26,
-    color: COLORS.deepForest,
-  },
-  hint: {
-    marginTop: 7,
-    fontFamily: 'Inter-Regular',
-    fontSize: 11,
-    lineHeight: 17,
-    color: COLORS.mutedText,
-    textAlign: 'center',
-    maxWidth: 290,
-  },
-  suggestions: {
-    gap: 9,
-    marginBottom: 17,
-  },
-  suggestion: {
-    minHeight: 48,
-    paddingHorizontal: 15,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.surface,
-    flexDirection: 'row',
-    alignItems: 'center',
+  content: {
+    flex: 1,
+    paddingHorizontal: 22,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) + 12 : 20,
+    paddingBottom: 28,
     justifyContent: 'space-between',
   },
-  suggestionText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 11,
-    color: COLORS.text,
+
+  /* TOP BAR */
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  button: {
+  iconButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOW.subtle,
+  },
+
+  /* HEADER */
+  header: {
+    marginTop: 6,
+    marginBottom: 10,
+  },
+  eyebrow: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 10,
+    letterSpacing: 1.5,
+    color: '#FFA07A',
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  title: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 28,
+    lineHeight: 34,
+    color: '#FFFFFF',
+  },
+  subtitle: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    color: 'rgba(255, 255, 255, 0.72)',
+    marginTop: 4,
+  },
+
+  /* CENTER ATMOSPHERIC FOCAL ORB (5 CONTINUOUS BREATHING TRANSLUCENT PORCELAIN LAYERS - NO OUTLINES) */
+  centerSection: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+  },
+  orbWrapper: {
+    width: 280,
+    height: 280,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+
+  /* Layer 5: Outermost / Faintest (280px) */
+  layer5: {
+    position: 'absolute',
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: 'rgba(250, 249, 246, 0.025)',
+  },
+  layer5Active: {
+    backgroundColor: 'rgba(250, 249, 246, 0.045)',
+  },
+
+  /* Layer 4: Large / Soft (236px) */
+  layer4: {
+    position: 'absolute',
+    width: 236,
+    height: 236,
+    borderRadius: 118,
+    backgroundColor: 'rgba(250, 249, 246, 0.04)',
+  },
+  layer4Active: {
+    backgroundColor: 'rgba(250, 249, 246, 0.075)',
+  },
+
+  /* Layer 3: Medium (194px) */
+  layer3: {
+    position: 'absolute',
+    width: 194,
+    height: 194,
+    borderRadius: 97,
+    backgroundColor: 'rgba(250, 249, 246, 0.06)',
+  },
+  layer3Active: {
+    backgroundColor: 'rgba(250, 249, 246, 0.11)',
+  },
+
+  /* Layer 2: Smaller (152px) */
+  layer2: {
+    position: 'absolute',
+    width: 152,
+    height: 152,
+    borderRadius: 76,
+    backgroundColor: 'rgba(250, 249, 246, 0.08)',
+  },
+  layer2Active: {
+    backgroundColor: 'rgba(250, 249, 246, 0.14)',
+  },
+
+  /* Layer 1: Core closest to microphone (112px) */
+  layer1: {
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    backgroundColor: 'rgba(26, 33, 53, 0.88)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOW.subtle,
+  },
+  layer1Active: {
+    backgroundColor: 'rgba(24, 30, 48, 0.96)',
+  },
+
+  /* STATUS & TYPOGRAPHY */
+  timer: {
+    fontFamily: 'Nunito-SemiBold',
+    fontSize: 12,
+    letterSpacing: 1.2,
+    color: 'rgba(255, 255, 255, 0.55)',
+    marginTop: 18,
+  },
+  status: {
+    fontFamily: 'Fredoka-Medium',
+    fontSize: 22,
+    color: '#FFFFFF',
+    marginTop: 6,
+  },
+  hint: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.6)',
+    marginTop: 4,
+  },
+
+  /* BOTTOM ACTIONS */
+  bottomSection: {
+    width: '100%',
+    paddingBottom: 4,
+  },
+  primaryButton: {
     height: 54,
-    borderRadius: 27,
-    backgroundColor: COLORS.forest,
+    borderRadius: RADIUS.pill,
+    backgroundColor: 'rgba(255, 255, 255, 0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.22)',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 9,
+    gap: 10,
+    ...SHADOW.subtle,
   },
-  buttonListening: {
-    backgroundColor: COLORS.wood,
+  primaryButtonActive: {
+    backgroundColor: '#FAF9F6',
+    borderWidth: 0,
   },
-  buttonText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 13,
-    color: COLORS.white,
+  primaryButtonText: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 15,
+    color: '#FFFFFF',
+  },
+  primaryButtonTextActive: {
+    color: '#181E2C',
+  },
+
+  pressed: {
+    transform: [{ scale: 0.98 }],
+    opacity: 0.88,
   },
 });

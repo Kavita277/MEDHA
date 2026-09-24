@@ -1,19 +1,19 @@
 import React from 'react';
 import {
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import { COLORS } from '../constants/colors';
 import { RADIUS, SHADOW } from '../constants/theme';
-import { MedhaBackground } from '../components/medha-background';
 import { MedhaBottomNav } from '../components/medha-bottom-nav';
 import { MedhaFloatingChat } from '../components/medha-floating-chat';
 
@@ -21,296 +21,250 @@ export default function HomeScreen() {
   const router = useRouter();
 
   return (
-    <MedhaBackground variant="home">
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.container}>
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-          >
-            {/* HEADER */}
-            <View style={styles.header}>
-              <View style={styles.greetingWrap}>
-                <Text style={styles.greetingTitle}>
-                  Good morning, Kavita 🌤️
-                </Text>
-                <Text style={styles.greetingSub}>
-                  Take a moment for yourself.
-                </Text>
-              </View>
-
-              <View style={styles.headerActions}>
-                {/* Notifications button */}
-                <Pressable
-                  onPress={() => router.push('/notifications')}
-                  style={({ pressed }) => [
-                    styles.headerIconBtn,
-                    pressed && styles.pressed,
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Notifications"
-                >
-                  <Ionicons
-                    name="notifications-outline"
-                    size={20}
-                    color={COLORS.navy}
-                  />
-                  <View style={styles.notificationDot} />
-                </Pressable>
-
-                {/* Profile Avatar button */}
-                <Pressable
-                  onPress={() => router.push('/profile')}
-                  style={({ pressed }) => [
-                    styles.profileAvatar,
-                    pressed && styles.pressed,
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Profile"
-                >
-                  <Text style={styles.avatarLetter}>K</Text>
-                </Pressable>
-              </View>
-            </View>
-
-            {/* HERO CHECK-IN CARD (Blue Gradient from HTML benchmark) */}
-            <View style={styles.heroWrap}>
-              <LinearGradient
-                colors={[COLORS.blueDark, '#6FC3E8']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.heroCard}
-              >
-                <View style={styles.heroBadge}>
-                  <Ionicons name="sparkles" size={12} color="#FFFFFF" />
-                  <Text style={styles.heroBadgeText}>A QUIET MOMENT</Text>
-                </View>
-
-                <Text style={styles.heroTitle}>
-                  How are you feeling today?
-                </Text>
-
-                <Text style={styles.heroSub}>
-                  Take a moment to check in. Nothing needs to be solved all at once.
-                </Text>
-
-                <Pressable
-                  onPress={() => router.push('/check-in')}
-                  style={({ pressed }) => [
-                    styles.heroPill,
-                    pressed && styles.pressed,
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Quick Check-in"
-                >
-                  <Text style={styles.heroPillText}>Quick Check-in →</Text>
-                </Pressable>
-              </LinearGradient>
-            </View>
-
-            {/* ARRIVE SECTION */}
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionEyebrow}>ARRIVE</Text>
-              <Text style={styles.sectionTitle}>
-                How would you like to arrive?
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.container}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* HEADER */}
+          <View style={styles.header}>
+            <View style={styles.greetingWrap}>
+              <Text style={styles.greetingTitle} numberOfLines={1}>
+                Good morning, Kavita 🌤️
+              </Text>
+              <Text style={styles.greetingSub} numberOfLines={1}>
+                Take a moment for yourself.
               </Text>
             </View>
 
-            <View style={styles.arriveGrid}>
-              {/* Quick Check-in Card */}
+            <View style={styles.headerActions}>
+              {/* Notifications button */}
+              <Pressable
+                onPress={() => router.push('/notifications')}
+                style={({ pressed }) => [
+                  styles.headerIconBtn,
+                  pressed && styles.pressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Notifications"
+              >
+                <Ionicons
+                  name="notifications-outline"
+                  size={19}
+                  color={COLORS.navy}
+                />
+                <View style={styles.notificationDot} />
+              </Pressable>
+
+              {/* Profile Avatar button */}
+              <Pressable
+                onPress={() => router.push('/profile')}
+                style={({ pressed }) => [
+                  styles.profileAvatar,
+                  pressed && styles.pressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Profile"
+              >
+                <Text style={styles.avatarLetter}>K</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {/* EXACTLY ONE DOMINANT CHECK-IN HERO CARD (LIGHT DAYTIME PATIENT DESIGN - COMPACT) */}
+          <View style={styles.heroWrap}>
+            <View style={styles.heroCard}>
+              <View style={styles.heroTopRow}>
+                <View style={styles.heroBadge}>
+                  <Ionicons name="sparkles" size={12} color={COLORS.coralDark} />
+                  <Text style={styles.heroBadgeText}>DAILY CHECK-IN</Text>
+                </View>
+
+                <View style={styles.streakBadge}>
+                  <Ionicons name="heart" size={13} color="#0284C7" />
+                  <Text style={styles.streakText}>7 day streak</Text>
+                </View>
+              </View>
+
+              <Text style={styles.heroTitle}>
+                How is your mind today?
+              </Text>
+
+              <Text style={styles.heroSub}>
+                Take 2 minutes to notice your thoughts and feelings. One quiet moment is enough.
+              </Text>
+
+              {/* GENTLE MOTIVATION */}
+              <View style={styles.motivationRow}>
+                <Ionicons name="sparkles-outline" size={13} color="#CCA01A" />
+                <Text style={styles.motivationText}>
+                  You showed up today. That’s a good step.
+                </Text>
+              </View>
+
               <Pressable
                 onPress={() => router.push('/check-in')}
                 style={({ pressed }) => [
-                  styles.arriveCard,
-                  styles.arriveCardPeach,
+                  styles.heroPill,
                   pressed && styles.pressed,
                 ]}
                 accessibilityRole="button"
-                accessibilityLabel="Check in with gentle questions"
+                accessibilityLabel="Start Daily Check-in"
               >
-                <View style={[styles.arriveIconCircle, { backgroundColor: COLORS.peach }]}>
-                  <Ionicons name="sparkles" size={20} color={COLORS.coralDark} />
-                </View>
-                <Text style={styles.arriveCardTitle}>Check in</Text>
-                <Text style={styles.arriveCardSub}>A few gentle questions</Text>
-              </Pressable>
-
-              {/* Speak / Voice Check-in Card */}
-              <Pressable
-                onPress={() => router.push('/voice')}
-                style={({ pressed }) => [
-                  styles.arriveCard,
-                  styles.arriveCardBlue,
-                  pressed && styles.pressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel="Speak what you are feeling"
-              >
-                <View style={[styles.arriveIconCircle, { backgroundColor: COLORS.blue }]}>
-                  <Ionicons name="mic" size={20} color={COLORS.blueDark} />
-                </View>
-                <Text style={styles.arriveCardTitle}>Speak</Text>
-                <Text style={styles.arriveCardSub}>Say what you’re feeling</Text>
+                <Text style={styles.heroPillText}>Quick Check-in</Text>
+                <Ionicons name="arrow-forward" size={15} color={COLORS.white} />
               </Pressable>
             </View>
+          </View>
 
-            {/* YOUR SPACE SECTION (2x2 Pastel Action Cards from HTML) */}
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionEyebrow}>YOUR SPACE</Text>
-              <Text style={styles.sectionTitle}>Daily reflections & support</Text>
-            </View>
+          {/* YOUR SPACE SECTION (2x2 Balanced Action Cards) */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionEyebrow}>YOUR SPACE</Text>
+            <Text style={styles.sectionTitle}>Daily reflections & support</Text>
+          </View>
 
-            <View style={styles.actionGrid}>
-              {/* 1. Journal */}
-              <Pressable
-                onPress={() => router.push('/journal')}
-                style={({ pressed }) => [
-                  styles.actionCard,
-                  styles.actionCardPink,
-                  pressed && styles.pressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel="Journal"
-              >
-                <View style={styles.actionTopRow}>
-                  <View style={[styles.emojiWrap, { backgroundColor: COLORS.pink }]}>
-                    <Text style={styles.emojiText}>📝</Text>
-                  </View>
-                  <Ionicons name="arrow-forward" size={16} color={COLORS.pinkDark} />
-                </View>
-                <Text style={styles.actionTitle}>Journal</Text>
-                <Text style={styles.actionSub}>Write freely, just for you</Text>
-              </Pressable>
-
-              {/* 2. Find Centre / Grounding */}
-              <Pressable
-                onPress={() => router.push('/grounding')}
-                style={({ pressed }) => [
-                  styles.actionCard,
-                  styles.actionCardGreen,
-                  pressed && styles.pressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel="Find centre and grounding pause"
-              >
-                <View style={styles.actionTopRow}>
-                  <View style={[styles.emojiWrap, { backgroundColor: COLORS.green }]}>
-                    <Text style={styles.emojiText}>🧘</Text>
-                  </View>
-                  <Ionicons name="arrow-forward" size={16} color={COLORS.greenDark} />
-                </View>
-                <Text style={styles.actionTitle}>Find centre</Text>
-                <Text style={styles.actionSub}>Breathe & ground pause</Text>
-              </Pressable>
-
-              {/* 3. Talk with MEDHA */}
-              <Pressable
-                onPress={() => router.push('/chat')}
-                style={({ pressed }) => [
-                  styles.actionCard,
-                  styles.actionCardLavender,
-                  pressed && styles.pressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel="Talk with MEDHA"
-              >
-                <View style={styles.actionTopRow}>
-                  <View style={[styles.emojiWrap, { backgroundColor: COLORS.lavender }]}>
-                    <Text style={styles.emojiText}>💬</Text>
-                  </View>
-                  <Ionicons name="arrow-forward" size={16} color={COLORS.lavenderDark} />
-                </View>
-                <Text style={styles.actionTitle}>Talk with MEDHA</Text>
-                <Text style={styles.actionSub}>Always here to listen</Text>
-              </Pressable>
-
-              {/* 4. Insights */}
-              <Pressable
-                onPress={() => router.push('/insights')}
-                style={({ pressed }) => [
-                  styles.actionCard,
-                  styles.actionCardYellow,
-                  pressed && styles.pressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel="Insights"
-              >
-                <View style={styles.actionTopRow}>
-                  <View style={[styles.emojiWrap, { backgroundColor: COLORS.yellow }]}>
-                    <Text style={styles.emojiText}>🌱</Text>
-                  </View>
-                  <Ionicons name="arrow-forward" size={16} color={COLORS.yellowDark} />
-                </View>
-                <Text style={styles.actionTitle}>Insights</Text>
-                <Text style={styles.actionSub}>Awareness of patterns</Text>
-              </Pressable>
-            </View>
-
-            {/* SELF-HELP FEATURE CARD */}
+          <View style={styles.actionGrid}>
+            {/* 1. Journal */}
             <Pressable
-              onPress={() => router.push('/self-help')}
+              onPress={() => router.push('/journal')}
               style={({ pressed }) => [
-                styles.selfHelpCard,
+                styles.actionCard,
                 pressed && styles.pressed,
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Explore Self Help"
+              accessibilityLabel="Journal"
             >
-              <View style={styles.selfHelpCopy}>
-                <View style={styles.selfHelpEyebrowWrap}>
-                  <Text style={styles.selfHelpEyebrow}>A LITTLE SUPPORT</Text>
+              <View style={styles.actionTopRow}>
+                <View style={[styles.badgeWrap, { backgroundColor: '#FFEBF1' }]}>
+                  <Ionicons name="create-outline" size={18} color="#E05375" />
                 </View>
-                <Text style={styles.selfHelpTitle}>
-                  Small steps.{'\n'}A calmer moment.
-                </Text>
-                <Text style={styles.selfHelpText}>
-                  Explore gentle, evidence-informed guides for stress, anxiety, low mood and everyday wellbeing.
-                </Text>
-
-                <View style={styles.selfHelpButtonRow}>
-                  <Text style={styles.selfHelpBtnText}>Explore Self Help</Text>
-                  <Ionicons name="arrow-forward" size={15} color={COLORS.coralDark} />
-                </View>
+                <Ionicons name="arrow-forward" size={15} color={COLORS.navyMuted} />
               </View>
-
-              <View style={styles.selfHelpArt}>
-                <View style={styles.artCircleOuter}>
-                  <View style={styles.artCircleInner}>
-                    <Ionicons name="leaf" size={32} color={COLORS.sage} />
-                  </View>
-                </View>
-              </View>
+              <Text style={styles.actionTitle}>Journal</Text>
+              <Text style={styles.actionSub}>Write freely, just for you</Text>
             </Pressable>
 
-            {/* Space before bottom navbar */}
-            <View style={{ height: 90 }} />
-          </ScrollView>
+            {/* 2. Find Centre / Grounding */}
+            <Pressable
+              onPress={() => router.push('/grounding')}
+              style={({ pressed }) => [
+                styles.actionCard,
+                pressed && styles.pressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Find centre and grounding pause"
+            >
+              <View style={styles.actionTopRow}>
+                <View style={[styles.badgeWrap, { backgroundColor: '#E2F5E8' }]}>
+                  <Ionicons name="leaf-outline" size={18} color="#2D8A4E" />
+                </View>
+                <Ionicons name="arrow-forward" size={15} color={COLORS.navyMuted} />
+              </View>
+              <Text style={styles.actionTitle}>Find centre</Text>
+              <Text style={styles.actionSub}>Breathe & ground pause</Text>
+            </Pressable>
 
-          {/* FLOATING ACTION CHAT BUTTON */}
-          <MedhaFloatingChat />
+            {/* 3. Speak / Voice Check-in */}
+            <Pressable
+              onPress={() => router.push('/voice')}
+              style={({ pressed }) => [
+                styles.actionCard,
+                pressed && styles.pressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Speak voice check-in"
+            >
+              <View style={styles.actionTopRow}>
+                <View style={[styles.badgeWrap, { backgroundColor: '#E1F2FE' }]}>
+                  <Ionicons name="mic-outline" size={18} color="#0284C7" />
+                </View>
+                <Ionicons name="arrow-forward" size={15} color={COLORS.navyMuted} />
+              </View>
+              <Text style={styles.actionTitle}>Speak</Text>
+              <Text style={styles.actionSub}>Say what you’re feeling</Text>
+            </Pressable>
 
-          {/* BOTTOM GLASS NAVIGATION BAR */}
-          <View style={styles.bottomNavContainer}>
-            <MedhaBottomNav activeTab="home" />
+            {/* 4. Insights */}
+            <Pressable
+              onPress={() => router.push('/insights')}
+              style={({ pressed }) => [
+                styles.actionCard,
+                pressed && styles.pressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Insights"
+            >
+              <View style={styles.actionTopRow}>
+                <View style={[styles.badgeWrap, { backgroundColor: '#FFF4D9' }]}>
+                  <Ionicons name="analytics-outline" size={18} color="#CCA01A" />
+                </View>
+                <Ionicons name="arrow-forward" size={15} color={COLORS.navyMuted} />
+              </View>
+              <Text style={styles.actionTitle}>Insights</Text>
+              <Text style={styles.actionSub}>Awareness of patterns</Text>
+            </Pressable>
           </View>
+
+          {/* SECONDARY SMALL STEPS CARD (PRESERVING ORIGINAL #DDE8D2 COLOR & ARTWORK) */}
+          <Pressable
+            onPress={() => router.push('/self-help')}
+            style={({ pressed }) => [
+              styles.selfHelpCard,
+              pressed && styles.pressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Explore Self Help"
+          >
+            <View style={styles.selfHelpCopy}>
+              <Text style={styles.selfHelpEyebrow}>A LITTLE SUPPORT</Text>
+              <Text style={styles.selfHelpTitle}>
+                Small steps.{'\n'}A calmer moment.
+              </Text>
+              <Text style={styles.selfHelpText}>
+                Explore gentle, evidence-informed guides for stress, anxiety, low mood and everyday wellbeing.
+              </Text>
+
+              <View style={styles.selfHelpButton}>
+                <Text style={styles.selfHelpButtonText}>Explore Self Help</Text>
+                <Ionicons name="arrow-forward" size={14} color="#1B3122" />
+              </View>
+            </View>
+
+            <View style={styles.selfHelpIllustration}>
+              <View style={styles.illustrationCircleLarge} />
+              <View style={styles.illustrationCircleSmall} />
+              <Ionicons name="leaf-outline" size={40} color="#3B5D45" />
+            </View>
+          </Pressable>
+        </ScrollView>
+
+        {/* FLOATING ACTION CHAT BUTTON */}
+        <MedhaFloatingChat />
+
+        {/* FLOATING BOTTOM NAVIGATION */}
+        <View style={styles.bottomNavContainer}>
+          <MedhaBottomNav activeTab="home" />
         </View>
-      </SafeAreaView>
-    </MedhaBackground>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
+    backgroundColor: COLORS.porcelain,
   },
   container: {
     flex: 1,
+    position: 'relative',
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
+    paddingHorizontal: 22,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) + 16 : 36,
+    paddingBottom: 110,
   },
 
   /* HEADER */
@@ -318,8 +272,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 20,
-    marginTop: 6,
+    marginBottom: 22,
   },
   greetingWrap: {
     flex: 1,
@@ -327,111 +280,165 @@ const styles = StyleSheet.create({
   },
   greetingTitle: {
     fontFamily: 'Fredoka-SemiBold',
-    fontSize: 24,
-    lineHeight: 30,
+    fontSize: 19,
+    lineHeight: 25,
     color: COLORS.navy,
   },
   greetingSub: {
-    fontFamily: 'Nunito-SemiBold',
+    fontFamily: 'Nunito-Regular',
     fontSize: 13,
     lineHeight: 18,
     color: COLORS.navyMuted,
-    marginTop: 3,
+    marginTop: 2,
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   headerIconBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.95)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOW.card,
+    position: 'relative',
+    ...SHADOW.subtle,
   },
   notificationDot: {
     position: 'absolute',
-    top: 10,
-    right: 11,
+    top: 8,
+    right: 8,
     width: 7,
     height: 7,
-    borderRadius: 4,
-    backgroundColor: COLORS.coral,
+    borderRadius: 3.5,
+    backgroundColor: COLORS.coralDark,
   },
   profileAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.coral,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOW.glow,
+    ...SHADOW.subtle,
   },
   avatarLetter: {
-    fontFamily: 'Fredoka-Bold',
-    fontSize: 18,
-    color: COLORS.white,
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 15,
+    color: COLORS.navy,
   },
 
-  /* HERO CARD */
+  /* STANDALONE HERO CHECK-IN CARD (LIGHT DAYTIME PATIENT PALETTE - 12-15% COMPACT) */
   heroWrap: {
-    marginBottom: 26,
-    ...SHADOW.soft,
+    marginBottom: 20,
   },
   heroCard: {
-    borderRadius: RADIUS.card + 6,
-    padding: 22,
-    overflow: 'hidden',
+    borderRadius: RADIUS.card,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+    ...SHADOW.subtle,
+  },
+  heroTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
   },
   heroBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    backgroundColor: '#FFEADB',
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 12,
+    paddingVertical: 3.5,
+    borderRadius: RADIUS.pill,
   },
   heroBadgeText: {
-    fontFamily: 'Fredoka-Medium',
+    fontFamily: 'Nunito-Bold',
     fontSize: 10,
     letterSpacing: 1.2,
-    color: COLORS.white,
+    color: COLORS.coralDark,
+  },
+  heroCalmBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#E1F2FE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#E1F2FE',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: RADIUS.pill,
+  },
+  streakText: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 11.5,
+    color: '#0284C7',
+  },
+  motivationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFF9ED',
+    borderWidth: 1,
+    borderColor: '#FFE8B8',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: RADIUS.pill,
+    alignSelf: 'flex-start',
+    marginBottom: 14,
+  },
+  motivationText: {
+    fontFamily: 'Nunito-Medium',
+    fontSize: 12,
+    color: '#8A6814',
   },
   heroTitle: {
     fontFamily: 'Fredoka-SemiBold',
-    fontSize: 22,
-    lineHeight: 28,
-    color: COLORS.white,
-    marginBottom: 6,
+    fontSize: 21,
+    lineHeight: 26,
+    color: COLORS.navy,
+    marginBottom: 4,
   },
   heroSub: {
-    fontFamily: 'Nunito-SemiBold',
-    fontSize: 12,
+    fontFamily: 'Nunito-Regular',
+    fontSize: 13,
     lineHeight: 18,
-    color: 'rgba(255, 255, 255, 0.92)',
-    marginBottom: 16,
-    maxWidth: 290,
+    color: COLORS.navyMuted,
+    marginBottom: 14,
+    maxWidth: 320,
   },
   heroPill: {
     alignSelf: 'flex-start',
-    backgroundColor: COLORS.white,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: COLORS.navy,
     paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 16,
-    ...SHADOW.card,
+    height: 40,
+    borderRadius: RADIUS.pill,
+    ...SHADOW.subtle,
   },
   heroPillText: {
-    fontFamily: 'Fredoka-SemiBold',
+    fontFamily: 'Fredoka-Medium',
     fontSize: 13,
-    color: COLORS.blueDark,
+    color: COLORS.white,
   },
 
   /* SECTION HEADERS */
@@ -441,7 +448,7 @@ const styles = StyleSheet.create({
   sectionEyebrow: {
     fontFamily: 'Nunito-Bold',
     fontSize: 10,
-    letterSpacing: 1.5,
+    letterSpacing: 1.4,
     color: COLORS.coralDark,
     textTransform: 'uppercase',
   },
@@ -452,179 +459,124 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  /* ARRIVE ROW */
-  arriveGrid: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 26,
-  },
-  arriveCard: {
-    flex: 1,
-    borderRadius: RADIUS.card,
-    padding: 16,
-    borderWidth: 1.5,
-    ...SHADOW.card,
-  },
-  arriveCardPeach: {
-    backgroundColor: COLORS.creamSecondary,
-    borderColor: COLORS.peach,
-  },
-  arriveCardBlue: {
-    backgroundColor: COLORS.blueSoft,
-    borderColor: COLORS.blue,
-  },
-  arriveIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  arriveCardTitle: {
-    fontFamily: 'Fredoka-SemiBold',
-    fontSize: 15,
-    color: COLORS.navy,
-    marginBottom: 2,
-  },
-  arriveCardSub: {
-    fontFamily: 'Nunito-Regular',
-    fontSize: 11,
-    color: COLORS.navyMuted,
-  },
-
-  /* ACTION 2X2 GRID (HTML benchmark) */
+  /* ACTION 2X2 GRID */
   actionGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
-    marginBottom: 26,
+    marginBottom: 20,
   },
   actionCard: {
     width: '48%',
     borderRadius: RADIUS.card,
-    padding: 14,
-    borderWidth: 1.5,
-    ...SHADOW.card,
-  },
-  actionCardPink: {
-    backgroundColor: COLORS.pinkSoft,
-    borderColor: COLORS.pink,
-  },
-  actionCardGreen: {
-    backgroundColor: COLORS.greenSoft,
-    borderColor: COLORS.green,
-  },
-  actionCardLavender: {
-    backgroundColor: '#F3EFFF',
-    borderColor: COLORS.lavender,
-  },
-  actionCardYellow: {
-    backgroundColor: COLORS.yellowSoft,
-    borderColor: COLORS.yellow,
+    padding: 16,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+    ...SHADOW.subtle,
   },
   actionTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 12,
   },
-  emojiWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  badgeWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emojiText: {
-    fontSize: 18,
-  },
   actionTitle: {
     fontFamily: 'Fredoka-SemiBold',
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.navy,
-    marginBottom: 2,
+    marginBottom: 3,
   },
   actionSub: {
     fontFamily: 'Nunito-Regular',
-    fontSize: 10,
-    lineHeight: 14,
+    fontSize: 11,
+    lineHeight: 15,
     color: COLORS.navyMuted,
   },
 
-  /* SELF HELP FEATURE CARD */
+  /* PRESERVED SMALL STEPS CARD (ORIGINAL #DDE8D2, ARTWORK, BALANCED SECONDARY PROPORTIONS) */
   selfHelpCard: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.sageSoft,
-    borderWidth: 1.5,
-    borderColor: COLORS.sage,
-    borderRadius: RADIUS.card + 4,
+    borderRadius: RADIUS.card,
+    backgroundColor: '#DDE8D2',
     padding: 18,
-    marginBottom: 14,
-    ...SHADOW.card,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.04)',
+    ...SHADOW.subtle,
   },
   selfHelpCopy: {
     flex: 1,
-    paddingRight: 10,
-  },
-  selfHelpEyebrowWrap: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(127, 168, 138, 0.22)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    marginBottom: 8,
+    zIndex: 2,
+    paddingRight: 6,
   },
   selfHelpEyebrow: {
-    fontFamily: 'Fredoka-Medium',
+    fontFamily: 'Nunito-Bold',
     fontSize: 9,
-    letterSpacing: 1.2,
-    color: COLORS.forestClassic,
+    letterSpacing: 1.6,
+    color: '#496B52',
+    textTransform: 'uppercase',
+    marginBottom: 5,
   },
   selfHelpTitle: {
     fontFamily: 'Fredoka-SemiBold',
-    fontSize: 17,
+    fontSize: 18,
     lineHeight: 22,
-    color: COLORS.navy,
-    marginBottom: 6,
+    color: '#1B3122',
   },
   selfHelpText: {
     fontFamily: 'Nunito-Regular',
     fontSize: 11,
     lineHeight: 16,
-    color: COLORS.navyMuted,
-    marginBottom: 12,
+    color: '#3D5443',
+    marginTop: 6,
+    maxWidth: 190,
   },
-  selfHelpButtonRow: {
+  selfHelpButton: {
+    alignSelf: 'flex-start',
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: RADIUS.pill,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    ...SHADOW.subtle,
   },
-  selfHelpBtnText: {
-    fontFamily: 'Fredoka-SemiBold',
-    fontSize: 12,
-    color: COLORS.coralDark,
+  selfHelpButtonText: {
+    fontFamily: 'Fredoka-Medium',
+    fontSize: 11,
+    color: '#1B3122',
   },
-  selfHelpArt: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 76,
-  },
-  artCircleOuter: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: 'rgba(255, 255, 255, 0.65)',
+  selfHelpIllustration: {
+    width: 90,
+    height: 120,
+    marginLeft: -4,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  artCircleInner: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: COLORS.white,
-    alignItems: 'center',
-    justifyContent: 'center',
+  illustrationCircleLarge: {
+    position: 'absolute',
+    width: 104,
+    height: 104,
+    borderRadius: 52,
+    backgroundColor: 'rgba(255, 255, 255, 0.42)',
+  },
+  illustrationCircleSmall: {
+    position: 'absolute',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.52)',
   },
 
   /* BOTTOM NAV CONTAINER */
@@ -636,7 +588,7 @@ const styles = StyleSheet.create({
   },
 
   pressed: {
-    transform: [{ scale: 0.97 }],
-    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
+    opacity: 0.88,
   },
 });

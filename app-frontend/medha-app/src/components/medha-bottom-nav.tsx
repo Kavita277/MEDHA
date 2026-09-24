@@ -10,7 +10,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import { RADIUS, SHADOW } from '../constants/theme';
 
-export type NavTab = 'home' | 'ambient' | 'support' | 'profile';
+export type NavTab =
+  | 'home'
+  | 'check-in'
+  | 'explore'
+  | 'profile'
+  | 'ambient'
+  | 'support'
+  | 'mood-calendar';
 
 interface MedhaBottomNavProps {
   activeTab?: NavTab;
@@ -25,40 +32,38 @@ export function MedhaBottomNav({ activeTab = 'home' }: MedhaBottomNavProps) {
       label: 'Home',
       iconActive: 'home' as const,
       iconInactive: 'home-outline' as const,
-      emoji: '🏠',
       onPress: () => router.replace('/home'),
     },
     {
-      id: 'ambient' as NavTab,
-      label: 'Ambient',
-      iconActive: 'musical-notes' as const,
-      iconInactive: 'musical-notes-outline' as const,
-      emoji: '🎵',
-      onPress: () => router.push('/ambient'),
+      id: 'check-in' as NavTab,
+      label: 'Check-in',
+      iconActive: 'add-circle' as const,
+      iconInactive: 'add-circle-outline' as const,
+      onPress: () => router.push('/check-in'),
     },
     {
-      id: 'support' as NavTab,
-      label: 'Support',
-      iconActive: 'heart' as const,
-      iconInactive: 'heart-outline' as const,
-      emoji: '💖',
-      onPress: () => router.push('/support'),
+      id: 'explore' as NavTab,
+      label: 'Explore',
+      iconActive: 'compass' as const,
+      iconInactive: 'compass-outline' as const,
+      onPress: () => router.push('/self-help'),
     },
     {
       id: 'profile' as NavTab,
       label: 'Profile',
       iconActive: 'person' as const,
       iconInactive: 'person-outline' as const,
-      emoji: '👤',
       onPress: () => router.push('/profile'),
     },
   ];
 
   return (
     <View style={styles.wrapper}>
-      <View style={styles.glassBar}>
+      <View style={styles.dock}>
         {tabs.map((tab) => {
-          const isActive = activeTab === tab.id;
+          const isActive =
+            activeTab === tab.id ||
+            (tab.id === 'explore' && activeTab === 'mood-calendar');
 
           return (
             <Pressable
@@ -66,18 +71,22 @@ export function MedhaBottomNav({ activeTab = 'home' }: MedhaBottomNavProps) {
               onPress={tab.onPress}
               style={({ pressed }) => [
                 styles.tabItem,
-                isActive && styles.tabItemActive,
                 pressed && styles.tabItemPressed,
               ]}
               accessibilityRole="button"
               accessibilityLabel={tab.label}
               accessibilityState={{ selected: isActive }}
             >
-              <View style={[styles.iconWrapper, isActive && styles.iconWrapperActive]}>
+              <View
+                style={[
+                  styles.iconWrapper,
+                  isActive && styles.iconWrapperActive,
+                ]}
+              >
                 <Ionicons
                   name={isActive ? tab.iconActive : tab.iconInactive}
-                  size={20}
-                  color={isActive ? COLORS.coralDark : COLORS.navyMuted}
+                  size={21}
+                  color={isActive ? COLORS.navy : COLORS.subtleText}
                 />
               </View>
               <Text
@@ -99,33 +108,31 @@ export function MedhaBottomNav({ activeTab = 'home' }: MedhaBottomNavProps) {
 const styles = StyleSheet.create({
   wrapper: {
     paddingHorizontal: 20,
-    paddingBottom: 16,
-    paddingTop: 8,
+    paddingBottom: 14,
+    paddingTop: 6,
+    backgroundColor: 'transparent',
   },
-  glassBar: {
+  dock: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    backgroundColor: 'rgba(255, 255, 255, 0.78)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: RADIUS.large,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+    borderRadius: RADIUS.modal,
     paddingVertical: 8,
-    paddingHorizontal: 8,
-    ...SHADOW.soft,
+    paddingHorizontal: 12,
+    ...SHADOW.dock,
   },
   tabItem: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderRadius: RADIUS.medium,
-  },
-  tabItemActive: {
-    backgroundColor: COLORS.creamSecondary,
+    paddingHorizontal: 14,
   },
   tabItemPressed: {
     transform: [{ scale: 0.94 }],
+    opacity: 0.85,
   },
   iconWrapper: {
     width: 32,
@@ -135,16 +142,16 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   iconWrapperActive: {
-    backgroundColor: 'rgba(255, 122, 89, 0.12)',
+    backgroundColor: 'rgba(24, 30, 44, 0.06)',
   },
   tabLabel: {
-    fontFamily: 'Nunito-Bold',
+    fontFamily: 'Nunito-SemiBold',
     fontSize: 10,
-    color: COLORS.navyMuted,
+    color: COLORS.subtleText,
     marginTop: 2,
   },
   tabLabelActive: {
-    color: COLORS.coralDark,
+    color: COLORS.navy,
     fontFamily: 'Fredoka-Medium',
   },
 });

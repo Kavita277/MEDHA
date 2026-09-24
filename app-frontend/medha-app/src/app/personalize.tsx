@@ -1,16 +1,18 @@
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
-    ImageBackground,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ImageBackground,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 import { COLORS } from '../constants/colors';
+import { RADIUS, SHADOW } from '../constants/theme';
 
 const options = [
   {
@@ -46,6 +48,7 @@ const options = [
 ];
 
 export default function PersonalizeScreen() {
+  const router = useRouter();
   const [selected, setSelected] = useState<string[]>([]);
 
   function toggle(title: string) {
@@ -57,160 +60,205 @@ export default function PersonalizeScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
-        <Pressable
-          onPress={() => router.back()}
-          style={styles.back}
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.content}
         >
-          <Ionicons
-            name="arrow-back"
-            size={19}
-            color={COLORS.deepForest}
-          />
-        </Pressable>
+          {/* TOP BAR / BACK */}
+          <View style={styles.topBar}>
+            <Pressable
+              onPress={() => router.back()}
+              style={({ pressed }) => [
+                styles.iconButton,
+                pressed && styles.pressed,
+              ]}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+            >
+              <Ionicons
+                name="arrow-back"
+                size={20}
+                color={COLORS.navy}
+              />
+            </Pressable>
+          </View>
 
-        <Text style={styles.title}>
-          What soothes you{'\n'}the most?
-        </Text>
-
-        <Text style={styles.subtitle}>
-          Select a few to personalise your space.
-        </Text>
-
-        <View style={styles.grid}>
-          {options.map((option) => {
-            const active = selected.includes(option.title);
-
-            return (
-              <Pressable
-                key={option.title}
-                onPress={() => toggle(option.title)}
-                style={[
-                  styles.card,
-                  active && styles.cardActive,
-                ]}
-              >
-                <ImageBackground
-                  source={{ uri: option.image }}
-                  style={styles.image}
-                  imageStyle={styles.imageRadius}
-                >
-                  <View style={styles.overlay} />
-
-                  <View style={styles.cardBottom}>
-                    <Text style={styles.cardTitle}>
-                      {option.title}
-                    </Text>
-                  </View>
-
-                  {active && (
-                    <View style={styles.check}>
-                      <Ionicons
-                        name="checkmark"
-                        size={15}
-                        color="#FFFFFF"
-                      />
-                    </View>
-                  )}
-                </ImageBackground>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        <Pressable
-          onPress={() => router.replace('/home')}
-          style={styles.button}
-        >
-          <Text style={styles.buttonText}>
-            Continue
+          {/* HEADINGS */}
+          <Text style={styles.eyebrow}>PREFERENCES</Text>
+          <Text style={styles.title}>
+            What soothes you{'\n'}the most?
           </Text>
-        </Pressable>
-      </ScrollView>
-    </View>
+
+          <Text style={styles.subtitle}>
+            Select a few to personalise your space.
+          </Text>
+
+          {/* 2-COLUMN OPTIONS GRID */}
+          <View style={styles.grid}>
+            {options.map((option) => {
+              const active = selected.includes(option.title);
+
+              return (
+                <Pressable
+                  key={option.title}
+                  onPress={() => toggle(option.title)}
+                  style={({ pressed }) => [
+                    styles.card,
+                    active && styles.cardActive,
+                    pressed && styles.pressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={option.title}
+                >
+                  <ImageBackground
+                    source={{ uri: option.image }}
+                    style={styles.image}
+                    imageStyle={styles.imageRadius}
+                  >
+                    <View style={styles.overlay} />
+
+                    <View style={styles.cardBottom}>
+                      <Text style={styles.cardTitle}>
+                        {option.title}
+                      </Text>
+                    </View>
+
+                    {active && (
+                      <View style={styles.check}>
+                        <Ionicons
+                          name="checkmark"
+                          size={15}
+                          color={COLORS.white}
+                        />
+                      </View>
+                    )}
+                  </ImageBackground>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* CONTINUATION BUTTON ROUTING TO ONBOARDING-COMPLETE (SCREEN 29) */}
+          <Pressable
+            onPress={() => router.replace('/onboarding-complete')}
+            style={({ pressed }) => [
+              styles.button,
+              pressed && styles.pressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Continue to completion"
+          >
+            <Text style={styles.buttonText}>
+              Continue
+            </Text>
+            <Ionicons name="arrow-forward" size={17} color={COLORS.white} />
+          </Pressable>
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.porcelain,
+  },
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
-
   content: {
-    paddingHorizontal: 22,
-    paddingTop: 55,
-    paddingBottom: 35,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 36,
   },
 
-  back: {
-    width: 40,
-    height: 40,
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  iconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+    alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 25,
+    ...SHADOW.subtle,
   },
 
+  eyebrow: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 10,
+    letterSpacing: 1.4,
+    color: COLORS.coralDark,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
   title: {
-    fontFamily: 'CormorantGaramond-Regular',
-    fontSize: 37,
-    lineHeight: 38,
-    color: COLORS.deepForest,
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 30,
+    lineHeight: 36,
+    color: COLORS.navy,
   },
-
   subtitle: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 13,
-    color: COLORS.mutedText,
-    marginTop: 9,
-    marginBottom: 23,
+    fontFamily: 'Nunito-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    color: COLORS.navyMuted,
+    marginTop: 8,
+    marginBottom: 24,
   },
 
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    rowGap: 12,
+    rowGap: 14,
   },
 
   card: {
-    width: '48.5%',
+    width: '48%',
     height: 145,
-    borderRadius: 19,
+    borderRadius: RADIUS.card,
     overflow: 'hidden',
+    backgroundColor: COLORS.white,
+    borderWidth: 1.5,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+    ...SHADOW.subtle,
   },
-
   cardActive: {
-    borderWidth: 2,
-    borderColor: COLORS.forest,
+    borderWidth: 2.5,
+    borderColor: COLORS.navy,
   },
 
   image: {
     flex: 1,
   },
-
   imageRadius: {
-    borderRadius: 18,
+    borderRadius: RADIUS.card - 2,
   },
-
   overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(28,39,31,0.30)',
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(24, 30, 44, 0.38)',
   },
 
   cardBottom: {
     position: 'absolute',
-    left: 15,
-    bottom: 14,
+    left: 14,
+    bottom: 12,
+    right: 14,
   },
-
   cardTitle: {
-    color: '#FFFFFF',
-    fontFamily: 'Inter-Medium',
-    fontSize: 12,
+    color: COLORS.white,
+    fontFamily: 'Fredoka-Medium',
+    fontSize: 14,
   },
 
   check: {
@@ -220,23 +268,30 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: COLORS.forest,
+    backgroundColor: COLORS.navy,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   button: {
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: COLORS.forest,
+    height: 52,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.navy,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 25,
+    gap: 8,
+    marginTop: 28,
+    ...SHADOW.subtle,
+  },
+  buttonText: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 15,
+    color: COLORS.white,
   },
 
-  buttonText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 13,
-    color: COLORS.white,
+  pressed: {
+    transform: [{ scale: 0.98 }],
+    opacity: 0.88,
   },
 });

@@ -51,6 +51,26 @@ export const SHADOW = {
     shadowRadius: 20,
     elevation: 5,
   },
+  subtle: {
+    shadowColor: COLORS.navy,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  dock: {
+    shadowColor: '#181E2C',
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 4,
+  },
   fab: {
     shadowColor: '#000000',
     shadowOffset: {

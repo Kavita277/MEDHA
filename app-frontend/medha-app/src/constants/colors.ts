@@ -22,10 +22,36 @@ export const COLORS = {
   yellowSoft: '#FFF6E0',
   lavender: '#E3DCF7',
   lavenderDark: '#8A79D6',
-  navy: '#28324A',
+  navy: '#181E2C',
   navyMuted: '#5B6478',
   navySoft: '#5B6478',
-  charcoal: '#1E1E1E',
+  charcoal: '#181E2C',
+  obsidian: '#181E2C',
+  midnightNavy: '#181E2C',
+  porcelain: '#FAF9F6',
+  canvas: '#FAF9F6',
+
+  // Mood Calendar tokens
+  moodYellow: '#FDE37E',
+  moodCoral: '#FF8771',
+  moodBlue: '#97CFF7',
+  moodGreen: '#85D79B',
+  moodPurple: '#B7A2F7',
+  moodPeach: '#FFB088',
+  moodNeutral: '#E8ECF2',
+
+  // Atmospheric Grounding & Dark tokens
+  twilightDark: '#0B0F19',
+  twilightDeep: '#121726',
+  twilightIndigo: '#1A2136',
+  twilightPurple: '#222340',
+  lotusGlow: '#FFA4B0',
+  lotusPetal: '#FFB8C2',
+  lotusCenter: '#FFEAA7',
+
+  // Card & Border tokens
+  cardBorder: 'rgba(0, 0, 0, 0.05)',
+  cardBorderSubtle: 'rgba(0, 0, 0, 0.03)',
 
   // Glassmorphic tokens
   glass: 'rgba(255, 255, 255, 0.65)',
@@ -33,7 +59,7 @@ export const COLORS = {
   glassOverlay: 'rgba(255, 255, 255, 0.40)',
 
   // Main environment & semantic mappings (updated for warm redesign)
-  background: '#FFF6EE',
+  background: '#FAF9F6',
   surface: '#FFFFFF',
   surfaceWarm: '#FFEFE1',
 

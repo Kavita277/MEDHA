@@ -1,13 +1,15 @@
 import React from 'react';
 import {
+  Image,
   Pressable,
   StyleSheet,
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import { SHADOW } from '../constants/theme';
+
+const MEDHA_LOGO = require('../../assets/images/medha-logo.png');
 
 export function MedhaFloatingChat() {
   const router = useRouter();
@@ -23,7 +25,11 @@ export function MedhaFloatingChat() {
         accessibilityRole="button"
         accessibilityLabel="Chat with MEDHA"
       >
-        <Ionicons name="chatbubble-ellipses" size={22} color={COLORS.white} />
+        <Image
+          source={MEDHA_LOGO}
+          style={styles.logo}
+          resizeMode="contain"
+        />
       </Pressable>
     </View>
   );
@@ -40,10 +46,16 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: COLORS.charcoal,
+    backgroundColor: COLORS.white,
+    borderWidth: 1.5,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOW.fab,
+    ...SHADOW.dock,
+  },
+  logo: {
+    width: 32,
+    height: 32,
   },
   pressed: {
     transform: [{ scale: 0.92 }],
