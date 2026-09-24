@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
+import { SHADOW } from '../constants/theme';
+import { MedhaBackground } from './medha-background';
 
 interface MedhaScreenProps {
   children: React.ReactNode;
@@ -20,6 +22,7 @@ interface MedhaScreenProps {
   scroll?: boolean;
   rightIcon?: keyof typeof Ionicons.glyphMap;
   onRightPress?: () => void;
+  withBackground?: boolean;
 }
 
 export function MedhaScreen({
@@ -32,6 +35,7 @@ export function MedhaScreen({
   scroll = true,
   rightIcon,
   onRightPress,
+  withBackground = false,
 }: MedhaScreenProps) {
   const content = (
     <View style={styles.inner}>
@@ -40,13 +44,18 @@ export function MedhaScreen({
           {back ? (
             <Pressable
               onPress={onBack}
-              style={styles.iconButton}
+              style={({ pressed }) => [
+                styles.iconButton,
+                pressed && styles.iconButtonPressed,
+              ]}
               hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
             >
               <Ionicons
                 name="arrow-back"
-                size={19}
-                color={COLORS.deepForest}
+                size={20}
+                color={COLORS.navy}
               />
             </Pressable>
           ) : (
@@ -56,13 +65,18 @@ export function MedhaScreen({
           {rightIcon && (
             <Pressable
               onPress={onRightPress}
-              style={styles.iconButton}
+              style={({ pressed }) => [
+                styles.iconButton,
+                pressed && styles.iconButtonPressed,
+              ]}
               hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Action"
             >
               <Ionicons
                 name={rightIcon}
-                size={19}
-                color={COLORS.deepForest}
+                size={20}
+                color={COLORS.navy}
               />
             </Pressable>
           )}
@@ -72,9 +86,7 @@ export function MedhaScreen({
       {(eyebrow || title || subtitle) && (
         <View style={styles.heading}>
           {eyebrow && <Text style={styles.eyebrow}>{eyebrow}</Text>}
-
           {title && <Text style={styles.title}>{title}</Text>}
-
           {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         </View>
       )}
@@ -83,12 +95,13 @@ export function MedhaScreen({
     </View>
   );
 
-  return (
+  const body = (
     <SafeAreaView style={styles.safe}>
       {scroll ? (
         <ScrollView
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           {content}
         </ScrollView>
@@ -97,12 +110,18 @@ export function MedhaScreen({
       )}
     </SafeAreaView>
   );
+
+  if (withBackground) {
+    return <MedhaBackground variant="calm">{body}</MedhaBackground>;
+  }
+
+  return body;
 }
 
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.cream,
   },
 
   scroll: {
@@ -112,54 +131,61 @@ const styles = StyleSheet.create({
 
   inner: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
   },
 
   topBar: {
-    height: 62,
+    height: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginTop: 4,
   },
 
   iconButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',
+    ...SHADOW.card,
+  },
+
+  iconButtonPressed: {
+    transform: [{ scale: 0.92 }],
+    opacity: 0.85,
   },
 
   heading: {
-    marginTop: 18,
-    marginBottom: 28,
+    marginTop: 14,
+    marginBottom: 22,
   },
 
   eyebrow: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 9,
-    letterSpacing: 2,
-    color: COLORS.forest,
+    fontFamily: 'Nunito-Bold',
+    fontSize: 10,
+    letterSpacing: 1.5,
+    color: COLORS.coralDark,
     textTransform: 'uppercase',
-    marginBottom: 12,
+    marginBottom: 8,
   },
 
   title: {
-    fontFamily: 'CormorantGaramond-Regular',
-    fontSize: 38,
-    lineHeight: 41,
-    color: COLORS.deepForest,
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 28,
+    lineHeight: 34,
+    color: COLORS.navy,
   },
 
   subtitle: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: 'Nunito-Regular',
     fontSize: 14,
-    lineHeight: 21,
-    color: COLORS.mutedText,
-    marginTop: 12,
+    lineHeight: 20,
+    color: COLORS.navyMuted,
+    marginTop: 8,
     maxWidth: 340,
   },
 });

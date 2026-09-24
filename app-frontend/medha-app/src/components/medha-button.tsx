@@ -1,121 +1,203 @@
+import React from 'react';
 import {
   Pressable,
+  StyleProp,
   StyleSheet,
   Text,
+  TextStyle,
   View,
+  ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
 import { COLORS } from '../constants/colors';
+import { RADIUS, SHADOW } from '../constants/theme';
+
+export type ButtonVariant =
+  | 'primary'
+  | 'coral'
+  | 'pill'
+  | 'soft'
+  | 'glass';
 
 interface MedhaButtonProps {
   title: string;
   onPress: () => void;
   icon?: keyof typeof Ionicons.glyphMap;
-  variant?: 'primary' | 'soft';
+  iconPosition?: 'left' | 'right';
+  variant?: ButtonVariant;
+  size?: 'sm' | 'md' | 'lg';
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
+  disabled?: boolean;
 }
 
 export function MedhaButton({
   title,
   onPress,
   icon,
+  iconPosition = 'right',
   variant = 'primary',
+  size = 'md',
+  style,
+  textStyle,
+  disabled = false,
 }: MedhaButtonProps) {
-  const isSoft = variant === 'soft';
-
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
       style={({ pressed }) => [
         styles.button,
-        isSoft ? styles.softButton : styles.primaryButton,
-        pressed && styles.pressed,
+        styles[variant],
+        styles[`size_${size}`],
+        disabled && styles.disabled,
+        pressed && !disabled && styles.pressed,
+        style,
       ]}
+      accessibilityRole="button"
     >
+      {icon && iconPosition === 'left' && (
+        <Ionicons
+          name={icon}
+          size={size === 'sm' ? 14 : size === 'lg' ? 20 : 16}
+          color={getIconColor(variant)}
+          style={styles.iconLeft}
+        />
+      )}
+
       <Text
         style={[
           styles.text,
-          isSoft ? styles.softText : styles.primaryText,
+          styles[`text_${variant}`],
+          styles[`textSize_${size}`],
+          textStyle,
         ]}
       >
         {title}
       </Text>
 
-      {icon && (
-        <View
-          style={[
-            styles.icon,
-            isSoft ? styles.softIcon : styles.primaryIcon,
-          ]}
-        >
-          <Ionicons
-            name={icon}
-            size={17}
-            color={
-              isSoft
-                ? COLORS.deepForest
-                : COLORS.white
-            }
-          />
-        </View>
+      {icon && iconPosition === 'right' && (
+        <Ionicons
+          name={icon}
+          size={size === 'sm' ? 14 : size === 'lg' ? 20 : 16}
+          color={getIconColor(variant)}
+          style={styles.iconRight}
+        />
       )}
     </Pressable>
   );
 }
 
+function getIconColor(variant: ButtonVariant): string {
+  switch (variant) {
+    case 'primary':
+    case 'coral':
+      return COLORS.white;
+    case 'pill':
+      return COLORS.blueDark;
+    case 'soft':
+    case 'glass':
+    default:
+      return COLORS.navy;
+  }
+}
+
 const styles = StyleSheet.create({
   button: {
-    height: 52,
-    borderRadius: 26,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 7,
+    borderRadius: RADIUS.pill,
   },
 
-  primaryButton: {
-    backgroundColor: COLORS.forest,
+  // Variants
+  primary: {
+    backgroundColor: COLORS.charcoal,
+    ...SHADOW.fab,
   },
-
-  softButton: {
-    backgroundColor: COLORS.surfaceWarm,
+  coral: {
+    backgroundColor: COLORS.coral,
+    ...SHADOW.glow,
+  },
+  pill: {
+    backgroundColor: COLORS.white,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 14,
+    ...SHADOW.card,
+  },
+  soft: {
+    backgroundColor: COLORS.creamSecondary,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.peach,
+  },
+  glass: {
+    backgroundColor: COLORS.glass,
+    borderWidth: 1.5,
+    borderColor: COLORS.glassBorder,
   },
 
+  // Sizes
+  size_sm: {
+    height: 36,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+  },
+  size_md: {
+    height: 48,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+  },
+  size_lg: {
+    height: 54,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+  },
+
+  // Typography
   text: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 13,
+    fontFamily: 'Fredoka-SemiBold',
+    letterSpacing: 0.3,
   },
-
-  primaryText: {
+  text_primary: {
     color: COLORS.white,
   },
-
-  softText: {
-    color: COLORS.deepForest,
+  text_coral: {
+    color: COLORS.white,
+  },
+  text_pill: {
+    color: COLORS.blueDark,
+    fontFamily: 'Fredoka-Medium',
+  },
+  text_soft: {
+    color: COLORS.navy,
+  },
+  text_glass: {
+    color: COLORS.navy,
   },
 
-  icon: {
-    position: 'absolute',
-    right: 7,
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
+  textSize_sm: {
+    fontSize: 12,
+  },
+  textSize_md: {
+    fontSize: 14,
+  },
+  textSize_lg: {
+    fontSize: 16,
   },
 
-  primaryIcon: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
+  iconLeft: {
+    marginRight: 8,
   },
-
-  softIcon: {
-    backgroundColor: COLORS.mist,
+  iconRight: {
+    marginLeft: 8,
   },
 
   pressed: {
-    transform: [{ scale: 0.98 }],
-    opacity: 0.82,
+    transform: [{ scale: 0.97 }],
+    opacity: 0.88,
+  },
+  disabled: {
+    opacity: 0.5,
   },
 });

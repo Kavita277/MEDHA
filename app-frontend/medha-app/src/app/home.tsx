@@ -1,668 +1,642 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import React from 'react';
 import {
-  ImageBackground,
   Pressable,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { COLORS } from '../constants/colors';
-
-const forestImage =
-  'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1200&q=85';
+import { RADIUS, SHADOW } from '../constants/theme';
+import { MedhaBackground } from '../components/medha-background';
+import { MedhaBottomNav } from '../components/medha-bottom-nav';
+import { MedhaFloatingChat } from '../components/medha-floating-chat';
 
 export default function HomeScreen() {
   const router = useRouter();
 
   return (
-    <View style={styles.screen}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
-        {/* HEADER */}
-
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.small}>GOOD MORNING</Text>
-            <Text style={styles.logo}>MEDHA</Text>
-          </View>
-
-          <Pressable
-            style={styles.profileButton}
-            onPress={() => router.push('/profile')}
+    <MedhaBackground variant="home">
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.container}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
           >
-            <Text style={styles.profileLetter}>E</Text>
-          </Pressable>
-        </View>
+            {/* HEADER */}
+            <View style={styles.header}>
+              <View style={styles.greetingWrap}>
+                <Text style={styles.greetingTitle}>
+                  Good morning, Kavita 🌤️
+                </Text>
+                <Text style={styles.greetingSub}>
+                  Take a moment for yourself.
+                </Text>
+              </View>
 
-        {/* HERO */}
+              <View style={styles.headerActions}>
+                {/* Notifications button */}
+                <Pressable
+                  onPress={() => router.push('/notifications')}
+                  style={({ pressed }) => [
+                    styles.headerIconBtn,
+                    pressed && styles.pressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Notifications"
+                >
+                  <Ionicons
+                    name="notifications-outline"
+                    size={20}
+                    color={COLORS.navy}
+                  />
+                  <View style={styles.notificationDot} />
+                </Pressable>
 
-        <View style={styles.hero}>
-          <ImageBackground
-            source={{ uri: forestImage }}
-            style={styles.heroImage}
-            imageStyle={styles.heroImageStyle}
-          >
-            <View style={styles.heroOverlay} />
+                {/* Profile Avatar button */}
+                <Pressable
+                  onPress={() => router.push('/profile')}
+                  style={({ pressed }) => [
+                    styles.profileAvatar,
+                    pressed && styles.pressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Profile"
+                >
+                  <Text style={styles.avatarLetter}>K</Text>
+                </Pressable>
+              </View>
+            </View>
 
-            <View style={styles.heroContent}>
-              <Text style={styles.heroEyebrow}>A QUIET MOMENT</Text>
+            {/* HERO CHECK-IN CARD (Blue Gradient from HTML benchmark) */}
+            <View style={styles.heroWrap}>
+              <LinearGradient
+                colors={[COLORS.blueDark, '#6FC3E8']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.heroCard}
+              >
+                <View style={styles.heroBadge}>
+                  <Ionicons name="sparkles" size={12} color="#FFFFFF" />
+                  <Text style={styles.heroBadgeText}>A QUIET MOMENT</Text>
+                </View>
 
-              <Text style={styles.heroTitle}>
-                {'Take a breath.\nYou’re here.'}
-              </Text>
+                <Text style={styles.heroTitle}>
+                  How are you feeling today?
+                </Text>
 
-              <Text style={styles.heroText}>
-                Nothing needs to be solved all at once.
+                <Text style={styles.heroSub}>
+                  Take a moment to check in. Nothing needs to be solved all at once.
+                </Text>
+
+                <Pressable
+                  onPress={() => router.push('/check-in')}
+                  style={({ pressed }) => [
+                    styles.heroPill,
+                    pressed && styles.pressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Quick Check-in"
+                >
+                  <Text style={styles.heroPillText}>Quick Check-in →</Text>
+                </Pressable>
+              </LinearGradient>
+            </View>
+
+            {/* ARRIVE SECTION */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionEyebrow}>ARRIVE</Text>
+              <Text style={styles.sectionTitle}>
+                How would you like to arrive?
               </Text>
             </View>
-          </ImageBackground>
-        </View>
 
-        {/* ARRIVE / CHECK-IN */}
+            <View style={styles.arriveGrid}>
+              {/* Quick Check-in Card */}
+              <Pressable
+                onPress={() => router.push('/check-in')}
+                style={({ pressed }) => [
+                  styles.arriveCard,
+                  styles.arriveCardPeach,
+                  pressed && styles.pressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Check in with gentle questions"
+              >
+                <View style={[styles.arriveIconCircle, { backgroundColor: COLORS.peach }]}>
+                  <Ionicons name="sparkles" size={20} color={COLORS.coralDark} />
+                </View>
+                <Text style={styles.arriveCardTitle}>Check in</Text>
+                <Text style={styles.arriveCardSub}>A few gentle questions</Text>
+              </Pressable>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionEyebrow}>ARRIVE</Text>
+              {/* Speak / Voice Check-in Card */}
+              <Pressable
+                onPress={() => router.push('/voice')}
+                style={({ pressed }) => [
+                  styles.arriveCard,
+                  styles.arriveCardBlue,
+                  pressed && styles.pressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Speak what you are feeling"
+              >
+                <View style={[styles.arriveIconCircle, { backgroundColor: COLORS.blue }]}>
+                  <Ionicons name="mic" size={20} color={COLORS.blueDark} />
+                </View>
+                <Text style={styles.arriveCardTitle}>Speak</Text>
+                <Text style={styles.arriveCardSub}>Say what you’re feeling</Text>
+              </Pressable>
+            </View>
 
-          <Text style={styles.sectionTitle}>
-            How would you like to arrive?
-          </Text>
+            {/* YOUR SPACE SECTION (2x2 Pastel Action Cards from HTML) */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionEyebrow}>YOUR SPACE</Text>
+              <Text style={styles.sectionTitle}>Daily reflections & support</Text>
+            </View>
 
-          <View style={styles.arrivalRow}>
-            {/* QUICK CHECK-IN */}
+            <View style={styles.actionGrid}>
+              {/* 1. Journal */}
+              <Pressable
+                onPress={() => router.push('/journal')}
+                style={({ pressed }) => [
+                  styles.actionCard,
+                  styles.actionCardPink,
+                  pressed && styles.pressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Journal"
+              >
+                <View style={styles.actionTopRow}>
+                  <View style={[styles.emojiWrap, { backgroundColor: COLORS.pink }]}>
+                    <Text style={styles.emojiText}>📝</Text>
+                  </View>
+                  <Ionicons name="arrow-forward" size={16} color={COLORS.pinkDark} />
+                </View>
+                <Text style={styles.actionTitle}>Journal</Text>
+                <Text style={styles.actionSub}>Write freely, just for you</Text>
+              </Pressable>
 
+              {/* 2. Find Centre / Grounding */}
+              <Pressable
+                onPress={() => router.push('/grounding')}
+                style={({ pressed }) => [
+                  styles.actionCard,
+                  styles.actionCardGreen,
+                  pressed && styles.pressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Find centre and grounding pause"
+              >
+                <View style={styles.actionTopRow}>
+                  <View style={[styles.emojiWrap, { backgroundColor: COLORS.green }]}>
+                    <Text style={styles.emojiText}>🧘</Text>
+                  </View>
+                  <Ionicons name="arrow-forward" size={16} color={COLORS.greenDark} />
+                </View>
+                <Text style={styles.actionTitle}>Find centre</Text>
+                <Text style={styles.actionSub}>Breathe & ground pause</Text>
+              </Pressable>
+
+              {/* 3. Talk with MEDHA */}
+              <Pressable
+                onPress={() => router.push('/chat')}
+                style={({ pressed }) => [
+                  styles.actionCard,
+                  styles.actionCardLavender,
+                  pressed && styles.pressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Talk with MEDHA"
+              >
+                <View style={styles.actionTopRow}>
+                  <View style={[styles.emojiWrap, { backgroundColor: COLORS.lavender }]}>
+                    <Text style={styles.emojiText}>💬</Text>
+                  </View>
+                  <Ionicons name="arrow-forward" size={16} color={COLORS.lavenderDark} />
+                </View>
+                <Text style={styles.actionTitle}>Talk with MEDHA</Text>
+                <Text style={styles.actionSub}>Always here to listen</Text>
+              </Pressable>
+
+              {/* 4. Insights */}
+              <Pressable
+                onPress={() => router.push('/insights')}
+                style={({ pressed }) => [
+                  styles.actionCard,
+                  styles.actionCardYellow,
+                  pressed && styles.pressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Insights"
+              >
+                <View style={styles.actionTopRow}>
+                  <View style={[styles.emojiWrap, { backgroundColor: COLORS.yellow }]}>
+                    <Text style={styles.emojiText}>🌱</Text>
+                  </View>
+                  <Ionicons name="arrow-forward" size={16} color={COLORS.yellowDark} />
+                </View>
+                <Text style={styles.actionTitle}>Insights</Text>
+                <Text style={styles.actionSub}>Awareness of patterns</Text>
+              </Pressable>
+            </View>
+
+            {/* SELF-HELP FEATURE CARD */}
             <Pressable
-              style={styles.arrival}
-              onPress={() => router.push('/check-in')}
-            >
-              <View style={styles.arrivalIcon}>
-                <Ionicons
-                  name="sparkles-outline"
-                  size={21}
-                  color={COLORS.forest}
-                />
-              </View>
-
-              <Text style={styles.arrivalTitle}>Check in</Text>
-
-              <Text style={styles.arrivalText}>
-                A few gentle questions
-              </Text>
-            </Pressable>
-
-            {/* VOICE CHECK-IN */}
-
-            <Pressable
-              style={styles.arrival}
-              onPress={() => router.push('/voice')}
-            >
-              <View style={styles.arrivalIcon}>
-                <Ionicons
-                  name="mic-outline"
-                  size={21}
-                  color={COLORS.forest}
-                />
-              </View>
-
-              <Text style={styles.arrivalTitle}>Speak</Text>
-
-              <Text style={styles.arrivalText}>
-                Say what you’re feeling
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-
-        {/* YOUR SPACE */}
-
-        <View style={styles.section}>
-          <Text style={styles.sectionEyebrow}>YOUR SPACE</Text>
-
-          <View style={styles.list}>
-            {/* TALK WITH MEDHA */}
-
-            <Pressable
-              style={styles.listItem}
-              onPress={() => router.push('/chat')}
-            >
-              <View style={styles.listIcon}>
-                <Ionicons
-                  name="chatbubble-outline"
-                  size={20}
-                  color={COLORS.forest}
-                />
-              </View>
-
-              <View style={styles.listCopy}>
-                <Text style={styles.listTitle}>
-                  Talk with MEDHA
-                </Text>
-
-                <Text style={styles.listText}>
-                  Type or talk about what’s on your mind.
-                </Text>
-              </View>
-
-              <Ionicons
-                name="arrow-forward"
-                size={18}
-                color={COLORS.mutedText}
-              />
-            </Pressable>
-
-            {/* FIND YOUR CENTRE */}
-
-            <Pressable
-              style={styles.listItem}
-              onPress={() => router.push('/grounding')}
-            >
-              <View style={styles.listIcon}>
-                <Ionicons
-                  name="leaf-outline"
-                  size={20}
-                  color={COLORS.forest}
-                />
-              </View>
-
-              <View style={styles.listCopy}>
-                <Text style={styles.listTitle}>
-                  Find your centre
-                </Text>
-
-                <Text style={styles.listText}>
-                  A few quiet minutes to breathe and settle.
-                </Text>
-              </View>
-
-              <Ionicons
-                name="arrow-forward"
-                size={18}
-                color={COLORS.mutedText}
-              />
-            </Pressable>
-
-            {/* JOURNAL */}
-
-            <Pressable
-              style={styles.listItem}
-              onPress={() => router.push('/journal')}
-            >
-              <View style={styles.listIcon}>
-                <Ionicons
-                  name="book-outline"
-                  size={20}
-                  color={COLORS.forest}
-                />
-              </View>
-
-              <View style={styles.listCopy}>
-                <Text style={styles.listTitle}>
-                  Write in your journal
-                </Text>
-
-                <Text style={styles.listText}>
-                  Leave a thought somewhere private.
-                </Text>
-              </View>
-
-              <Ionicons
-                name="arrow-forward"
-                size={18}
-                color={COLORS.mutedText}
-              />
-            </Pressable>
-
-            {/* SELF HELP */}
-
-            <Pressable
-              style={styles.listItem}
               onPress={() => router.push('/self-help')}
+              style={({ pressed }) => [
+                styles.selfHelpCard,
+                pressed && styles.pressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Explore Self Help"
             >
-              <View style={styles.listIcon}>
-                <Ionicons
-                  name="heart-outline"
-                  size={20}
-                  color={COLORS.forest}
-                />
-              </View>
-
-              <View style={styles.listCopy}>
-                <Text style={styles.listTitle}>
-                  Self Help
+              <View style={styles.selfHelpCopy}>
+                <View style={styles.selfHelpEyebrowWrap}>
+                  <Text style={styles.selfHelpEyebrow}>A LITTLE SUPPORT</Text>
+                </View>
+                <Text style={styles.selfHelpTitle}>
+                  Small steps.{'\n'}A calmer moment.
+                </Text>
+                <Text style={styles.selfHelpText}>
+                  Explore gentle, evidence-informed guides for stress, anxiety, low mood and everyday wellbeing.
                 </Text>
 
-                <Text style={styles.listText}>
-                  Small, gentle steps for difficult moments.
-                </Text>
+                <View style={styles.selfHelpButtonRow}>
+                  <Text style={styles.selfHelpBtnText}>Explore Self Help</Text>
+                  <Ionicons name="arrow-forward" size={15} color={COLORS.coralDark} />
+                </View>
               </View>
 
-              <Ionicons
-                name="arrow-forward"
-                size={18}
-                color={COLORS.mutedText}
-              />
+              <View style={styles.selfHelpArt}>
+                <View style={styles.artCircleOuter}>
+                  <View style={styles.artCircleInner}>
+                    <Ionicons name="leaf" size={32} color={COLORS.sage} />
+                  </View>
+                </View>
+              </View>
             </Pressable>
+
+            {/* Space before bottom navbar */}
+            <View style={{ height: 90 }} />
+          </ScrollView>
+
+          {/* FLOATING ACTION CHAT BUTTON */}
+          <MedhaFloatingChat />
+
+          {/* BOTTOM GLASS NAVIGATION BAR */}
+          <View style={styles.bottomNavContainer}>
+            <MedhaBottomNav activeTab="home" />
           </View>
         </View>
-
-        {/* SELF HELP FEATURE CARD */}
-
-        <Pressable
-          style={styles.selfHelpCard}
-          onPress={() => router.push('/self-help')}
-        >
-          <View style={styles.selfHelpCopy}>
-            <Text style={styles.selfHelpEyebrow}>
-              A LITTLE SUPPORT
-            </Text>
-
-            <Text style={styles.selfHelpTitle}>
-              Small steps.{'\n'}A calmer moment.
-            </Text>
-
-            <Text style={styles.selfHelpText}>
-              Explore gentle, evidence-informed guides for stress,
-              anxiety, low mood and everyday wellbeing.
-            </Text>
-
-            <View style={styles.selfHelpButton}>
-              <Text style={styles.selfHelpButtonText}>
-                Explore Self Help
-              </Text>
-
-              <Ionicons
-                name="arrow-forward"
-                size={16}
-                color={COLORS.deepForest}
-              />
-            </View>
-          </View>
-
-          <View style={styles.selfHelpIllustration}>
-            <View style={styles.illustrationCircleLarge} />
-            <View style={styles.illustrationCircleSmall} />
-
-            <Ionicons
-              name="leaf-outline"
-              size={45}
-              color={COLORS.forest}
-            />
-          </View>
-        </Pressable>
-
-        {/* BOTTOM TOOLS */}
-
-        <View style={styles.tools}>
-          <Pressable
-            onPress={() => router.push('/ambient')}
-            style={styles.tool}
-          >
-            <Ionicons
-              name="musical-notes-outline"
-              size={19}
-              color={COLORS.forest}
-            />
-
-            <Text style={styles.toolText}>Ambient</Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => router.push('/notifications')}
-            style={styles.tool}
-          >
-            <Ionicons
-              name="notifications-outline"
-              size={19}
-              color={COLORS.forest}
-            />
-
-            <Text style={styles.toolText}>Notifications</Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => router.push('/support')}
-            style={styles.tool}
-          >
-            <Ionicons
-              name="heart-outline"
-              size={19}
-              color={COLORS.forest}
-            />
-
-            <Text style={styles.toolText}>Support</Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => router.push('/profile')}
-            style={styles.tool}
-          >
-            <Ionicons
-              name="person-outline"
-              size={19}
-              color={COLORS.forest}
-            />
-
-            <Text style={styles.toolText}>Profile</Text>
-          </Pressable>
-        </View>
-      </ScrollView>
-    </View>
+      </SafeAreaView>
+    </MedhaBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
+  safe: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
-
-  content: {
-    paddingHorizontal: 22,
-    paddingTop: 55,
-    paddingBottom: 50,
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
 
   /* HEADER */
-
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    marginBottom: 20,
+    marginTop: 6,
   },
-
-  small: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 8,
-    letterSpacing: 2,
-    color: COLORS.moss,
+  greetingWrap: {
+    flex: 1,
+    paddingRight: 12,
   },
-
-  logo: {
-    fontFamily: 'CormorantGaramond-Regular',
-    fontSize: 30,
-    color: COLORS.deepForest,
-    marginTop: 1,
+  greetingTitle: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 24,
+    lineHeight: 30,
+    color: COLORS.navy,
   },
-
-  profileButton: {
+  greetingSub: {
+    fontFamily: 'Nunito-SemiBold',
+    fontSize: 13,
+    lineHeight: 18,
+    color: COLORS.navyMuted,
+    marginTop: 3,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  headerIconBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: COLORS.deepForest,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',
+    ...SHADOW.card,
   },
-
-  profileLetter: {
-    fontFamily: 'CormorantGaramond-Regular',
-    fontSize: 22,
-    color: COLORS.white,
+  notificationDot: {
+    position: 'absolute',
+    top: 10,
+    right: 11,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: COLORS.coral,
   },
-
-  /* HERO */
-
-  hero: {
-    height: 360,
-    borderRadius: 30,
-    overflow: 'hidden',
-  },
-
-  heroImage: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-
-  heroImageStyle: {
-    resizeMode: 'cover',
-  },
-
-  heroOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(28,45,37,0.28)',
-  },
-
-  heroContent: {
-    padding: 25,
-  },
-
-  heroEyebrow: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 8,
-    letterSpacing: 2,
-    color: COLORS.stone,
-    marginBottom: 12,
-  },
-
-  heroTitle: {
-    fontFamily: 'CormorantGaramond-Regular',
-    fontSize: 42,
-    lineHeight: 42,
-    color: COLORS.white,
-  },
-
-  heroText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 11,
-    color: COLORS.stone,
-    marginTop: 12,
-  },
-
-  /* SECTIONS */
-
-  section: {
-    marginTop: 38,
-  },
-
-  sectionEyebrow: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 8,
-    letterSpacing: 2,
-    color: COLORS.forest,
-    marginBottom: 9,
-  },
-
-  sectionTitle: {
-    fontFamily: 'CormorantGaramond-Regular',
-    fontSize: 28,
-    color: COLORS.deepForest,
-  },
-
-  /* ARRIVAL */
-
-  arrivalRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 17,
-  },
-
-  arrival: {
-    flex: 1,
-    minHeight: 165,
-    borderRadius: 23,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: 17,
-  },
-
-  arrivalIcon: {
-    width: 43,
-    height: 43,
+  profileAvatar: {
+    width: 44,
+    height: 44,
     borderRadius: 22,
-    backgroundColor: COLORS.mist,
+    backgroundColor: COLORS.coral,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 22,
+    ...SHADOW.glow,
+  },
+  avatarLetter: {
+    fontFamily: 'Fredoka-Bold',
+    fontSize: 18,
+    color: COLORS.white,
   },
 
-  arrivalTitle: {
-    fontFamily: 'CormorantGaramond-Regular',
-    fontSize: 22,
-    color: COLORS.deepForest,
+  /* HERO CARD */
+  heroWrap: {
+    marginBottom: 26,
+    ...SHADOW.soft,
   },
-
-  arrivalText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 10,
-    lineHeight: 15,
-    color: COLORS.mutedText,
-    marginTop: 5,
-  },
-
-  /* LIST */
-
-  list: {
-    marginTop: 14,
-    gap: 9,
-  },
-
-  listItem: {
-    minHeight: 74,
-    borderRadius: 20,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingHorizontal: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 13,
-  },
-
-  listIcon: {
-    width: 39,
-    height: 39,
-    borderRadius: 20,
-    backgroundColor: COLORS.mist,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  listCopy: {
-    flex: 1,
-  },
-
-  listTitle: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 12,
-    color: COLORS.deepForest,
-  },
-
-  listText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 10,
-    color: COLORS.mutedText,
-    marginTop: 3,
-  },
-
-  /* SELF HELP FEATURE */
-
-  selfHelpCard: {
-    marginTop: 34,
-    minHeight: 235,
-    borderRadius: 27,
-    backgroundColor: '#DDE8D2',
+  heroCard: {
+    borderRadius: RADIUS.card + 6,
     padding: 22,
     overflow: 'hidden',
+  },
+  heroBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  heroBadgeText: {
+    fontFamily: 'Fredoka-Medium',
+    fontSize: 10,
+    letterSpacing: 1.2,
+    color: COLORS.white,
+  },
+  heroTitle: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 22,
+    lineHeight: 28,
+    color: COLORS.white,
+    marginBottom: 6,
+  },
+  heroSub: {
+    fontFamily: 'Nunito-SemiBold',
+    fontSize: 12,
+    lineHeight: 18,
+    color: 'rgba(255, 255, 255, 0.92)',
+    marginBottom: 16,
+    maxWidth: 290,
+  },
+  heroPill: {
+    alignSelf: 'flex-start',
+    backgroundColor: COLORS.white,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 16,
+    ...SHADOW.card,
+  },
+  heroPillText: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 13,
+    color: COLORS.blueDark,
   },
 
+  /* SECTION HEADERS */
+  sectionHeader: {
+    marginBottom: 12,
+  },
+  sectionEyebrow: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 10,
+    letterSpacing: 1.5,
+    color: COLORS.coralDark,
+    textTransform: 'uppercase',
+  },
+  sectionTitle: {
+    fontFamily: 'Fredoka-Medium',
+    fontSize: 17,
+    color: COLORS.navy,
+    marginTop: 2,
+  },
+
+  /* ARRIVE ROW */
+  arriveGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 26,
+  },
+  arriveCard: {
+    flex: 1,
+    borderRadius: RADIUS.card,
+    padding: 16,
+    borderWidth: 1.5,
+    ...SHADOW.card,
+  },
+  arriveCardPeach: {
+    backgroundColor: COLORS.creamSecondary,
+    borderColor: COLORS.peach,
+  },
+  arriveCardBlue: {
+    backgroundColor: COLORS.blueSoft,
+    borderColor: COLORS.blue,
+  },
+  arriveIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  arriveCardTitle: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 15,
+    color: COLORS.navy,
+    marginBottom: 2,
+  },
+  arriveCardSub: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 11,
+    color: COLORS.navyMuted,
+  },
+
+  /* ACTION 2X2 GRID (HTML benchmark) */
+  actionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 26,
+  },
+  actionCard: {
+    width: '48%',
+    borderRadius: RADIUS.card,
+    padding: 14,
+    borderWidth: 1.5,
+    ...SHADOW.card,
+  },
+  actionCardPink: {
+    backgroundColor: COLORS.pinkSoft,
+    borderColor: COLORS.pink,
+  },
+  actionCardGreen: {
+    backgroundColor: COLORS.greenSoft,
+    borderColor: COLORS.green,
+  },
+  actionCardLavender: {
+    backgroundColor: '#F3EFFF',
+    borderColor: COLORS.lavender,
+  },
+  actionCardYellow: {
+    backgroundColor: COLORS.yellowSoft,
+    borderColor: COLORS.yellow,
+  },
+  actionTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  emojiWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emojiText: {
+    fontSize: 18,
+  },
+  actionTitle: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 14,
+    color: COLORS.navy,
+    marginBottom: 2,
+  },
+  actionSub: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 10,
+    lineHeight: 14,
+    color: COLORS.navyMuted,
+  },
+
+  /* SELF HELP FEATURE CARD */
+  selfHelpCard: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.sageSoft,
+    borderWidth: 1.5,
+    borderColor: COLORS.sage,
+    borderRadius: RADIUS.card + 4,
+    padding: 18,
+    marginBottom: 14,
+    ...SHADOW.card,
+  },
   selfHelpCopy: {
     flex: 1,
-    zIndex: 2,
-    paddingRight: 6,
+    paddingRight: 10,
   },
-
-  selfHelpEyebrow: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 8,
-    letterSpacing: 1.8,
-    color: COLORS.forest,
-    marginBottom: 9,
-  },
-
-  selfHelpTitle: {
-    fontFamily: 'CormorantGaramond-Regular',
-    fontSize: 29,
-    lineHeight: 31,
-    color: COLORS.deepForest,
-  },
-
-  selfHelpText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 10,
-    lineHeight: 15,
-    color: COLORS.mutedText,
-    marginTop: 9,
-    maxWidth: 190,
-  },
-
-  selfHelpButton: {
+  selfHelpEyebrowWrap: {
     alignSelf: 'flex-start',
-    marginTop: 17,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: COLORS.surface,
+    backgroundColor: 'rgba(127, 168, 138, 0.22)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  selfHelpEyebrow: {
+    fontFamily: 'Fredoka-Medium',
+    fontSize: 9,
+    letterSpacing: 1.2,
+    color: COLORS.forestClassic,
+  },
+  selfHelpTitle: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 17,
+    lineHeight: 22,
+    color: COLORS.navy,
+    marginBottom: 6,
+  },
+  selfHelpText: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 11,
+    lineHeight: 16,
+    color: COLORS.navyMuted,
+    marginBottom: 12,
+  },
+  selfHelpButtonRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
+    gap: 6,
   },
-
-  selfHelpButtonText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 10,
-    color: COLORS.deepForest,
+  selfHelpBtnText: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 12,
+    color: COLORS.coralDark,
   },
-
-  selfHelpIllustration: {
-    width: 105,
-    height: 190,
-    marginLeft: -5,
+  selfHelpArt: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 76,
+  },
+  artCircleOuter: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: 'rgba(255, 255, 255, 0.65)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  artCircleInner: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.white,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  illustrationCircleLarge: {
+  /* BOTTOM NAV CONTAINER */
+  bottomNavContainer: {
     position: 'absolute',
-    width: 125,
-    height: 125,
-    borderRadius: 63,
-    backgroundColor: 'rgba(255,255,255,0.42)',
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
 
-  illustrationCircleSmall: {
-    position: 'absolute',
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    backgroundColor: 'rgba(255,255,255,0.5)',
-  },
-
-  /* BOTTOM TOOLS */
-
-  tools: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 30,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-
-  tool: {
-    alignItems: 'center',
-    gap: 7,
-  },
-
-  toolText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 8,
-    color: COLORS.mutedText,
+  pressed: {
+    transform: [{ scale: 0.97 }],
+    opacity: 0.9,
   },
 });

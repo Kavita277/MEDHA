@@ -6,28 +6,60 @@ export const SPACING = {
   md: 12,
   lg: 16,
   xl: 20,
-  xxl: 28,
-  xxxl: 36,
+  xxl: 24,
+  xxxl: 32,
   huge: 48,
 };
 
 export const RADIUS = {
-  small: 10,
-  medium: 16,
-  large: 22,
+  small: 12,
+  medium: 18,
+  large: 24,
+  card: 22,
+  modal: 32,
   pill: 999,
 };
 
 export const SHADOW = {
   soft: {
-    shadowColor: '#283A31',
+    shadowColor: COLORS.coralDark,
     shadowOffset: {
       width: 0,
       height: 8,
     },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.10,
+    shadowRadius: 18,
+    elevation: 3,
+  },
+  card: {
+    shadowColor: COLORS.navy,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    elevation: 2,
+  },
+  glow: {
+    shadowColor: COLORS.coral,
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.22,
     shadowRadius: 20,
-    elevation: 4,
+    elevation: 5,
+  },
+  fab: {
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.30,
+    shadowRadius: 16,
+    elevation: 6,
   },
 };
 
@@ -37,3 +69,12 @@ export const THEME = {
   radius: RADIUS,
   shadow: SHADOW,
 };
+
+// Aliases for compatibility
+export const Colors = {
+  light: COLORS,
+  dark: COLORS,
+  ...COLORS,
+};
+export const Spacing = SPACING;
+export const MaxContentWidth = 800;

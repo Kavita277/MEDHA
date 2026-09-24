@@ -1,13 +1,24 @@
-import { Ionicons } from '@expo/vector-icons';
+import React, { useMemo, useState } from 'react';
+import {
+  Alert,
+  Linking,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Alert, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+
+import { MedhaBackground } from '../components/medha-background';
+import { MedhaButton } from '../components/medha-button';
 import { COLORS } from '../constants/colors';
+import { RADIUS, SHADOW } from '../constants/theme';
 
 /*
   MEDHA Self Help
-  Adapted from Abby's supplied self-help prototype.
-
   Source intent preserved:
   - educational/supportive content
   - no diagnosis
@@ -19,10 +30,17 @@ import { COLORS } from '../constants/colors';
 
 type Step = { id: string; title: string; body: string; tip?: string };
 type Module = {
-  id: string; title: string; subtitle: string;
+  id: string;
+  title: string;
+  subtitle: string;
   category: 'condition' | 'population';
-  type: string; duration: string; icon: string;
-  color: string; sourceIds: string[]; steps: Step[];
+  type: string;
+  duration: string;
+  icon: string;
+  color: string;
+  borderColor: string;
+  sourceIds: string[];
+  steps: Step[];
 };
 
 const SOURCES = [
@@ -36,8 +54,15 @@ const SOURCES = [
 
 const MODULES: Module[] = [
   {
-    id: 'anxiety', title: 'Managing Anxiety', subtitle: 'Gentle steps for moments when worry feels overwhelming.',
-    category: 'condition', type: 'Anxiety', duration: '5 min', icon: '◌', color: '#DCE8D1',
+    id: 'anxiety',
+    title: 'Managing Anxiety',
+    subtitle: 'Gentle steps for moments when worry feels overwhelming.',
+    category: 'condition',
+    type: 'Anxiety',
+    duration: '5 min',
+    icon: '🌿',
+    color: COLORS.greenSoft,
+    borderColor: COLORS.green,
     sourceIds: ['who-stress', 'nimh-anxiety'],
     steps: [
       { id: 'a1', title: 'Pause for a moment', body: 'If you can, stop what you are doing for a moment. Sit somewhere comfortable and allow yourself a little space before deciding what to do next.' },
@@ -48,8 +73,15 @@ const MODULES: Module[] = [
     ],
   },
   {
-    id: 'panic', title: 'During a Panic Episode', subtitle: 'A simple guide for getting through an intense moment.',
-    category: 'condition', type: 'Panic', duration: '4 min', icon: '○', color: '#E8DED5',
+    id: 'panic',
+    title: 'During a Panic Episode',
+    subtitle: 'A simple guide for getting through an intense moment.',
+    category: 'condition',
+    type: 'Panic',
+    duration: '4 min',
+    icon: '🌊',
+    color: COLORS.blueSoft,
+    borderColor: COLORS.blue,
     sourceIds: ['nhs-panic'],
     steps: [
       { id: 'p1', title: 'Stay where you are if possible', body: 'If it is safe to do so, remain where you are and give yourself time for the intense feelings to settle.' },
@@ -59,8 +91,15 @@ const MODULES: Module[] = [
     ],
   },
   {
-    id: 'low-mood', title: 'Taking the First Small Step', subtitle: 'Gentle activity planning when everything feels difficult.',
-    category: 'condition', type: 'Low mood', duration: '7 min', icon: '☀', color: '#EEE5C9',
+    id: 'low-mood',
+    title: 'Taking the First Small Step',
+    subtitle: 'Gentle activity planning when everything feels difficult.',
+    category: 'condition',
+    type: 'Low mood',
+    duration: '7 min',
+    icon: '☀️',
+    color: COLORS.yellowSoft,
+    borderColor: COLORS.yellow,
     sourceIds: ['who-depression'],
     steps: [
       { id: 'd1', title: 'Start smaller than you think', body: 'When motivation is low, choose a task that feels realistically manageable rather than trying to change everything at once.' },
@@ -71,8 +110,15 @@ const MODULES: Module[] = [
     ],
   },
   {
-    id: 'stress', title: 'When Stress Feels Too Much', subtitle: 'Ground yourself and return to what matters.',
-    category: 'condition', type: 'Stress', duration: '5 min', icon: '♡', color: '#DCE7D6',
+    id: 'stress',
+    title: 'When Stress Feels Too Much',
+    subtitle: 'Ground yourself and return to what matters.',
+    category: 'condition',
+    type: 'Stress',
+    duration: '5 min',
+    icon: '🌸',
+    color: COLORS.pinkSoft,
+    borderColor: COLORS.pink,
     sourceIds: ['who-stress'],
     steps: [
       { id: 's1', title: 'Notice and name', body: 'Notice what thoughts, feelings or sensations are present. Naming what is happening can create a little distance from the experience.' },
@@ -83,8 +129,15 @@ const MODULES: Module[] = [
     ],
   },
   {
-    id: 'adolescents', title: 'For Adolescents', subtitle: 'Tools for emotions, stress, friendships and confidence.',
-    category: 'population', type: 'Adolescents', duration: '6 min', icon: '✦', color: '#E7DDD2',
+    id: 'adolescents',
+    title: 'For Adolescents',
+    subtitle: 'Tools for emotions, stress, friendships and confidence.',
+    category: 'population',
+    type: 'Adolescents',
+    duration: '6 min',
+    icon: '✨',
+    color: '#F3EFFF',
+    borderColor: COLORS.lavender,
     sourceIds: ['unicef'],
     steps: [
       { id: 'ad1', title: 'Name the emotion', body: 'Try putting a simple name to what you are feeling: worried, angry, lonely, overwhelmed, disappointed or something else.' },
@@ -95,8 +148,15 @@ const MODULES: Module[] = [
     ],
   },
   {
-    id: 'older-adults', title: 'For Older Adults', subtitle: 'Small routines for connection, movement and wellbeing.',
-    category: 'population', type: 'Older adults', duration: '5 min', icon: '○', color: '#DDE5D3',
+    id: 'older-adults',
+    title: 'For Older Adults',
+    subtitle: 'Small routines for connection, movement and wellbeing.',
+    category: 'population',
+    type: 'Older adults',
+    duration: '5 min',
+    icon: '🍃',
+    color: COLORS.sageSoft,
+    borderColor: COLORS.sage,
     sourceIds: ['nia'],
     steps: [
       { id: 'oa1', title: 'Start gently', body: 'Choose an activity appropriate for your abilities and current health. Even small amounts of movement can be a starting point.' },
@@ -106,8 +166,15 @@ const MODULES: Module[] = [
     ],
   },
   {
-    id: 'caregivers', title: 'For Caregivers', subtitle: 'Protecting your own wellbeing while supporting someone else.',
-    category: 'population', type: 'Caregivers', duration: '6 min', icon: '♡', color: '#E8DDD4',
+    id: 'caregivers',
+    title: 'For Caregivers',
+    subtitle: 'Protecting your own wellbeing while supporting someone else.',
+    category: 'population',
+    type: 'Caregivers',
+    duration: '6 min',
+    icon: '💛',
+    color: COLORS.creamSecondary,
+    borderColor: COLORS.peach,
     sourceIds: ['nia'],
     steps: [
       { id: 'c1', title: 'Notice your own needs', body: 'Supporting someone else can be demanding. Take a moment to notice your own energy, emotions and needs.' },
@@ -122,59 +189,148 @@ const MODULES: Module[] = [
 function Guide({ module, onBack }: { module: Module; onBack: () => void }) {
   const [step, setStep] = useState(0);
   const current = module.steps[step];
+  const progressPercent = Math.round(((step + 1) / module.steps.length) * 100);
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.guide}>
-        <Pressable onPress={onBack} style={styles.back}><Ionicons name="arrow-back" size={19} color={COLORS.deepForest} /></Pressable>
-        <Text style={styles.guideType}>{module.type.toUpperCase()}</Text>
-        <Text style={styles.guideTitle}>{module.title}</Text>
-        <View style={styles.progressTop}>
-          <Text style={styles.progressLabel}>STEP {step + 1} OF {module.steps.length}</Text>
-          <Text style={styles.progressLabel}>{Math.round(((step + 1) / module.steps.length) * 100)}%</Text>
-        </View>
-        <View style={styles.track}><View style={[styles.fill, { width: `${((step + 1) / module.steps.length) * 100}%` }]} /></View>
+    <MedhaBackground variant="calm">
+      <SafeAreaView style={styles.screen}>
+        <ScrollView contentContainerStyle={styles.guideContent} showsVerticalScrollIndicator={false}>
+          {/* TOP BAR */}
+          <View style={styles.guideTopBar}>
+            <Pressable
+              onPress={onBack}
+              style={({ pressed }) => [
+                styles.iconButton,
+                pressed && styles.pressed,
+              ]}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Back to self-help modules"
+            >
+              <Ionicons name="arrow-back" size={20} color={COLORS.navy} />
+            </Pressable>
 
-        <View style={[styles.illustration, { backgroundColor: module.color }]}>
-          <View style={styles.softCircle} />
-          <Text style={styles.bigIcon}>{module.icon}</Text>
-          <Text style={styles.stepNumber}>{step + 1}</Text>
-        </View>
+            <View style={styles.guideTypeBadge}>
+              <Text style={styles.guideType}>{module.type.toUpperCase()}</Text>
+            </View>
+          </View>
 
-        <Text style={styles.stepTitle}>{current.title}</Text>
-        <Text style={styles.stepBody}>{current.body}</Text>
-        {current.tip && <View style={styles.tip}><Text style={styles.tipLabel}>GENTLE TIP</Text><Text style={styles.tipText}>{current.tip}</Text></View>}
+          <Text style={styles.guideTitle}>{module.title}</Text>
 
-        <View style={styles.dots}>
-          {module.steps.map((item, index) => <View key={item.id} style={[styles.dot, index === step && styles.activeDot]} />)}
-        </View>
+          {/* PROGRESS */}
+          <View style={styles.progressTop}>
+            <Text style={styles.progressLabel}>STEP {step + 1} OF {module.steps.length}</Text>
+            <Text style={styles.progressLabel}>{progressPercent}%</Text>
+          </View>
+          <View style={styles.track}>
+            <View style={[styles.fill, { width: `${progressPercent}%` }]} />
+          </View>
 
-        <View style={styles.nav}>
-          <Pressable disabled={step === 0} onPress={() => setStep((value) => value - 1)} style={[styles.secondary, step === 0 && { opacity: 0.35 }]}>
-            <Text style={styles.secondaryText}>Back</Text>
-          </Pressable>
-          <Pressable onPress={() => step === module.steps.length - 1 ? Alert.alert('Nice work', 'Small steps count.', [{ text: 'Done', onPress: onBack }]) : setStep((value) => value + 1)} style={styles.primary}>
-            <Text style={styles.primaryText}>{step === module.steps.length - 1 ? 'Complete' : 'Next step'}</Text>
-          </Pressable>
-        </View>
+          {/* ILLUSTRATION BANNER */}
+          <View style={[styles.illustrationBanner, { backgroundColor: module.color, borderColor: module.borderColor }]}>
+            <View style={styles.softCircle} />
+            <Text style={styles.bigEmoji}>{module.icon}</Text>
+            <View style={styles.stepBadge}>
+              <Text style={styles.stepBadgeText}>Step {step + 1}</Text>
+            </View>
+          </View>
 
-        <Text style={styles.swipeNote}>Move through the guide at your own pace.</Text>
+          {/* STEP CONTENT */}
+          <Text style={styles.stepTitle}>{current.title}</Text>
+          <Text style={styles.stepBody}>{current.body}</Text>
 
-        <View style={styles.sources}>
-          <Text style={styles.sourcesTitle}>Evidence & sources</Text>
-          {module.sourceIds.map((id) => {
-            const source = SOURCES.find((item) => item.id === id);
-            if (!source) return null;
-            return (
-              <Pressable key={source.id} style={styles.sourceRow} onPress={() => Linking.openURL(source.url)}>
-                <View style={styles.sourceIcon}><Ionicons name="arrow-up-right" size={14} color={COLORS.forest} /></View>
-                <View style={{ flex: 1 }}><Text style={styles.sourceOrg}>{source.org}</Text><Text style={styles.sourceTitle}>{source.title}</Text></View>
-              </Pressable>
-            );
-          })}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          {current.tip && (
+            <View style={styles.tipCard}>
+              <View style={styles.tipHeader}>
+                <Ionicons name="bulb-outline" size={15} color={COLORS.yellowDark} />
+                <Text style={styles.tipLabel}>GENTLE TIP</Text>
+              </View>
+              <Text style={styles.tipText}>{current.tip}</Text>
+            </View>
+          )}
+
+          {/* DOTS */}
+          <View style={styles.dots}>
+            {module.steps.map((item, index) => (
+              <View
+                key={item.id}
+                style={[
+                  styles.dot,
+                  index === step && styles.activeDot,
+                ]}
+              />
+            ))}
+          </View>
+
+          {/* STEP NAVIGATION */}
+          <View style={styles.navRow}>
+            <View style={{ flex: 1 }}>
+              <MedhaButton
+                title="Back"
+                variant="soft"
+                size="md"
+                disabled={step === 0}
+                onPress={() => setStep((value) => value - 1)}
+              />
+            </View>
+
+            <View style={{ flex: 2 }}>
+              <MedhaButton
+                title={step === module.steps.length - 1 ? 'Complete Guide' : 'Next step'}
+                variant="coral"
+                size="md"
+                icon={step === module.steps.length - 1 ? 'checkmark-circle' : 'arrow-forward'}
+                iconPosition="right"
+                onPress={() => {
+                  if (step === module.steps.length - 1) {
+                    Alert.alert('Nice work', 'Small steps count. You took time for yourself today.', [
+                      { text: 'Done', onPress: onBack },
+                    ]);
+                  } else {
+                    setStep((value) => value + 1);
+                  }
+                }}
+              />
+            </View>
+          </View>
+
+          <Text style={styles.swipeNote}>Move through the guide at your own pace.</Text>
+
+          {/* EVIDENCE & SOURCES (Fix TS2820 by using open-outline) */}
+          <View style={styles.sources}>
+            <Text style={styles.sourcesTitle}>Evidence & Sources</Text>
+            <Text style={styles.sourcesSub}>
+              Grounded in recommendations from recognized public health bodies.
+            </Text>
+
+            {module.sourceIds.map((id) => {
+              const source = SOURCES.find((item) => item.id === id);
+              if (!source) return null;
+
+              return (
+                <Pressable
+                  key={source.id}
+                  style={({ pressed }) => [
+                    styles.sourceRow,
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={() => Linking.openURL(source.url)}
+                  accessibilityRole="link"
+                >
+                  <View style={styles.sourceIcon}>
+                    <Ionicons name="open-outline" size={15} color={COLORS.coralDark} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.sourceOrg}>{source.org}</Text>
+                    <Text style={styles.sourceTitle}>{source.title}</Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </MedhaBackground>
   );
 }
 
@@ -182,115 +338,577 @@ export default function SelfHelpScreen() {
   const router = useRouter();
   const [filter, setFilter] = useState<'all' | 'condition' | 'population'>('all');
   const [selected, setSelected] = useState<Module | null>(null);
-  const filtered = useMemo(() => filter === 'all' ? MODULES : MODULES.filter((item) => item.category === filter), [filter]);
 
-  if (selected) return <Guide module={selected} onBack={() => setSelected(null)} />;
+  const filtered = useMemo(
+    () => (filter === 'all' ? MODULES : MODULES.filter((item) => item.category === filter)),
+    [filter]
+  );
+
+  if (selected) {
+    return <Guide module={selected} onBack={() => setSelected(null)} />;
+  }
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <Pressable onPress={() => router.back()} style={styles.back}><Ionicons name="arrow-back" size={19} color={COLORS.deepForest} /></Pressable>
-        <Text style={styles.eyebrow}>YOUR WELLBEING</Text>
-        <Text style={styles.heroTitle}>
-        {'Small steps.\nA calmer moment.'}
-         </Text>
-        <Text style={styles.heroText}>Explore simple, evidence-informed guides for difficult moments and everyday wellbeing.</Text>
-
-        <View style={styles.filters}>
-          {[
-            { id: 'all' as const, label: 'All' },
-            { id: 'condition' as const, label: 'Conditions' },
-            { id: 'population' as const, label: 'For You' },
-          ].map((item) => (
-            <Pressable key={item.id} onPress={() => setFilter(item.id)} style={[styles.filter, filter === item.id && styles.filterActive]}>
-              <Text style={[styles.filterText, filter === item.id && styles.filterTextActive]}>{item.label}</Text>
-            </Pressable>
-          ))}
-        </View>
-
-        <Text style={styles.sectionTitle}>Guides for difficult moments</Text>
-        <View style={styles.grid}>
-          {filtered.map((module) => (
-            <Pressable key={module.id} onPress={() => setSelected(module)} style={[styles.card, { backgroundColor: module.color }]}>
-              <View style={styles.cardIcon}><Text style={styles.cardIconText}>{module.icon}</Text></View>
-              <Text style={styles.cardTitle}>{module.title}</Text>
-              <Text style={styles.cardText}>{module.subtitle}</Text>
-              <View style={styles.cardFooter}><Text style={styles.duration}>{module.duration}</Text><View style={styles.arrow}><Ionicons name="arrow-forward" size={15} color={COLORS.forest} /></View></View>
-            </Pressable>
-          ))}
-        </View>
-
-        <View style={styles.support}>
-          <Text style={styles.supportTitle}>Need more support?</Text>
-          <Text style={styles.supportText}>Self-help can be useful, but it does not replace professional care. If you are struggling significantly or feel unsafe, reach out for professional or emergency support.</Text>
-          <Pressable onPress={() => Linking.openURL('https://www.dghs.mohfw.gov.in/national-mental-health-programme.php')} style={styles.supportButton}>
-            <Text style={styles.supportButtonText}>Tele-MANAS · 14416</Text>
+    <MedhaBackground variant="calm">
+      <SafeAreaView style={styles.screen}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* HEADER */}
+          <Pressable
+            onPress={() => router.back()}
+            style={({ pressed }) => [
+              styles.iconButton,
+              pressed && styles.pressed,
+            ]}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Back to Home"
+          >
+            <Ionicons name="arrow-back" size={20} color={COLORS.navy} />
           </Pressable>
-        </View>
 
-        <Text style={styles.disclaimer}>MEDHA self-help content is educational and should not be used to diagnose a mental health condition or replace professional medical care.</Text>
-      </ScrollView>
-    </SafeAreaView>
+          <View style={styles.header}>
+            <Text style={styles.eyebrow}>YOUR WELLBEING</Text>
+            <Text style={styles.heroTitle}>
+              {'Small steps.\nA calmer moment.'}
+            </Text>
+            <Text style={styles.heroText}>
+              Explore simple, evidence-informed guides for difficult moments and everyday wellbeing.
+            </Text>
+          </View>
+
+          {/* CATEGORY FILTER PILLS */}
+          <View style={styles.filters}>
+            {[
+              { id: 'all' as const, label: 'All Guides' },
+              { id: 'condition' as const, label: 'Difficult Moments' },
+              { id: 'population' as const, label: 'For You' },
+            ].map((item) => {
+              const active = filter === item.id;
+              return (
+                <Pressable
+                  key={item.id}
+                  onPress={() => setFilter(item.id)}
+                  style={({ pressed }) => [
+                    styles.filterChip,
+                    active && styles.filterChipActive,
+                    pressed && styles.pressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                >
+                  <Text style={[styles.filterText, active && styles.filterTextActive]}>
+                    {item.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* MODULE GRID */}
+          <Text style={styles.sectionTitle}>Guides for difficult moments</Text>
+
+          <View style={styles.grid}>
+            {filtered.map((module) => (
+              <Pressable
+                key={module.id}
+                onPress={() => setSelected(module)}
+                style={({ pressed }) => [
+                  styles.moduleCard,
+                  { backgroundColor: module.color, borderColor: module.borderColor },
+                  pressed && styles.pressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={`${module.title}, duration ${module.duration}`}
+              >
+                <View style={styles.cardIcon}>
+                  <Text style={styles.cardEmoji}>{module.icon}</Text>
+                </View>
+
+                <Text style={styles.cardTitle}>{module.title}</Text>
+                <Text style={styles.cardText}>{module.subtitle}</Text>
+
+                <View style={styles.cardFooter}>
+                  <View style={styles.durationBadge}>
+                    <Ionicons name="time-outline" size={11} color={COLORS.navyMuted} />
+                    <Text style={styles.durationText}>{module.duration}</Text>
+                  </View>
+
+                  <View style={styles.arrowCircle}>
+                    <Ionicons name="arrow-forward" size={14} color={COLORS.coralDark} />
+                  </View>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* TELE-MANAS & EMERGENCY SUPPORT CARD */}
+          <View style={styles.supportCard}>
+            <View style={styles.supportIconWrap}>
+              <Ionicons name="heart" size={20} color={COLORS.coralDark} />
+            </View>
+
+            <Text style={styles.supportTitle}>Need more support?</Text>
+            <Text style={styles.supportText}>
+              Self-help can be useful, but it does not replace professional care. If you are struggling significantly or feel unsafe, reach out for qualified support.
+            </Text>
+
+            <Pressable
+              onPress={() => Linking.openURL('https://www.dghs.mohfw.gov.in/national-mental-health-programme.php')}
+              style={({ pressed }) => [
+                styles.teleManasButton,
+                pressed && styles.pressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Contact Tele-MANAS helpline 14416"
+            >
+              <Ionicons name="call" size={15} color={COLORS.white} />
+              <Text style={styles.teleManasText}>Tele-MANAS · 14416</Text>
+            </Pressable>
+          </View>
+
+          {/* DISCLAIMER */}
+          <Text style={styles.disclaimer}>
+            MEDHA self-help content is educational and should not be used to diagnose a mental health condition or replace professional medical care.
+          </Text>
+        </ScrollView>
+      </SafeAreaView>
+    </MedhaBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F8F5EC' },
-  content: { padding: 22, paddingTop: 50, paddingBottom: 42 },
-  guide: { padding: 22, paddingTop: 50, paddingBottom: 45 },
-  back: { width: 40, height: 40, justifyContent: 'center', marginBottom: 12 },
-  eyebrow: { fontFamily: 'Inter-Medium', fontSize: 8, letterSpacing: 1.8, color: COLORS.forest, marginTop: 5 },
-  heroTitle: { fontFamily: 'CormorantGaramond-Regular', fontSize: 38, lineHeight: 39, color: COLORS.deepForest, marginTop: 10 },
-  heroText: { fontFamily: 'Inter-Regular', fontSize: 11, lineHeight: 17, color: COLORS.mutedText, marginTop: 11, maxWidth: 330 },
-  filters: { flexDirection: 'row', gap: 8, marginTop: 22 },
-  filter: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 18, backgroundColor: COLORS.surfaceWarm },
-  filterActive: { backgroundColor: COLORS.forest },
-  filterText: { fontFamily: 'Inter-Medium', fontSize: 10, color: COLORS.mutedText },
-  filterTextActive: { color: COLORS.white },
-  sectionTitle: { fontFamily: 'CormorantGaramond-Regular', fontSize: 25, color: COLORS.deepForest, marginTop: 30, marginBottom: 13 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 10 },
-  card: { width: '48.2%', minHeight: 205, borderRadius: 23, padding: 17 },
-  cardIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.52)', alignItems: 'center', justifyContent: 'center', marginBottom: 15 },
-  cardIconText: { fontSize: 22, color: COLORS.forest },
-  cardTitle: { fontFamily: 'CormorantGaramond-Regular', fontSize: 21, lineHeight: 23, color: COLORS.deepForest },
-  cardText: { fontFamily: 'Inter-Regular', fontSize: 9, lineHeight: 14, color: '#667064', marginTop: 6 },
-  cardFooter: { marginTop: 'auto', paddingTop: 13, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  duration: { fontFamily: 'Inter-Regular', fontSize: 9, color: COLORS.mutedText },
-  arrow: { width: 29, height: 29, borderRadius: 15, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center' },
-  support: { marginTop: 28, padding: 20, borderRadius: 23, backgroundColor: '#EADFD7' },
-  supportTitle: { fontFamily: 'CormorantGaramond-Regular', fontSize: 23, color: '#3D342F' },
-  supportText: { fontFamily: 'Inter-Regular', fontSize: 10, lineHeight: 16, color: '#665B55', marginTop: 5 },
-  supportButton: { alignSelf: 'flex-start', marginTop: 14, paddingHorizontal: 15, paddingVertical: 10, borderRadius: 18, backgroundColor: COLORS.forest },
-  supportButtonText: { fontFamily: 'Inter-Medium', fontSize: 10, color: COLORS.white },
-  disclaimer: { fontFamily: 'Inter-Regular', fontSize: 8, lineHeight: 13, textAlign: 'center', color: COLORS.subtleText, marginTop: 20 },
-  guideType: { fontFamily: 'Inter-Medium', fontSize: 8, letterSpacing: 1.6, color: COLORS.moss },
-  guideTitle: { fontFamily: 'CormorantGaramond-Regular', fontSize: 32, lineHeight: 34, color: COLORS.deepForest, marginTop: 6 },
-  progressTop: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 22 },
-  progressLabel: { fontFamily: 'Inter-Medium', fontSize: 8, letterSpacing: 1.1, color: COLORS.mutedText },
-  track: { height: 5, borderRadius: 3, backgroundColor: COLORS.stone, overflow: 'hidden', marginTop: 8 },
-  fill: { height: '100%', borderRadius: 3, backgroundColor: COLORS.forest },
-  illustration: { height: 230, borderRadius: 28, marginTop: 22, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  softCircle: { position: 'absolute', width: 210, height: 210, borderRadius: 105, backgroundColor: 'rgba(255,255,255,0.36)' },
-  bigIcon: { fontSize: 60, color: COLORS.forest },
-  stepNumber: { position: 'absolute', top: 18, left: 19, fontFamily: 'Inter-Medium', fontSize: 10, color: COLORS.mutedText },
-  stepTitle: { fontFamily: 'CormorantGaramond-Regular', fontSize: 28, lineHeight: 32, color: COLORS.deepForest, marginTop: 24 },
-  stepBody: { fontFamily: 'Inter-Regular', fontSize: 12, lineHeight: 19, color: COLORS.mutedText, marginTop: 8 },
-  tip: { marginTop: 14, padding: 14, borderRadius: 17, backgroundColor: COLORS.mist },
-  tipLabel: { fontFamily: 'Inter-Medium', fontSize: 8, letterSpacing: 1.3, color: COLORS.forest },
-  tipText: { fontFamily: 'Inter-Regular', fontSize: 10, lineHeight: 15, color: COLORS.mutedText, marginTop: 4 },
-  dots: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 5, marginTop: 20 },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.stone },
-  activeDot: { width: 18, backgroundColor: COLORS.forest },
-  nav: { flexDirection: 'row', gap: 9, marginTop: 16 },
-  secondary: { flex: 1, height: 51, borderRadius: 26, backgroundColor: COLORS.surfaceWarm, alignItems: 'center', justifyContent: 'center' },
-  secondaryText: { fontFamily: 'Inter-Medium', fontSize: 11, color: COLORS.mutedText },
-  primary: { flex: 2, height: 51, borderRadius: 26, backgroundColor: COLORS.forest, alignItems: 'center', justifyContent: 'center' },
-  primaryText: { fontFamily: 'Inter-Medium', fontSize: 11, color: COLORS.white },
-  swipeNote: { fontFamily: 'Inter-Regular', fontSize: 9, textAlign: 'center', color: COLORS.subtleText, marginTop: 10 },
-  sources: { marginTop: 25 },
-  sourcesTitle: { fontFamily: 'CormorantGaramond-Regular', fontSize: 21, color: COLORS.deepForest, marginBottom: 7 },
-  sourceRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: COLORS.border, gap: 9 },
-  sourceIcon: { width: 30, height: 30, borderRadius: 15, backgroundColor: COLORS.mist, alignItems: 'center', justifyContent: 'center' },
-  sourceOrg: { fontFamily: 'Inter-Medium', fontSize: 8, letterSpacing: 0.7, color: COLORS.moss },
-  sourceTitle: { fontFamily: 'Inter-Regular', fontSize: 10, color: COLORS.text, marginTop: 2 },
+  screen: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 40,
+  },
+  guideContent: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 45,
+  },
+
+  iconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    ...SHADOW.card,
+  },
+
+  header: {
+    marginBottom: 18,
+  },
+  eyebrow: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 10,
+    letterSpacing: 1.5,
+    color: COLORS.coralDark,
+    textTransform: 'uppercase',
+  },
+  heroTitle: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 28,
+    lineHeight: 34,
+    color: COLORS.navy,
+    marginTop: 6,
+  },
+  heroText: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 13,
+    lineHeight: 19,
+    color: COLORS.navyMuted,
+    marginTop: 8,
+    maxWidth: 320,
+  },
+
+  /* FILTERS */
+  filters: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: RADIUS.pill,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
+    ...SHADOW.card,
+  },
+  filterChipActive: {
+    backgroundColor: COLORS.charcoal,
+    borderColor: COLORS.charcoal,
+  },
+  filterText: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 12,
+    color: COLORS.navyMuted,
+  },
+  filterTextActive: {
+    color: COLORS.white,
+    fontFamily: 'Fredoka-Medium',
+  },
+
+  sectionTitle: {
+    fontFamily: 'Fredoka-Medium',
+    fontSize: 18,
+    color: COLORS.navy,
+    marginBottom: 14,
+  },
+
+  /* MODULE GRID */
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  moduleCard: {
+    width: '48%',
+    minHeight: 200,
+    borderRadius: RADIUS.card,
+    borderWidth: 1.5,
+    padding: 16,
+    ...SHADOW.card,
+  },
+  cardIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  cardEmoji: {
+    fontSize: 20,
+  },
+  cardTitle: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 16,
+    lineHeight: 20,
+    color: COLORS.navy,
+  },
+  cardText: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 11,
+    lineHeight: 16,
+    color: COLORS.navyMuted,
+    marginTop: 6,
+  },
+  cardFooter: {
+    marginTop: 'auto',
+    paddingTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  durationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.65)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  durationText: {
+    fontFamily: 'Nunito-SemiBold',
+    fontSize: 10,
+    color: COLORS.navyMuted,
+  },
+  arrowCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOW.card,
+  },
+
+  /* SUPPORT / TELE-MANAS CARD */
+  supportCard: {
+    marginTop: 30,
+    padding: 20,
+    borderRadius: RADIUS.card + 4,
+    backgroundColor: COLORS.creamSecondary,
+    borderWidth: 1.5,
+    borderColor: COLORS.peach,
+    ...SHADOW.soft,
+  },
+  supportIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 122, 89, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  supportTitle: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 19,
+    color: COLORS.navy,
+  },
+  supportText: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 12,
+    lineHeight: 18,
+    color: COLORS.navyMuted,
+    marginTop: 6,
+  },
+  teleManasButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    alignSelf: 'flex-start',
+    marginTop: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.coral,
+    ...SHADOW.glow,
+  },
+  teleManasText: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 13,
+    color: COLORS.white,
+  },
+
+  disclaimer: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 10,
+    lineHeight: 15,
+    textAlign: 'center',
+    color: COLORS.subtleText,
+    marginTop: 22,
+    paddingHorizontal: 10,
+  },
+
+  /* GUIDE VIEW */
+  guideTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  guideTypeBadge: {
+    backgroundColor: COLORS.creamSecondary,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+    borderColor: COLORS.peach,
+  },
+  guideType: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 10,
+    letterSpacing: 1.2,
+    color: COLORS.coralDark,
+  },
+  guideTitle: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 26,
+    lineHeight: 32,
+    color: COLORS.navy,
+    marginTop: 6,
+  },
+  progressTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  progressLabel: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 10,
+    letterSpacing: 1.1,
+    color: COLORS.navyMuted,
+  },
+  track: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(0, 0, 0, 0.08)',
+    overflow: 'hidden',
+    marginTop: 8,
+  },
+  fill: {
+    height: '100%',
+    borderRadius: 3,
+    backgroundColor: COLORS.coral,
+  },
+
+  illustrationBanner: {
+    height: 180,
+    borderRadius: RADIUS.card + 4,
+    borderWidth: 1.5,
+    marginTop: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    ...SHADOW.card,
+  },
+  softCircle: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+  },
+  bigEmoji: {
+    fontSize: 54,
+  },
+  stepBadge: {
+    position: 'absolute',
+    top: 14,
+    left: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  stepBadgeText: {
+    fontFamily: 'Fredoka-Medium',
+    fontSize: 11,
+    color: COLORS.navy,
+  },
+
+  stepTitle: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 22,
+    lineHeight: 28,
+    color: COLORS.navy,
+    marginTop: 22,
+  },
+  stepBody: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 14,
+    lineHeight: 22,
+    color: COLORS.navyMuted,
+    marginTop: 8,
+  },
+  tipCard: {
+    marginTop: 16,
+    padding: 14,
+    borderRadius: RADIUS.medium,
+    backgroundColor: COLORS.yellowSoft,
+    borderWidth: 1.5,
+    borderColor: COLORS.yellow,
+    ...SHADOW.card,
+  },
+  tipHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  tipLabel: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 10,
+    letterSpacing: 1.2,
+    color: COLORS.yellowDark,
+  },
+  tipText: {
+    fontFamily: 'Nunito-SemiBold',
+    fontSize: 12,
+    lineHeight: 17,
+    color: COLORS.navy,
+  },
+  dots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 24,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: COLORS.peach2,
+  },
+  activeDot: {
+    width: 18,
+    borderRadius: 4,
+    backgroundColor: COLORS.coral,
+  },
+  navRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+  },
+  swipeNote: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 11,
+    textAlign: 'center',
+    color: COLORS.navyMuted,
+    marginTop: 12,
+  },
+
+  /* SOURCES */
+  sources: {
+    marginTop: 30,
+    paddingTop: 18,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  sourcesTitle: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 17,
+    color: COLORS.navy,
+  },
+  sourcesSub: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 11,
+    color: COLORS.navyMuted,
+    marginTop: 2,
+    marginBottom: 10,
+  },
+  sourceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderLight,
+    gap: 10,
+  },
+  sourceIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.creamSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sourceOrg: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 9,
+    letterSpacing: 0.8,
+    color: COLORS.coralDark,
+  },
+  sourceTitle: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 12,
+    color: COLORS.navy,
+    marginTop: 1,
+  },
+
+  pressed: {
+    transform: [{ scale: 0.97 }],
+    opacity: 0.88,
+  },
 });
