@@ -263,6 +263,27 @@ export default function SettingsScreen() {
               <Ionicons name="chevron-forward" size={18} color={COLORS.navyMuted} />
             </Pressable>
 
+            {/* Quick Support Access (Distress PIN) */}
+            <Pressable
+              onPress={() => router.push('/distress-pin')}
+              style={({ pressed }) => [
+                styles.menuItem,
+                styles.menuItemBorder,
+                pressed && styles.pressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Quick Support Distress PIN"
+            >
+              <View style={[styles.menuIconBadge, { backgroundColor: '#EDE7FB' }]}>
+                <Ionicons name="key-outline" size={18} color="#7856D6" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.menuTitle}>Quick Support Access</Text>
+                <Text style={styles.menuSubText}>Verify personal Distress PIN</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={COLORS.navyMuted} />
+            </Pressable>
+
             {/* About MEDHA */}
             <Pressable
               onPress={handleAbout}

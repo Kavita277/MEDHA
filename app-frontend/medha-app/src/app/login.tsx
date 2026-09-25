@@ -36,10 +36,20 @@ export default function LoginScreen() {
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const handleLogin = () => {
-    if (role === 'therapist') {
-      router.replace('/therapist');
-    } else {
-      router.replace('/home');
+    switch (role) {
+      case 'therapist':
+        router.replace('/therapist');
+        break;
+      case 'guardian':
+        router.replace('/guardian' as any);
+        break;
+      case 'admin':
+        router.replace('/admin' as any);
+        break;
+      case 'patient':
+      default:
+        router.replace('/home');
+        break;
     }
   };
 

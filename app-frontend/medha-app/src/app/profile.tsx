@@ -307,7 +307,28 @@ export default function ProfileScreen() {
               <Ionicons name="chevron-forward" size={18} color={COLORS.navyMuted} />
             </Pressable>
 
-            {/* 7. Help & Support */}
+            {/* 7. Quick Support Access (Distress PIN) */}
+            <Pressable
+              onPress={() => router.push('/distress-pin')}
+              style={({ pressed }) => [
+                styles.menuItem,
+                styles.menuItemBorder,
+                pressed && styles.pressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Quick Support Access"
+            >
+              <View style={[styles.menuIconBadge, { backgroundColor: '#E2F5E8' }]}>
+                <Ionicons name="key-outline" size={18} color="#2D8A4E" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.menuLabel}>Quick Support Access</Text>
+                <Text style={styles.menuSubLabel}>Direct access via personal Distress PIN</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={COLORS.navyMuted} />
+            </Pressable>
+
+            {/* 8. Help & Support */}
             <Pressable
               onPress={() => router.push('/support')}
               style={({ pressed }) => [
