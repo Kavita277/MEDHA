@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { MedhaScreenBackground } from '../components/medha-screen-background';
 
 const MEDHA_LOGO = require('../../assets/images/medha-logo.png');
 
@@ -73,6 +74,7 @@ export default function LoadingScreen() {
 
   return (
     <View style={styles.container}>
+      <MedhaScreenBackground />
       <StatusBar style="dark" />
       <Animated.View
         style={[
@@ -112,7 +114,7 @@ export default function LoadingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAF9F6',
+    backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
   },

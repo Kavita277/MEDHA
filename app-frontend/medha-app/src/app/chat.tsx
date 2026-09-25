@@ -3,18 +3,19 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { COLORS } from '../constants/colors';
-import { RADIUS, SHADOW } from '../constants/theme';
+import { RADIUS, SHADOW, TOP_HEADER_PADDING } from '../constants/theme';
+import { MedhaScreenBackground } from '../components/medha-screen-background';
 import {
   ApiError,
   createSession,
@@ -60,6 +61,7 @@ const QUICK_SUGGESTIONS = [
 
 export default function ChatScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ fromVoice?: string }>();
   const scrollViewRef = useRef<ScrollView>(null);
   const [text, setText] = useState('');
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
@@ -67,6 +69,27 @@ export default function ChatScreen() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [errorState, setErrorState] = useState<{ message: string; retryText?: string } | null>(null);
   const [safetyTriggered, setSafetyTriggered] = useState(false);
+
+  // If arriving from Voice flow, confirm that message was recorded without faking an AI answer
+  useEffect(() => {
+    if (params.fromVoice === 'true') {
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === 'voice-recorded-confirm')) return prev;
+        return [
+          ...prev,
+          {
+            id: 'voice-recorded-confirm',
+            from: 'you',
+            text: '🎙️ Voice message recorded. We recorded your message.',
+            timestamp: 'Just now',
+          },
+        ];
+      });
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 200);
+    }
+  }, [params.fromVoice]);
 
   useEffect(() => {
     let isMounted = true;
@@ -193,8 +216,10 @@ export default function ChatScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
+    <View style={styles.root}>
+      <MedhaScreenBackground />
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
         style={styles.keyboard}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
@@ -431,13 +456,18 @@ export default function ChatScreen() {
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  root: {
     flex: 1,
     backgroundColor: COLORS.porcelain,
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
   keyboard: {
     flex: 1,
@@ -449,10 +479,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingTop: TOP_HEADER_PADDING - 6,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0, 0, 0, 0.04)',
-    backgroundColor: COLORS.porcelain,
+    backgroundColor: 'transparent',
   },
   iconButton: {
     width: 44,
@@ -652,11 +683,12 @@ const styles = StyleSheet.create({
     color: COLORS.navy,
   },
 
-  /* COMPOSER */
+  /* COMPOSER (ELEVATED 22PX UPWARD FROM SYSTEM DOCK) */
   composerWrapper: {
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: COLORS.porcelain,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'android' ? 32 : 30,
+    backgroundColor: 'transparent',
   },
   composer: {
     minHeight: 52,

@@ -28,8 +28,8 @@ export const COLORS = {
   charcoal: '#181E2C',
   obsidian: '#181E2C',
   midnightNavy: '#181E2C',
-  porcelain: '#FAF9F6',
-  canvas: '#FAF9F6',
+  porcelain: '#FAF3D6',
+  canvas: '#FAF3D6',
 
   // Mood Calendar tokens
   moodYellow: '#FDE37E',

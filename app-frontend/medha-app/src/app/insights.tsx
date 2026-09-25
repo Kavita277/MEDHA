@@ -2,16 +2,17 @@ import React, { useState } from 'react';
 import {
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { RADIUS, SHADOW } from '../constants/theme';
+import { RADIUS, SHADOW, TOP_HEADER_PADDING } from '../constants/theme';
+import { MedhaScreenBackground } from '../components/medha-screen-background';
 
 type TrendStatus = 'Improving' | 'Stable' | 'Needs Attention';
 
@@ -43,9 +44,11 @@ export default function InsightsScreen() {
   const trend = mockTrend;
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FAF9F6" />
-      <ScrollView
+    <View style={styles.root}>
+      <MedhaScreenBackground />
+      <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" />
+        <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
@@ -243,17 +246,22 @@ export default function InsightsScreen() {
         )}
       </ScrollView>
     </SafeAreaView>
+  </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#FAF3D6',
+  },
   safe: {
     flex: 1,
-    backgroundColor: '#FAF9F6',
+    backgroundColor: 'transparent',
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) + 10 : 12,
+    paddingTop: TOP_HEADER_PADDING,
     paddingBottom: 40,
   },
 
@@ -440,7 +448,7 @@ const styles = StyleSheet.create({
   },
   bar: {
     width: '100%',
-    backgroundColor: '#FF735C',
+    backgroundColor: '#7FA88A',
     borderRadius: 10,
   },
   dayText: {

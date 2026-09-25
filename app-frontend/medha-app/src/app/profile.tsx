@@ -4,20 +4,21 @@ import {
   Modal,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { MedhaBottomNav } from '../components/medha-bottom-nav';
 import { COLORS } from '../constants/colors';
-import { RADIUS, SHADOW } from '../constants/theme';
+import { RADIUS, SHADOW, TOP_HEADER_PADDING } from '../constants/theme';
 import { clearAccessToken } from '../services/api';
+import { MedhaScreenBackground } from '../components/medha-screen-background';
 
 const languages = [
   { code: 'en', label: 'English' },
@@ -110,7 +111,7 @@ export default function ProfileScreen() {
 
   const performLogout = () => {
     clearAccessToken();
-    router.replace('/signup');
+    router.replace('/login');
   };
 
   const handleLogout = () => {
@@ -139,8 +140,10 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <View style={styles.root}>
+      <MedhaScreenBackground />
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -627,13 +630,18 @@ export default function ProfileScreen() {
         </View>
       </Modal>
     </SafeAreaView>
+  </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  root: {
     flex: 1,
     backgroundColor: COLORS.porcelain,
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
   container: {
     flex: 1,
@@ -641,7 +649,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingTop: TOP_HEADER_PADDING,
     paddingBottom: 24,
   },
 

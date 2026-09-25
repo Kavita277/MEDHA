@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
 import {
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { MedhaBottomNav } from '../components/medha-bottom-nav';
 import { COLORS } from '../constants/colors';
-import { RADIUS, SHADOW } from '../constants/theme';
+import { RADIUS, SHADOW, TOP_HEADER_PADDING } from '../constants/theme';
+import { MedhaScreenBackground } from '../components/medha-screen-background';
 
 export type MoodType = 'happy' | 'calm' | 'thoughtful' | 'stressed' | 'tired';
 
@@ -140,8 +141,10 @@ export default function MoodCalendarScreen() {
   const selectedRecord = SEPTEMBER_MOODS[selectedDay];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <View style={styles.root}>
+      <MedhaScreenBackground />
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -292,13 +295,18 @@ export default function MoodCalendarScreen() {
         <MedhaBottomNav activeTab="explore" />
       </View>
     </SafeAreaView>
+  </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  root: {
     flex: 1,
     backgroundColor: COLORS.porcelain,
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
   container: {
     flex: 1,
@@ -306,7 +314,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingTop: TOP_HEADER_PADDING,
     paddingBottom: 24,
   },
 

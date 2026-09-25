@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
+  Platform,
   Pressable,
-  SafeAreaView,
+  StatusBar,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -49,12 +51,20 @@ export default function GroundingScreen() {
       setPhase('Ready');
       setDurationSecs('Tap play to begin');
       if (status.playing) {
-        player.pause();
+        try {
+          player.pause();
+        } catch {
+          // ignore if already paused or released
+        }
       }
       return;
     }
 
-    player.play();
+    try {
+      player.play();
+    } catch {
+      // ignore
+    }
 
     let isMounted = true;
 
@@ -118,12 +128,6 @@ export default function GroundingScreen() {
       glowOpacity.stopAnimation();
     };
   }, [running]);
-
-  useEffect(() => {
-    return () => {
-      player.pause();
-    };
-  }, [player]);
 
   return (
     <LinearGradient
@@ -322,12 +326,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
 
-  /* TOP BAR */
+  /* TOP BAR (SAFE AREA DOWNWARD ADJUSTMENT FOR PHYSICAL DEVICE) */
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 12,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) + 16 : 28,
     paddingBottom: 8,
   },
   iconButton: {
@@ -397,13 +401,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  /* CONTROLS */
+  /* CONTROLS (ELEVATED 24PX UPWARD) */
   bottomControls: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 28,
-    paddingBottom: 28,
+    paddingBottom: Platform.OS === 'android' ? 52 : 48,
   },
   controlAuxButton: {
     width: 50,

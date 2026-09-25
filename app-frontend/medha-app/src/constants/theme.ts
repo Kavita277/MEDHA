@@ -1,4 +1,14 @@
+import { Platform, StatusBar } from 'react-native';
 import { COLORS } from './colors';
+
+// Physical phone top breathing room below safe-area/status-bar
+export const TOP_HEADER_PADDING = Platform.OS === 'android'
+  ? (StatusBar.currentHeight ?? 32) + 26
+  : 28;
+
+export const TOP_HOME_PADDING = Platform.OS === 'android'
+  ? (StatusBar.currentHeight ?? 32) + 38
+  : 52;
 
 export const SPACING = {
   xs: 4,

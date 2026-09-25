@@ -3,18 +3,19 @@ import {
   Alert,
   Linking,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { MedhaBottomNav } from '../components/medha-bottom-nav';
 import { COLORS } from '../constants/colors';
-import { RADIUS, SHADOW } from '../constants/theme';
+import { RADIUS, SHADOW, TOP_HEADER_PADDING } from '../constants/theme';
+import { MedhaScreenBackground } from '../components/medha-screen-background';
 
 /*
   MEDHA Self Help Library (Screen 18)
@@ -209,8 +210,10 @@ function ModuleGuideView({ module, onBack }: { module: Module; onBack: () => voi
   const progressPercent = Math.round(((step + 1) / module.steps.length) * 100);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
+    <View style={styles.root}>
+      <MedhaScreenBackground />
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView
         contentContainerStyle={styles.guideScrollContent}
         showsVerticalScrollIndicator={false}
       >
@@ -363,6 +366,7 @@ function ModuleGuideView({ module, onBack }: { module: Module; onBack: () => voi
         </View>
       </ScrollView>
     </SafeAreaView>
+  </View>
   );
 }
 
@@ -394,8 +398,10 @@ export default function SelfHelpScreen() {
   ];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <View style={styles.root}>
+      <MedhaScreenBackground />
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -458,6 +464,7 @@ export default function SelfHelpScreen() {
                   accessibilityState={{ selected: active }}
                 >
                   <Text
+                    numberOfLines={1}
                     style={[
                       styles.filterText,
                       active && styles.filterTextActive,
@@ -539,13 +546,18 @@ export default function SelfHelpScreen() {
         <MedhaBottomNav activeTab="explore" />
       </View>
     </SafeAreaView>
+  </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  root: {
     flex: 1,
     backgroundColor: COLORS.porcelain,
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
   container: {
     flex: 1,
@@ -553,7 +565,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingTop: TOP_HEADER_PADDING,
     paddingBottom: 24,
   },
 
@@ -618,12 +630,14 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
   filterChip: {
+    height: 38,
     paddingHorizontal: 16,
-    paddingVertical: 8,
     borderRadius: RADIUS.pill,
     backgroundColor: COLORS.white,
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
     ...SHADOW.subtle,
   },
   filterChipActive: {
@@ -633,11 +647,14 @@ const styles = StyleSheet.create({
   filterText: {
     fontFamily: 'Nunito-SemiBold',
     fontSize: 13,
+    lineHeight: 18,
     color: COLORS.navyMuted,
   },
   filterTextActive: {
     color: COLORS.white,
     fontFamily: 'Fredoka-Medium',
+    fontSize: 13,
+    lineHeight: 18,
   },
 
   /* RESOURCE LIST */
@@ -756,7 +773,7 @@ const styles = StyleSheet.create({
   guideScrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingTop: TOP_HEADER_PADDING,
     paddingBottom: 40,
   },
   guideTypeBadge: {

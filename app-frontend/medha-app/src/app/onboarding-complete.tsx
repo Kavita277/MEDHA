@@ -2,11 +2,11 @@ import React, { useEffect, useRef } from 'react';
 import {
   Animated,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -109,7 +109,7 @@ export default function OnboardingCompleteScreen() {
           {/* PRIMARY ENTER ACTION */}
           <View style={styles.actionWrapper}>
             <Pressable
-              onPress={() => router.replace('/home')}
+              onPress={() => router.replace('/personalize')}
               style={({ pressed }) => [
                 styles.enterButton,
                 pressed && styles.pressed,

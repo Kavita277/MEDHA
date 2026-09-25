@@ -2,17 +2,18 @@ import React, { useState } from 'react';
 import {
   Linking,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { COLORS } from '../constants/colors';
-import { RADIUS, SHADOW } from '../constants/theme';
+import { RADIUS, SHADOW, TOP_HEADER_PADDING } from '../constants/theme';
+import { MedhaScreenBackground } from '../components/medha-screen-background';
 
 type RecommendationType =
   | 'counselling'
@@ -195,9 +196,24 @@ export default function SupportScreen() {
     }
   };
 
+  const getRecButtonTheme = (rec: Recommendation) => {
+    if (rec.priority === 'Immediate' || rec.type === 'crisis') {
+      return { bg: '#FFEADB', text: '#A33516', border: 'rgba(232, 102, 63, 0.25)' };
+    }
+    if (rec.type === 'coping') {
+      return { bg: '#E2F5E8', text: '#1B6336', border: 'rgba(45, 138, 78, 0.25)' };
+    }
+    if (rec.type === 'counselling') {
+      return { bg: '#EDE7FB', text: '#5337A8', border: 'rgba(120, 86, 214, 0.25)' };
+    }
+    return { bg: '#E1F2FE', text: '#026597', border: 'rgba(2, 132, 199, 0.25)' };
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <View style={styles.root}>
+      <MedhaScreenBackground />
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -357,43 +373,46 @@ export default function SupportScreen() {
           </View>
 
           <View style={styles.recommendationsList}>
-            {recommendations.map((rec) => (
-              <View key={rec.id} style={styles.recCard}>
-                <View style={styles.recHeaderRow}>
-                  <View style={styles.recIconWrap}>
-                    <Ionicons name={getRecIcon(rec.type)} size={18} color={COLORS.navy} />
+            {recommendations.map((rec) => {
+              const theme = getRecButtonTheme(rec);
+              return (
+                <View key={rec.id} style={styles.recCard}>
+                  <View style={styles.recHeaderRow}>
+                    <View style={styles.recIconWrap}>
+                      <Ionicons name={getRecIcon(rec.type)} size={18} color={COLORS.navy} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={[
+                          styles.recPriorityTag,
+                          rec.priority === 'Immediate' && styles.recPriorityImmediate,
+                          rec.priority === 'Important' && styles.recPriorityImportant,
+                        ]}
+                      >
+                        {rec.priority.toUpperCase()}
+                      </Text>
+                      <Text style={styles.recTitle}>{rec.title}</Text>
+                    </View>
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={[
-                        styles.recPriorityTag,
-                        rec.priority === 'Immediate' && styles.recPriorityImmediate,
-                        rec.priority === 'Important' && styles.recPriorityImportant,
-                      ]}
-                    >
-                      {rec.priority.toUpperCase()}
-                    </Text>
-                    <Text style={styles.recTitle}>{rec.title}</Text>
-                  </View>
+
+                  <Text style={styles.recDesc}>{rec.description}</Text>
+
+                  <Pressable
+                    onPress={() => handleRecommendation(rec)}
+                    style={({ pressed }) => [
+                      styles.recButton,
+                      { backgroundColor: theme.bg, borderColor: theme.border },
+                      pressed && styles.pressed,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={rec.cta}
+                  >
+                    <Text style={[styles.recButtonText, { color: theme.text }]}>{rec.cta}</Text>
+                    <Ionicons name="arrow-forward" size={15} color={theme.text} />
+                  </Pressable>
                 </View>
-
-                <Text style={styles.recDesc}>{rec.description}</Text>
-
-                <Pressable
-                  onPress={() => handleRecommendation(rec)}
-                  style={({ pressed }) => [
-                    styles.recButton,
-                    rec.priority === 'Immediate' ? styles.recButtonCoral : styles.recButtonNavy,
-                    pressed && styles.pressed,
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel={rec.cta}
-                >
-                  <Text style={styles.recButtonText}>{rec.cta}</Text>
-                  <Ionicons name="arrow-forward" size={15} color={COLORS.white} />
-                </Pressable>
-              </View>
-            ))}
+              );
+            })}
           </View>
 
           {/* DISCLAIMER FOOTER */}
@@ -406,13 +425,18 @@ export default function SupportScreen() {
         </ScrollView>
       </View>
     </SafeAreaView>
+  </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  root: {
     flex: 1,
     backgroundColor: COLORS.porcelain,
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
   container: {
     flex: 1,
@@ -420,7 +444,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingTop: TOP_HEADER_PADDING,
     paddingBottom: 36,
   },
 
@@ -683,25 +707,20 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   recButton: {
-    height: 44,
+    height: 42,
     borderRadius: RADIUS.pill,
+    borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
     paddingHorizontal: 18,
     alignSelf: 'flex-start',
-  },
-  recButtonNavy: {
-    backgroundColor: COLORS.navy,
-  },
-  recButtonCoral: {
-    backgroundColor: COLORS.coral,
+    ...SHADOW.subtle,
   },
   recButtonText: {
     fontFamily: 'Fredoka-Medium',
     fontSize: 13,
-    color: COLORS.white,
   },
 
   /* DISCLAIMER */

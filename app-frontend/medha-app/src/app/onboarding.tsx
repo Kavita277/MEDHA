@@ -3,12 +3,12 @@ import {
   ImageBackground,
   Platform,
   Pressable,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -48,7 +48,7 @@ export default function OnboardingScreen() {
     if (current < slides.length - 1) {
       setCurrent(current + 1);
     } else {
-      router.replace('/signup');
+      router.replace('/onboarding-complete');
     }
   }
 
@@ -79,7 +79,7 @@ export default function OnboardingScreen() {
               <Text style={styles.logo}>MEDHA</Text>
 
               <Pressable
-                onPress={() => router.replace('/signup')}
+                onPress={() => router.replace('/onboarding-complete')}
                 style={({ pressed }) => [
                   styles.skipButton,
                   pressed && styles.pressed,
@@ -218,12 +218,12 @@ const styles = StyleSheet.create({
     maxWidth: 320,
   },
 
-  /* BOTTOM CONTROLS */
+  /* BOTTOM CONTROLS (ELEVATED 28PX UPWARD FOR PHYSICAL DEVICE SAFE AREA) */
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingBottom: 8,
+    paddingBottom: Platform.OS === 'android' ? 36 : 32,
   },
   dots: {
     flexDirection: 'row',

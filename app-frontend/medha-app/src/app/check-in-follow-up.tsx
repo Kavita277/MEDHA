@@ -2,18 +2,19 @@ import React, { useState } from 'react';
 import {
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { COLORS } from '../constants/colors';
-import { RADIUS, SHADOW } from '../constants/theme';
+import { RADIUS, SHADOW, TOP_HEADER_PADDING } from '../constants/theme';
+import { MedhaScreenBackground } from '../components/medha-screen-background';
 
 export interface AdaptiveTopic {
   id: string;
@@ -88,6 +89,7 @@ export default function CheckInFollowUpScreen() {
 
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [selectedAdaptiveAnswer, setSelectedAdaptiveAnswer] = useState<string | null>(null);
+  const [completed, setCompleted] = useState(false);
 
   const currentTopic = topics.find((t) => t.id === selectedTopic);
 
@@ -98,23 +100,15 @@ export default function CheckInFollowUpScreen() {
 
   const handleContinue = () => {
     if (!selectedTopic) return;
-
-    router.push({
-      pathname: '/voice',
-      params: {
-        mood: params.mood ?? '',
-        moodComparison: params.moodComparison ?? '',
-        topic: currentTopic?.label ?? selectedTopic,
-        adaptiveQuestion: currentTopic?.adaptiveQuestion ?? '',
-        adaptiveAnswer: selectedAdaptiveAnswer ?? '',
-      },
-    });
+    setCompleted(true);
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FAF9F6" />
-      <ScrollView
+    <View style={styles.root}>
+      <MedhaScreenBackground />
+      <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" />
+        <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
@@ -138,7 +132,7 @@ export default function CheckInFollowUpScreen() {
             <View style={styles.progressTrack}>
               <View style={styles.progressFill} />
             </View>
-            <Text style={styles.progressText}>Step 2 of 3</Text>
+            <Text style={styles.progressText}>Step 2 of 2</Text>
           </View>
         </View>
 
@@ -279,7 +273,7 @@ export default function CheckInFollowUpScreen() {
           </View>
         )}
 
-        {/* BOTTOM SECTION: PRIMARY CONTINUE BUTTON & SUPPORTIVE HINT */}
+        {/* BOTTOM SECTION: PRIMARY COMPLETE BUTTON */}
         <View style={styles.bottomSection}>
           <Pressable
             disabled={!selectedTopic}
@@ -290,35 +284,73 @@ export default function CheckInFollowUpScreen() {
               pressed && selectedTopic && styles.pressed,
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Continue to voice check-in"
+            accessibilityLabel="Complete Check-in"
           >
             <Text style={[styles.buttonText, !selectedTopic && styles.buttonTextDisabled]}>
-              Continue
+              Complete Check-in
             </Text>
             <Ionicons
-              name="mic-outline"
+              name="checkmark"
               size={18}
               color={selectedTopic ? COLORS.white : 'rgba(24, 30, 44, 0.4)'}
             />
           </Pressable>
 
           <Text style={styles.hint}>
-            Next, MEDHA will listen. You can speak freely for a moment.
+            Your check-in is private and saved to your reflection rhythm.
           </Text>
         </View>
       </ScrollView>
+
+      {/* GENTLE COMPLETION OVERLAY */}
+      {completed && (
+        <View style={styles.completionOverlay}>
+          <View style={styles.completionCard}>
+            <View style={styles.completionIconCircle}>
+              <Ionicons name="sparkles" size={26} color="#FF735C" />
+            </View>
+            <Text style={styles.completionTitle}>Check-in Complete</Text>
+            <Text style={styles.completionSubtitle}>
+              You showed up for yourself today.
+            </Text>
+            <Text style={styles.completionBody}>
+              {params.mood
+                ? `You noted you felt ${params.mood.toLowerCase()}${selectedTopic ? ` regarding ${currentTopic?.label ?? selectedTopic}` : ''}. Consistent check-ins help build emotional clarity over time.`
+                : 'Taking a quiet moment to pause and notice how you feel builds mindful clarity and emotional strength.'}
+            </Text>
+
+            <Pressable
+              onPress={() => router.replace('/home')}
+              style={({ pressed }) => [
+                styles.completionBtn,
+                pressed && styles.pressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Return to Home"
+            >
+              <Text style={styles.completionBtnText}>Return to Home</Text>
+              <Ionicons name="arrow-forward" size={17} color="#FFFFFF" />
+            </Pressable>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
+  </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: COLORS.porcelain,
+  },
   safe: {
     flex: 1,
-    backgroundColor: '#FAF9F6',
+    backgroundColor: 'transparent',
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) + 10 : 12,
+    paddingTop: TOP_HEADER_PADDING,
     paddingBottom: 40,
   },
 
@@ -361,7 +393,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressFill: {
-    width: '66%',
+    width: '100%',
     height: '100%',
     borderRadius: 2.5,
     backgroundColor: '#FF735C',
@@ -599,5 +631,72 @@ const styles = StyleSheet.create({
   pressed: {
     transform: [{ scale: 0.98 }],
     opacity: 0.88,
+  },
+
+  /* COMPLETION OVERLAY */
+  completionOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(24, 30, 44, 0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 22,
+    zIndex: 99,
+  },
+  completionCard: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: RADIUS.card,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+    ...SHADOW.dock,
+  },
+  completionIconCircle: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#FFEADB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  completionTitle: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 22,
+    color: '#181E2C',
+    textAlign: 'center',
+  },
+  completionSubtitle: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 14,
+    color: '#FF735C',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  completionBody: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#5B6478',
+    textAlign: 'center',
+    marginTop: 10,
+    marginBottom: 22,
+  },
+  completionBtn: {
+    width: '100%',
+    height: 50,
+    borderRadius: RADIUS.pill,
+    backgroundColor: '#181E2C',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    ...SHADOW.subtle,
+  },
+  completionBtnText: {
+    fontFamily: 'Fredoka-SemiBold',
+    fontSize: 14,
+    color: '#FFFFFF',
   },
 });

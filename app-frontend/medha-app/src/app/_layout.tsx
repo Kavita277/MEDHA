@@ -60,7 +60,7 @@ export default function RootLayout() {
           headerShown: false,
           animation: 'fade',
           contentStyle: {
-            backgroundColor: '#FFF6EE',
+            backgroundColor: '#FAF3D6',
           },
         }}
       />

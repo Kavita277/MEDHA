@@ -3,17 +3,18 @@ import {
   Alert,
   Modal,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { COLORS } from '../constants/colors';
-import { RADIUS, SHADOW } from '../constants/theme';
+import { RADIUS, SHADOW, TOP_HEADER_PADDING } from '../constants/theme';
+import { MedhaScreenBackground } from '../components/medha-screen-background';
 
 type AppearanceMode = 'light' | 'dark' | 'system';
 
@@ -47,8 +48,10 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <View style={styles.root}>
+      <MedhaScreenBackground />
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -278,28 +281,6 @@ export default function SettingsScreen() {
               <Ionicons name="chevron-forward" size={18} color={COLORS.navyMuted} />
             </Pressable>
           </View>
-
-          {/* THERAPIST WORKSPACE LINK */}
-          <View style={styles.clinicalGroup}>
-            <Pressable
-              onPress={() => router.push('/therapist-login')}
-              style={({ pressed }) => [
-                styles.menuItem,
-                pressed && styles.pressed,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="Therapist Portal"
-            >
-              <View style={[styles.menuIconBadge, { backgroundColor: '#E3F2FD' }]}>
-                <Ionicons name="medkit-outline" size={18} color="#1E88E5" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.menuTitle}>Therapist Workspace</Text>
-                <Text style={styles.menuSubText}>For authorized clinical clinicians</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={COLORS.navyMuted} />
-            </Pressable>
-          </View>
         </ScrollView>
       </View>
 
@@ -387,13 +368,18 @@ export default function SettingsScreen() {
         </View>
       </Modal>
     </SafeAreaView>
+  </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  root: {
     flex: 1,
     backgroundColor: COLORS.porcelain,
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
   container: {
     flex: 1,
@@ -401,7 +387,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingTop: TOP_HEADER_PADDING,
     paddingBottom: 36,
   },
 

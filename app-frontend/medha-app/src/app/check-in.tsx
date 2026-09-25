@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
 import {
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { COLORS } from '../constants/colors';
-import { RADIUS, SHADOW } from '../constants/theme';
+import { RADIUS, SHADOW, TOP_HEADER_PADDING } from '../constants/theme';
 import { MedhaBottomNav } from '../components/medha-bottom-nav';
+import { MedhaScreenBackground } from '../components/medha-screen-background';
 
 const moods = [
   { label: 'Overwhelmed', icon: 'sad-outline' as const, bg: '#FFEBF1', color: '#E05375' },
@@ -63,8 +64,10 @@ export default function CheckInScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
+    <View style={styles.root}>
+      <MedhaScreenBackground />
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.container}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
@@ -84,6 +87,15 @@ export default function CheckInScreen() {
             >
               <Ionicons name="arrow-back" size={20} color={COLORS.navy} />
             </Pressable>
+
+            {ageAcknowledged && (
+              <View style={styles.progressBadge}>
+                <View style={styles.progressTrack}>
+                  <View style={styles.progressFill} />
+                </View>
+                <Text style={styles.progressText}>Step 1 of 2</Text>
+              </View>
+            )}
           </View>
 
           {/* AGE SUITABILITY GATE (BEFORE FIRST SENSITIVE CHECK-IN) */}
@@ -287,13 +299,18 @@ export default function CheckInScreen() {
         </View>
       </View>
     </SafeAreaView>
+  </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
+  root: {
     flex: 1,
     backgroundColor: COLORS.porcelain,
+  },
+  safe: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
   container: {
     flex: 1,
@@ -301,7 +318,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingTop: TOP_HEADER_PADDING,
     paddingBottom: 110,
   },
 
@@ -310,7 +327,38 @@ const styles = StyleSheet.create({
     height: 48,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 8,
+  },
+  progressBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+    ...SHADOW.subtle,
+  },
+  progressTrack: {
+    width: 44,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: 'rgba(24, 30, 44, 0.08)',
+    overflow: 'hidden',
+  },
+  progressFill: {
+    width: '50%',
+    height: '100%',
+    borderRadius: 2.5,
+    backgroundColor: '#FF735C',
+  },
+  progressText: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 11,
+    color: '#5B6478',
   },
   iconButton: {
     width: 42,

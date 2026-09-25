@@ -2,17 +2,18 @@ import React, { useState } from 'react';
 import {
   ImageBackground,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { COLORS } from '../constants/colors';
-import { RADIUS, SHADOW } from '../constants/theme';
+import { RADIUS, SHADOW, TOP_HEADER_PADDING } from '../constants/theme';
+import { MedhaScreenBackground } from '../components/medha-screen-background';
 
 const options = [
   {
@@ -60,31 +61,14 @@ export default function PersonalizeScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <View style={styles.root}>
+      <MedhaScreenBackground />
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.content}
         >
-          {/* TOP BAR / BACK */}
-          <View style={styles.topBar}>
-            <Pressable
-              onPress={() => router.back()}
-              style={({ pressed }) => [
-                styles.iconButton,
-                pressed && styles.pressed,
-              ]}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel="Back"
-            >
-              <Ionicons
-                name="arrow-back"
-                size={20}
-                color={COLORS.navy}
-              />
-            </Pressable>
-          </View>
 
           {/* HEADINGS */}
           <Text style={styles.eyebrow}>PREFERENCES</Text>
@@ -141,15 +125,15 @@ export default function PersonalizeScreen() {
             })}
           </View>
 
-          {/* CONTINUATION BUTTON ROUTING TO ONBOARDING-COMPLETE (SCREEN 29) */}
+          {/* CONTINUATION BUTTON ROUTING TO LOGIN */}
           <Pressable
-            onPress={() => router.replace('/onboarding-complete')}
+            onPress={() => router.replace('/login')}
             style={({ pressed }) => [
               styles.button,
               pressed && styles.pressed,
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Continue to completion"
+            accessibilityLabel="Continue to login"
           >
             <Text style={styles.buttonText}>
               Continue
@@ -159,38 +143,26 @@ export default function PersonalizeScreen() {
         </ScrollView>
       </View>
     </SafeAreaView>
+  </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  root: {
     flex: 1,
     backgroundColor: COLORS.porcelain,
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
   container: {
     flex: 1,
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 36,
-  },
-
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.05)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...SHADOW.subtle,
+    paddingTop: TOP_HEADER_PADDING,
+    paddingBottom: 20,
   },
 
   eyebrow: {
@@ -281,7 +253,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    marginTop: 28,
+    marginTop: 18,
     ...SHADOW.subtle,
   },
   buttonText: {
