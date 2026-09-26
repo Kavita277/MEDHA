@@ -180,11 +180,11 @@ export default function ProfileScreen() {
           {/* USER IDENTITY CARD MATCHING REFERENCE SCREEN 22 */}
           <View style={styles.profileHeaderCard}>
             <View style={styles.avatarCircle}>
-              <Text style={styles.avatarInitial}>A</Text>
+              <Text style={styles.avatarInitial}>K</Text>
             </View>
             <View style={styles.profileIdentity}>
-              <Text style={styles.userName}>Aarya Sharma</Text>
-              <Text style={styles.userEmail}>aarya.sharma@medha.care</Text>
+              <Text style={styles.userName}>Kavita</Text>
+              <Text style={styles.userEmail}>kavita@medha.care</Text>
             </View>
           </View>
 
@@ -389,12 +389,12 @@ export default function ProfileScreen() {
 
             <View style={styles.infoField}>
               <Text style={styles.fieldLabel}>Display Name</Text>
-              <Text style={styles.fieldValue}>Aarya Sharma</Text>
+              <Text style={styles.fieldValue}>Kavita</Text>
             </View>
 
             <View style={styles.infoField}>
               <Text style={styles.fieldLabel}>Account Email</Text>
-              <Text style={styles.fieldValue}>aarya.sharma@medha.care</Text>
+              <Text style={styles.fieldValue}>kavita@medha.care</Text>
             </View>
 
             <View style={styles.infoField}>

@@ -37,7 +37,7 @@ export interface GuardianData {
 export const GUARDIAN_DEMO_DATA: GuardianData = {
   guardianName: 'Sunita Sharma',
   linkedPatient: {
-    name: 'Aarav Sharma',
+    name: 'Kavita',
     patientId: 'PT-8802',
     wellbeingStatus: 'Gentle & Steady · Within Normal Baseline',
     wellbeingLevel: 'gentle',
@@ -76,7 +76,7 @@ export const THERAPIST_DEMO_CASES: TherapistCaseSummary[] = [
   {
     caseId: 'CASE-9021',
     patientId: 'PT-8802',
-    patientName: 'Aarav S.',
+    patientName: 'Kavita',
     wellbeingStatus: 'Elevated tension reported',
     riskLevel: 'Needs Attention',
     trend: 'Increasing',
@@ -186,7 +186,7 @@ export const THERAPIST_DEMO_CASE_DETAILS: Record<string, TherapistCaseDetail> = 
   'CASE-9021': {
     caseId: 'CASE-9021',
     patientId: 'PT-8802',
-    patientName: 'Aarav S.',
+    patientName: 'Kavita',
     status: 'Clinical Review Flagged',
     riskLevel: 'Needs Attention',
     trend: 'Increasing',
@@ -416,7 +416,7 @@ export const ADMIN_DEMO_DATA: AdminData = {
     },
   },
   patients: [
-    { id: 'PT-8802', name: 'Aarav Sharma', enrolledDate: '12 Aug 2026', status: 'Under Review', assignedTherapist: 'Dr. Ananya Roy', lastActivity: '2 hours ago' },
+    { id: 'PT-8802', name: 'Kavita', enrolledDate: '12 Aug 2026', status: 'Under Review', assignedTherapist: 'Dr. Ananya Roy', lastActivity: '2 hours ago' },
     { id: 'PT-7640', name: 'Priya Mukherjee', enrolledDate: '01 Jul 2026', status: 'Active', assignedTherapist: 'Dr. Vikram Seth', lastActivity: 'Yesterday' },
     { id: 'PT-5129', name: 'Rohan Kapoor', enrolledDate: '18 Jun 2026', status: 'Active', assignedTherapist: 'Dr. Ananya Roy', lastActivity: '3 days ago' },
     { id: 'PT-9931', name: 'Neha Varma', enrolledDate: '24 Jul 2026', status: 'Under Review', assignedTherapist: 'Dr. Meera Nambiar', lastActivity: '4 hours ago' },
@@ -429,7 +429,7 @@ export const ADMIN_DEMO_DATA: AdminData = {
     { id: 'TH-104', name: 'Dr. Siddharth Rao', license: 'RCI-CLIN-2021-95', activeCases: 11, status: 'Verified' },
   ],
   cases: [
-    { id: 'CASE-9021', patientId: 'PT-8802', patientName: 'Aarav Sharma', therapistName: 'Dr. Ananya Roy', priority: 'Immediate Review', openedDate: '15 Aug 2026', status: 'Monitoring' },
+    { id: 'CASE-9021', patientId: 'PT-8802', patientName: 'Kavita', therapistName: 'Dr. Ananya Roy', priority: 'Immediate Review', openedDate: '15 Aug 2026', status: 'Monitoring' },
     { id: 'CASE-8412', patientId: 'PT-7640', patientName: 'Priya Mukherjee', therapistName: 'Dr. Vikram Seth', priority: 'Normal', openedDate: '10 Jul 2026', status: 'Open' },
     { id: 'CASE-7105', patientId: 'PT-5129', patientName: 'Rohan Kapoor', therapistName: 'Dr. Ananya Roy', priority: 'Normal', openedDate: '22 Jun 2026', status: 'Open' },
     { id: 'CASE-6230', patientId: 'PT-9931', patientName: 'Neha Varma', therapistName: 'Dr. Meera Nambiar', priority: 'High', openedDate: '01 Aug 2026', status: 'Monitoring' },
